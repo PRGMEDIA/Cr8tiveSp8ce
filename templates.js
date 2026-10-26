@@ -509,5 +509,183 @@ tpl("marketing","Award Certificate","Elegant recognition document",1100,850,[
    LN(740,680,880,680,{s:"#999",sw:1})
  ]}],"certificate award recognition print diploma");
 
+/* ============ v1.1 template additions ============ */
+
+tpl("social","Podcast Episode Cover","Square cover with bold title",800,800,[
+ {bg:"#0b0f14",elements:[
+   EL(-140,420,460,460,{f:"#ff5c8a",op:.35}), EL(560,-120,380,380,{f:"#7c5cff",op:.4}),
+   GL(320,120,160,120,"\uD83C\uDFA4",{fs:110,c:"#fff"}),
+   T(60,300,680,44,"EPISODE 47 · THE LONG GAME",{fs:18,ff:"Arial",fw:"700",c:"#8f7bff",al:"center",ls:"4"}),
+   T(60,360,680,160,"Why Nobody\nFinishes Anything",{fs:58,ff:"Georgia, serif",fw:"700",c:"#fff",al:"center",lh:1.15}),
+   LN(320,540,480,540,{s:"#ff5c8a",sw:3}),
+   T(60,570,680,60,"with Dr. Maya Chen · 52 min",{fs:22,ff:"Arial",c:"#aab",al:"center"}),
+   T(60,700,680,40,"Listen on all platforms · @longgamepod",{fs:15,ff:"Arial",c:"#667",al:"center"})
+ ]}],"podcast cover audio episode square");
+
+tpl("social","Testimonial Post","Customer quote card",800,800,[
+ {bg:"#f4f6fb",elements:[
+   R(80,110,640,560,{f:"#ffffff",s:"#dfe4f2",sw:1,r:20}),
+   GL(110,150,80,70,"\u275D",{fs:80,c:"#7c5cff"}),
+   T(140,260,520,200,"Aura Studio paid for itself in the first week. Our whole team designs in it now.",{fs:30,ff:"Georgia, serif",it:true,c:"#222",lh:1.5}),
+   EL(140,520,64,64,{f:"#7c5cff"}), T(140,536,64,40,"K",{fs:28,ff:"Arial",fw:"800",c:"#fff",al:"center"}),
+   T(220,524,400,40,"Kim Alvarado",{fs:20,ff:"Arial",fw:"700",c:"#222"}),
+   T(220,556,400,30,"Marketing Lead, Fernwood",{fs:14,ff:"Arial",c:"#889"}),
+   T(80,720,640,40,"\u2b50\u2b50\u2b50\u2b50\u2b50",{fs:24,al:"center",c:"#f2b705"})
+ ]}],"testimonial review quote social proof");
+
+tpl("social","Story Flash Sale","Urgent vertical story",720,1280,[
+ {bg:"#160a02",elements:[
+   EL(60,180,600,600,{f:"#ff7b00",op:.25}),
+   T(60,220,600,60,"TODAY ONLY",{fs:24,ff:"Arial",fw:"800",c:"#ffb703",al:"center",ls:"8"}),
+   T(40,300,640,220,"40% OFF",{fs:120,ff:"'Arial Black', Arial",fw:"900",c:"#fff",al:"center",lh:1.0}),
+   T(60,540,600,60,"EVERYTHING IN STORE",{fs:26,ff:"Arial",fw:"700",c:"#ffd479",al:"center",ls:"2"}),
+   R(210,700,300,80,{f:"#ffb703",r:40}), T(210,724,300,40,"TAP TO SHOP",{fs:24,ff:"Arial",fw:"800",c:"#160a02",al:"center"}),
+   T(60,880,600,40,"Ends midnight · code FLASH40",{fs:18,ff:"Arial",c:"#c9a24b",al:"center"}),
+   GL(300,980,120,90,"\u23F0",{fs:80})
+ ]}],"story sale flash countdown urgent");
+
+tpl("magazine","Interview Q&A Spread","Editorial interview layout",850,1100,[
+ {bg:"#ffffff",elements:[
+   IM(0,0,850,380,"Interviewee portrait","#b9a8c9","#6e5a89"),
+   R(0,300,850,80,{f:"#111",op:.75}),
+   T(50,318,750,50,"\u201cI make things I wish existed.\u201d",{fs:28,ff:"Georgia, serif",it:true,c:"#fff"}),
+   T(50,440,770,50,"THE INTERVIEW · ANA REYES, FOUNDER OF STUDIO OCHO",{fs:14,ff:"Arial",fw:"700",c:"#c9a24b",ls:"2"}),
+   T(50,500,770,60,"Q: What drove you to leave a stable job and start over?",{fs:17,ff:"Georgia, serif",fw:"700",c:"#111",lh:1.4}),
+   T(50,570,770,90,"A: Fear, mostly — the good kind. I realized the safest path had quietly become the riskiest one.",{fs:15,ff:"Georgia, serif",c:"#444",lh:1.7}),
+   T(50,680,770,60,"Q: What does Studio Ocho do differently?",{fs:17,ff:"Georgia, serif",fw:"700",c:"#111",lh:1.4}),
+   T(50,748,770,90,"A: We prototype in public. Every failure ships with a postmortem. Clients trust us more for it.",{fs:15,ff:"Georgia, serif",c:"#444",lh:1.7}),
+   LN(50,880,800,880,{s:"#111",sw:1}),
+   T(50,900,770,60,"Photography · Lin Bao · Styling · Marc Deveraux",{fs:12,ff:"Arial",c:"#999"})
+ ]}],"magazine interview qa questions editorial");
+
+tpl("magazine","Travel Feature","Destination spread with sidebar",850,1100,[
+ {bg:"#f2f7f5",elements:[
+   IM(0,0,560,1100,"Coastal hero photo","#7fb8a8","#2e6e5e"),
+   R(560,0,290,1100,{f:"#0e3d33"}),
+   T(596,80,220,60,"36 HOURS\nIN LISBON",{fs:30,ff:"Georgia, serif",fw:"700",c:"#f5efe4",lh:1.2}),
+   LN(596,170,800,170,{s:"#c9a24b",sw:2}),
+   T(596,200,220,320,"07:00 — Past\u00e9is at Manteigaria\n10:00 — Tram 28, window seat\n13:00 — Grilled sardines, Cais do Sodr\u00e9\n16:00 — Miradouro da Gra\u00e7a\n21:00 — Fado, two glasses of vinho verde",{fs:14,ff:"Arial",c:"#cfe0d8",lh:2.0}),
+   T(596,560,220,40,"DON'T MISS",{fs:14,ff:"Arial",fw:"700",c:"#c9a24b",ls:"2"}),
+   T(596,595,220,120,"The azulejo museum — small, free, unforgettable.",{fs:14,ff:"Georgia, serif",it:true,c:"#f5efe4",lh:1.6}),
+   T(596,1010,220,30,"PAGES 54–61",{fs:11,ff:"Arial",c:"#6e9a8a",ls:"2"})
+ ]}],"magazine travel destination feature itinerary");
+
+tpl("books","Cookbook Recipe Page","Warm illustrated recipe layout",850,1100,[
+ {bg:"#fffaf3",elements:[
+   IM(60,70,730,420,"Finished dish","#f2c57c","#c96f3b",{r:12}),
+   T(60,510,500,50,"Brown Butter Apple Cake",{fs:38,ff:"Georgia, serif",fw:"700",c:"#4a2c1a"}),
+   T(60,565,500,36,"Serves 8 · 1 hr 15 min · Easy",{fs:15,ff:"Arial",c:"#a08670"}),
+   R(60,630,300,360,{f:"#f6e8d8",r:12}),
+   T(80,650,260,30,"INGREDIENTS",{fs:14,ff:"Arial",fw:"700",c:"#c96f3b",ls:"2"}),
+   T(80,688,260,290,"\u2022 3 apples, sliced\n\u2022 180 g flour\n\u2022 150 g brown sugar\n\u2022 115 g butter\n\u2022 2 eggs\n\u2022 1 tsp cinnamon\n\u2022 Pinch of salt",{fs:14,ff:"Georgia, serif",c:"#5a4634",lh:1.9}),
+   T(400,630,390,30,"METHOD",{fs:14,ff:"Arial",fw:"700",c:"#c96f3b",ls:"2"}),
+   T(400,668,390,320,"1. Brown the butter until it smells like hazelnuts.\n2. Whisk eggs and sugar until pale.\n3. Fold in flour, cinnamon, salt.\n4. Layer apples in a buttered tin; pour batter over.\n5. Bake 50 min at 180\u00b0C. Cool 15 min. Dust with sugar.",{fs:14,ff:"Georgia, serif",c:"#444",lh:1.8})
+ ]}],"cookbook recipe food book page");
+
+tpl("books","Poetry Page","Minimal typographic poem",850,1100,[
+ {bg:"#faf8f4",elements:[
+   T(80,140,690,50,"II. THE FIELD",{fs:16,ff:"Arial",c:"#a89878",ls:"6"}),
+   T(200,280,450,400,"The grass does not ask\nthe wind for permission\nto move.\n\nNeither should you.",{fs:30,ff:"Georgia, serif",it:true,c:"#2b2b2b",lh:1.9}),
+   LN(380,760,470,760,{s:"#a89878",sw:1}),
+   T(80,990,690,30,"12",{fs:14,ff:"Georgia, serif",c:"#999",al:"center"})
+ ]}],"poetry poem book minimal typographic");
+
+tpl("docs","Cover Letter","Job application — exports to .odt",850,1100,[
+ {bg:"#ffffff",elements:[
+   T(60,70,400,40,"JAMIE RIVERA",{fs:26,ff:"Arial",fw:"800",c:"#16324f",ls:"2"}),
+   T(60,115,400,26,"Portland, OR · jamie.rivera@mail.com · (555) 210-4477",{fs:12,ff:"Arial",c:"#777"}),
+   LN(60,165,790,165,{s:"#16324f",sw:2}),
+   T(60,200,730,30,"October 25, 2026",{fs:13,ff:"Georgia, serif",c:"#444"}),
+   T(60,250,730,60,"Dear Hiring Team,",{fs:13,ff:"Georgia, serif",c:"#333"}),
+   T(60,300,730,240,"I am writing to apply for the Senior Product Designer position at Northwind. Over the past seven years I have designed products used by more than a million people — most recently leading the redesign of Nimbus Software's analytics suite, where my team cut onboarding drop-off by 31%.\n\nWhat draws me to Northwind is the conviction that tools for serious work can still feel light. That has been the through-line of my career.",{fs:13,ff:"Georgia, serif",c:"#333",lh:1.75}),
+   T(60,570,730,180,"I would welcome the chance to walk you through two case studies that map directly onto the challenges in your posting. I am available any weekday afternoon and can share a portfolio on request.\n\nThank you for your time and consideration.",{fs:13,ff:"Georgia, serif",c:"#333",lh:1.75}),
+   T(60,790,730,30,"Sincerely,",{fs:13,ff:"Georgia, serif",c:"#333"}),
+   T(60,850,730,36,"Jamie Rivera",{fs:20,ff:"'Brush Script MT', cursive",c:"#16324f"}),
+   T(60,890,730,26,"Enclosure: r\u00e9sum\u00e9",{fs:11,ff:"Arial",c:"#999"})
+ ]}],"cover letter job application odt libreoffice");
+
+tpl("docs","Press Release","Announcement format — exports to .odt",850,1100,[
+ {bg:"#ffffff",elements:[
+   R(60,60,180,40,{f:"#111"}), T(60,69,180,26,"PRESS RELEASE",{fs:13,ff:"Arial",fw:"700",c:"#fff",al:"center",ls:"2"}),
+   T(60,130,730,60,"Northwind Labs Opens First East Coast Office",{fs:32,ff:"Georgia, serif",fw:"700",c:"#111",lh:1.2}),
+   T(60,205,730,30,"FOR IMMEDIATE RELEASE · PORTLAND, OR · OCTOBER 25, 2026",{fs:12,ff:"Arial",c:"#777",ls:"1"}),
+   LN(60,250,790,250,{s:"#ddd",sw:1}),
+   T(60,280,730,200,"PORTLAND, Ore. — Northwind Labs, the logistics software company behind the CargoLine platform, today announced the opening of its first East Coast office in Savannah, Georgia, creating an estimated 120 jobs over the next two years.\n\nThe expansion follows a 240% increase in regional delivery volume and a $40M Series B closed earlier this year.",{fs:13,ff:"Georgia, serif",c:"#333",lh:1.75}),
+   T(60,510,730,160,"\u201cThe Southeast is where freight is growing fastest,\u201d said CEO Mara Voss. \u201cBeing close to our customers there changes what we can build for them.\u201d",{fs:14,ff:"Georgia, serif",it:true,c:"#555",lh:1.7}),
+   T(60,700,730,140,"The Savannah office will open in January with engineering, operations, and customer success teams. Hiring begins immediately at northwindlabs.example/careers.",{fs:13,ff:"Georgia, serif",c:"#333",lh:1.75}),
+   T(60,880,730,26,"MEDIA CONTACT",{fs:12,ff:"Arial",fw:"700",c:"#111",ls:"2"}),
+   T(60,910,730,50,"Priya Nair · press@northwindlabs.example · +1 (503) 555-0119",{fs:12,ff:"Arial",c:"#666"}),
+   LN(60,1000,790,1000,{s:"#ddd",sw:1}),
+   T(60,1015,730,24,"###",{fs:13,ff:"Georgia, serif",c:"#999"})
+ ]}],"press release announcement media odt libreoffice");
+
+tpl("presentation","Data Slide — Bar Chart","Chart built from shapes",1280,720,[
+ {bg:"#ffffff",elements:[
+   T(70,60,1140,50,"Delivery time cut in half — and falling.",{fs:38,ff:"'Segoe UI', Arial",fw:"700",c:"#111"}),
+   T(70,120,1140,30,"Average delivery time, hours · 2023–2026",{fs:16,ff:"Arial",c:"#888"}),
+   LN(90,600,760,600,{s:"#ddd",sw:2}),
+   R(130,320,80,280,{f:"#c9d2e8",r:4}), T(130,620,80,30,"2023",{fs:15,ff:"Arial",c:"#777",al:"center"}),
+   R(280,260,80,340,{f:"#8fa8d0",r:4}), T(280,620,80,30,"2024",{fs:15,ff:"Arial",c:"#777",al:"center"}),
+   R(430,210,80,390,{f:"#4a7aab",r:4}), T(430,620,80,30,"2025",{fs:15,ff:"Arial",c:"#777",al:"center"}),
+   R(580,140,80,460,{f:"#1d5c43",r:4}), T(580,620,80,30,"2026",{fs:15,ff:"Arial",c:"#1d5c43",al:"center",fw:"700"}),
+   T(580,100,80,30,"6.2h",{fs:17,ff:"Arial",fw:"800",c:"#1d5c43",al:"center"}),
+   R(840,220,380,300,{f:"#f2f6fb",r:14}),
+   T(870,250,320,240,"\u2212 52% since 2023\n\nEvery route re-optimized nightly against live traffic and dock availability.",{fs:18,ff:"Arial",c:"#33507a",lh:1.7})
+ ]}],"presentation data chart bar slide metrics");
+
+tpl("presentation","Team Slide","People grid slide",1280,720,[
+ {bg:"#101828",elements:[
+   T(70,70,1140,50,"The people behind CargoLine",{fs:40,ff:"'Segoe UI', Arial",fw:"700",c:"#fff"}),
+   T(70,125,1140,30,"47 teammates \u00b7 6 countries \u00b7 one mission",{fs:17,ff:"Arial",c:"#8fa3bd"}),
+   EL(140,240,180,180,{f:"#1f3d5c"}), T(140,460,180,36,"Mara Voss",{fs:20,ff:"Arial",fw:"700",c:"#fff",al:"center"}),
+   T(140,498,180,28,"CEO · ex-Flexport",{fs:13,ff:"Arial",c:"#8fa3bd",al:"center"}),
+   EL(550,240,180,180,{f:"#2f6e5e"}), T(550,460,180,36,"Dan Okafor",{fs:20,ff:"Arial",fw:"700",c:"#fff",al:"center"}),
+   T(550,498,180,28,"CTO · routing systems",{fs:13,ff:"Arial",c:"#8fa3bd",al:"center"}),
+   EL(960,240,180,180,{f:"#6e3d5c"}), T(960,460,180,36,"Ines Halvorsen",{fs:20,ff:"Arial",fw:"700",c:"#fff",al:"center"}),
+   T(960,498,180,28,"COO · 14 yrs freight",{fs:13,ff:"Arial",c:"#8fa3bd",al:"center"})
+ ]}],"presentation team about people slide startup");
+
+tpl("posters","Wellness Studio Poster","Calm spa/yoga promo",600,900,[
+ {bg:"#e9f2ec",elements:[
+   EL(150,100,300,300,{f:"#cfe3d6"}),
+   GL(260,180,80,70,"\u2698",{fs:70,c:"#3d6b52"}),
+   T(60,450,480,50,"STILLPOINT YOGA",{fs:28,ff:"Georgia, serif",c:"#3d6b52",al:"center",ls:"6"}),
+   LN(230,520,370,520,{s:"#3d6b52",sw:1}),
+   T(60,550,480,110,"Morning flows.\nEvening stillness.",{fs:34,ff:"Georgia, serif",it:true,c:"#22402f",al:"center",lh:1.4}),
+   T(60,700,480,60,"New student month \u2014 unlimited classes, $49",{fs:17,ff:"Arial",c:"#4a6b58",al:"center",lh:1.5}),
+   T(60,810,480,30,"14 Alder Way · stillpoint.example",{fs:13,ff:"Arial",c:"#7a9a88",al:"center"})
+ ]}],"poster yoga wellness spa studio calm");
+
+tpl("posters","Flash Sale Poster","Retail discount poster",600,900,[
+ {bg:"#ffd400",elements:[
+   EL(-80,-100,340,340,{f:"#111"}), EL(420,700,320,320,{f:"#111"}),
+   T(60,130,480,50,"THIS WEEKEND",{fs:22,ff:"Arial",fw:"800",c:"#111",al:"center",ls:"4"}),
+   T(40,190,520,240,"50%\nOFF",{fs:120,ff:"'Arial Black', Arial",fw:"900",c:"#111",al:"center",lh:1.0}),
+   R(150,460,300,70,{f:"#111",r:8}),
+   T(150,482,300,30,"EVERYTHING*",{fs:26,ff:"Arial",fw:"800",c:"#ffd400",al:"center"}),
+   T(60,580,480,40,"Sat & Sun only · In store & online",{fs:19,ff:"Arial",fw:"600",c:"#111",al:"center"}),
+   T(60,840,480,26,"*Excludes gift cards. While stock lasts.",{fs:11,ff:"Arial",c:"#554400",al:"center"})
+ ]}],"poster sale discount retail yellow");
+
+tpl("collages","Polaroid Scatter","Playful tilted photo stack",900,1100,[
+ {bg:"#f6f3ee",elements:[
+   IM(90,120,330,330,"Photo A","#c9b8d9","#8a7aa9",{r:4}), R(70,90,370,410,{f:"#fff",s:"#e5e0d8",sw:1,r:4}),
+   IM(470,220,330,330,"Photo B","#b8d9c9","#7aa98a",{r:4}), R(450,190,370,410,{f:"#fff",s:"#e5e0d8",sw:1,r:4}),
+   IM(150,560,330,330,"Photo C","#d9c9b8","#a98a7a",{r:4}), R(130,530,370,410,{f:"#fff",s:"#e5e0d8",sw:1,r:4}),
+   T(80,1000,740,40,"SUMMER, UNEDITED",{fs:18,ff:"'Brush Script MT', cursive",c:"#5a5348",al:"center",ls:"3"})
+ ]}],"collage polaroid photos scrapbook memories");
+
+tpl("marketing","Gift Certificate","Elegant voucher",1000,600,[
+ {bg:"#fdfbf6",elements:[
+   R(24,24,952,552,{f:"none",s:"#b98d2f",sw:2}),
+   LN(700,60,700,540,{s:"#e5dcc8",sw:1}),
+   GL(420,90,160,110,"\uD83C\uDF81",{fs:90,c:"#b98d2f"}),
+   T(150,210,560,60,"GIFT CERTIFICATE",{fs:40,ff:"Georgia, serif",fw:"700",c:"#2b2b2b",al:"center",ls:"4"}),
+   T(150,300,560,50,"This certificate entitles the bearer to",{fs:17,ff:"Georgia, serif",it:true,c:"#666",al:"center"}),
+   T(150,350,560,70,"$100",{fs:56,ff:"Georgia, serif",fw:"700",c:"#b98d2f",al:"center"}),
+   T(150,460,560,40,"at The Copper Kettle · valid 12 months",{fs:15,ff:"Arial",c:"#888",al:"center"}),
+   T(740,120,200,160,"No. 00417\n\nIssued: Oct 2026\nSigned: ________",{fs:14,ff:"Arial",c:"#666",lh:2.0})
+ ]}],"gift certificate voucher print reward");
+
 /* expose */
 if (typeof window !== "undefined") window.TEMPLATES = TEMPLATES, window.CATS = CATS;
