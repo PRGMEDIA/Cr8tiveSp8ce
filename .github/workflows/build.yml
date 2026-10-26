@@ -1,0 +1,35 @@
+name: Build
+
+# Rebuilds the single-file bundle on every push so dist/ is always fresh.
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild single-file bundle
+        run: python tools/build_single.py
+
+      - name: Commit rebuilt bundle
+        run: |
+          git config user.name "aura-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add dist/aura-studio-single.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "ci: rebuild single-file bundle [skip ci]"
+            git push
+          fi
