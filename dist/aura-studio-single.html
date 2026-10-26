@@ -1,0 +1,1923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aura Studio — Creative Suite</title>
+<style>
+/* ============ Aura Studio — styles ============ */
+:root{
+  --bg:#0f1222; --bg2:#171b31; --bg3:#1f2444; --panel:#141831; --line:#2a2f55;
+  --ink:#eef0ff; --ink-dim:#9aa0c7; --accent:#7c5cff; --accent2:#ff5c8a;
+  --radius:12px;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{height:100%}
+body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; background:var(--bg); color:var(--ink); overflow:hidden}
+
+/* ---------- Top bar ---------- */
+#topbar{height:54px; display:flex; align-items:center; gap:10px; padding:0 14px;
+  background:var(--panel); border-bottom:1px solid var(--line); position:relative; z-index:50}
+.tb-left{display:flex; align-items:center; gap:10px; flex:1; min-width:0}
+.tb-center{display:flex; align-items:center; gap:6px}
+.tb-right{display:flex; align-items:center; gap:8px; justify-content:flex-end}
+.brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:16px; cursor:pointer; white-space:nowrap}
+.brand-dot{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+.divider-v{width:1px;height:22px;background:var(--line)}
+.proj-name{background:transparent;border:1px solid transparent;color:var(--ink);font-size:14px;padding:5px 8px;border-radius:8px;width:220px;outline:none}
+.proj-name:hover{border-color:var(--line)} .proj-name:focus{border-color:var(--accent);background:var(--bg2)}
+.save-state{font-size:11px;color:var(--ink-dim)}
+.tbtn{background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:8px;width:32px;height:30px;cursor:pointer;font-size:14px}
+.tbtn:hover{background:var(--bg3)}
+.abtn{border:none;border-radius:9px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:600}
+.abtn.ghost{background:var(--bg2);color:var(--ink);border:1px solid var(--line)}
+.abtn.ghost:hover{background:var(--bg3)}
+.abtn.primary{background:var(--accent);color:#fff}
+.abtn.primary:hover{filter:brightness(1.1)}
+.zoom-sel{background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 6px;font-size:12px}
+
+/* dropdowns */
+.dropdown{position:relative}
+.dropdown-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:250px;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:100}
+.dropdown.open .dropdown-menu{display:block}
+.dropdown-menu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink);
+  padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.dropdown-menu button:hover{background:var(--bg3)}
+.dropdown-menu hr{border:none;border-top:1px solid var(--line);margin:5px 0}
+
+/* ---------- Layout ---------- */
+#main{height:calc(100vh - 54px);display:flex}
+#galleryView{display:flex;width:100%}
+#editorView{display:flex;width:100%}
+
+/* ---------- Category rail ---------- */
+#catRail{width:210px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;flex-shrink:0}
+.rail-head{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);padding:16px 16px 8px}
+.cat-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;
+  color:var(--ink-dim);cursor:pointer;font-size:13.5px;text-align:left;border-left:3px solid transparent}
+.cat-item:hover{background:var(--bg2);color:var(--ink)}
+.cat-item.active{background:var(--bg3);color:var(--ink);border-left-color:var(--accent);font-weight:600}
+.cat-item .em{font-size:16px;width:20px;text-align:center}
+
+/* ---------- Gallery ---------- */
+#galleryPane{flex:1;overflow-y:auto;padding:0 30px 60px}
+.gallery-hero{padding:40px 0 26px;text-align:center;max-width:760px;margin:0 auto}
+.gallery-hero h1{font-size:30px;background:linear-gradient(90deg,#a78bff,#ff8fb1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.gallery-hero p{color:var(--ink-dim);margin:10px auto 22px;font-size:14px;max-width:620px;line-height:1.55}
+#searchBox{width:min(560px,90%);padding:12px 18px;border-radius:999px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink);font-size:14px;outline:none}
+#searchBox:focus{border-color:var(--accent)}
+.gal-section{margin-top:26px}
+.gal-section h2{font-size:17px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.gal-section .sub{color:var(--ink-dim);font-size:12.5px;margin-bottom:14px}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.tpl-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:pointer;
+  transition:transform .12s, box-shadow .12s}
+.tpl-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.45);border-color:var(--accent)}
+.tpl-thumb{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:var(--bg3);position:relative}
+.tpl-thumb .mini{position:relative;transform-origin:center;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.tpl-info{padding:10px 12px}
+.tpl-info .t{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl-info .d{font-size:11px;color:var(--ink-dim);margin-top:2px}
+.badge{position:absolute;top:8px;left:8px;background:rgba(10,10,25,.75);color:#ffd479;font-size:10px;
+  padding:3px 8px;border-radius:999px;border:1px solid #3a3a66}
+
+/* ---------- Editor ---------- */
+#elemPalette{width:170px;background:var(--panel);border-right:1px solid var(--line);padding:12px 10px;overflow-y:auto;flex-shrink:0}
+.pal-head{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);padding:4px 6px 10px}
+.pal-btn{display:block;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--line);color:var(--ink);
+  padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;margin-bottom:7px}
+.pal-btn:hover{background:var(--bg3);border-color:var(--accent)}
+.pal-sep{height:10px}
+
+#canvasArea{flex:1;display:flex;flex-direction:column;background:
+  radial-gradient(1200px 600px at 50% -10%, #232a52 0%, var(--bg) 60%);min-width:0}
+#boardWrap{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px 10px}
+#board{background:#fff;box-shadow:0 14px 50px rgba(0,0,0,.55);position:relative;flex-shrink:0;overflow:hidden;
+  transform-origin:top center}
+#board.editing-text-off #el-textarea{display:none}
+
+/* elements */
+.el{position:absolute;cursor:move;user-select:none}
+.el.sel{outline:2px solid var(--accent);outline-offset:1px}
+.el.locked{cursor:default}
+.el-text{width:100%;height:100%;display:flex;outline:none;white-space:pre-wrap;word-break:break-word;cursor:text}
+.handle{position:absolute;width:11px;height:11px;background:#fff;border:2px solid var(--accent);border-radius:3px;z-index:20}
+.handle.nw{top:-6px;left:-6px;cursor:nwse-resize}.handle.ne{top:-6px;right:-6px;cursor:nesw-resize}
+.handle.sw{bottom:-6px;left:-6px;cursor:nesw-resize}.handle.se{bottom:-6px;right:-6px;cursor:nwse-resize}
+#el-textarea{position:absolute;z-index:30;min-width:80px;background:#fff;color:#111;border:2px solid var(--accent);
+  border-radius:4px;padding:2px 4px;font:inherit;outline:none;resize:none;display:none}
+
+#pageStrip{height:86px;background:var(--panel);border-top:1px solid var(--line);display:flex;align-items:center;
+  gap:10px;padding:0 16px;overflow-x:auto;flex-shrink:0}
+.page-thumb{width:74px;height:58px;background:#fff;border:2px solid transparent;border-radius:6px;cursor:pointer;
+  position:relative;flex-shrink:0;overflow:hidden}
+.page-thumb.active{border-color:var(--accent)}
+.page-thumb .num{position:absolute;bottom:1px;right:4px;font-size:9px;color:#555;background:rgba(255,255,255,.85);border-radius:3px;padding:0 3px}
+.page-thumb .del{position:absolute;top:0;right:0;background:#e33;color:#fff;font-size:9px;width:15px;height:15px;
+  display:none;align-items:center;justify-content:center;border-radius:0 0 0 5px}
+.page-thumb:hover .del{display:flex}
+.pstrip-btn{width:34px;height:34px;border-radius:8px;background:var(--bg2);border:1px solid var(--line);color:var(--ink);
+  cursor:pointer;font-size:16px;flex-shrink:0}
+.pstrip-btn:hover{background:var(--bg3)}
+
+/* properties panel */
+#propsPane{width:260px;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0;padding:12px}
+.prop-group{margin-bottom:14px}
+.prop-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.prop-label{font-size:11px;color:var(--ink-dim);width:64px;flex-shrink:0}
+.prop-input,.prop-select{flex:1;background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:7px;
+  padding:6px 8px;font-size:12px;outline:none;min-width:0}
+.prop-input:focus,.prop-select:focus{border-color:var(--accent)}
+input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
+.prop-btn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:7px 10px;
+  cursor:pointer;font-size:12px;width:100%;margin-bottom:7px;text-align:left}
+.prop-btn:hover{background:var(--bg3)}
+.prop-empty{color:var(--ink-dim);font-size:12.5px;line-height:1.6;padding:8px 4px}
+
+/* ---------- Toast & modal ---------- */
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);
+  border:1px solid var(--accent);color:var(--ink);padding:11px 22px;border-radius:999px;font-size:13px;
+  opacity:0;transition:.25s;z-index:999;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#modal{position:fixed;inset:0;background:rgba(5,6,15,.7);z-index:200;display:flex;align-items:center;justify-content:center}
+#modalCard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:min(560px,92vw);
+  max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#modalCard h3{margin-bottom:12px}
+#modalCard .m-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+#modalCard select,#modalCard input{background:var(--bg2);border:1px solid var(--line);color:var(--ink);
+  border-radius:8px;padding:8px 10px;font-size:13px;flex:1}
+#modalCard .m-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+#modalCard .m-actions .abtn{padding:8px 18px}
+#modalCard p,#modalCard li{color:var(--ink-dim);font-size:13px;line-height:1.6;margin-bottom:8px}
+#modalCard b{color:var(--ink)}
+
+/* scrollbars */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2c3260;border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+
+@media (max-width:1000px){ #propsPane{width:220px} #elemPalette{width:150px} }
+
+</style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🎨</text></svg>">
+</head>
+<body>
+
+<!-- ================= TOP BAR ================= -->
+<header id="topbar">
+  <div class="tb-left">
+    <div class="brand" id="brandHome" title="Home / Templates">
+      <span class="brand-dot">A</span> Aura&nbsp;Studio
+    </div>
+    <div class="divider-v"></div>
+    <input id="projName" class="proj-name" value="Untitled design" spellcheck="false">
+    <span id="saveState" class="save-state">Saved</span>
+  </div>
+  <div class="tb-center" id="editorBar" style="display:none">
+    <button class="tbtn" id="btnUndo" title="Undo (Ctrl+Z)">↩</button>
+    <button class="tbtn" id="btnRedo" title="Redo (Ctrl+Y)">↪</button>
+    <div class="divider-v"></div>
+    <button class="tbtn" id="btnDup" title="Duplicate (Ctrl+D)">⧉</button>
+    <button class="tbtn" id="btnDel" title="Delete (Del)">🗑</button>
+    <div class="divider-v"></div>
+    <button class="tbtn" id="btnFront" title="Bring to front">⬆</button>
+    <button class="tbtn" id="btnBack" title="Send to back">⬇</button>
+    <div class="divider-v"></div>
+    <select id="zoomSel" class="zoom-sel">
+      <option value="fit">Fit</option><option value="0.5">50%</option>
+      <option value="0.75">75%</option><option value="1" selected>100%</option>
+      <option value="1.5">150%</option><option value="2">200%</option>
+    </select>
+  </div>
+  <div class="tb-right">
+    <button class="abtn ghost" id="btnAdmin" title="Open local admin agent">⚙ Admin</button>
+    <div class="dropdown">
+      <button class="abtn ghost" id="btnProject">Project ▾</button>
+      <div class="dropdown-menu" id="menuProject">
+        <button data-act="save-local">💾 Save to browser</button>
+        <button data-act="open-local">📂 Open saved design…</button>
+        <button data-act="export-json">⬇ Export project (.json)</button>
+        <button data-act="import-json">⬆ Import project (.json)</button>
+        <hr>
+        <button data-act="new-blank">✨ New blank design</button>
+        <button data-act="help">❓ Help &amp; shortcuts</button>
+      </div>
+    </div>
+    <div class="dropdown">
+      <button class="abtn primary" id="btnExport">⬇ Export ▾</button>
+      <div class="dropdown-menu right" id="menuExport">
+        <button data-act="png">PNG image — current page</button>
+        <button data-act="png-all">PNG — all pages (zip)</button>
+        <button data-act="svg">SVG vector — current page</button>
+        <button data-act="odt">ODF document (.odt) — LibreOffice</button>
+        <button data-act="fodt">Flat ODF (.fodt) — LibreOffice</button>
+        <button data-act="print">Print / Save as PDF</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main id="main">
+
+  <!-- Gallery view -->
+  <section id="galleryView">
+    <aside id="catRail">
+      <div class="rail-head">Create</div>
+      <div id="catList"></div>
+    </aside>
+    <div id="galleryPane">
+      <div class="gallery-hero">
+        <h1>What will you create today?</h1>
+        <p>Start from a professionally designed template — magazine spreads, book layouts, social posts, LibreOffice-ready documents, presentations, logos, posters, video storyboards, collages and more.</p>
+        <input id="searchBox" type="search" placeholder="🔍  Search templates…  (e.g. instagram, resume, poster)">
+      </div>
+      <div id="searchResults" style="display:none"></div>
+      <div id="gallerySections"></div>
+    </div>
+  </section>
+
+  <!-- Editor view -->
+  <section id="editorView" style="display:none">
+    <aside id="elemPalette">
+      <div class="pal-head">Elements</div>
+      <button class="pal-btn" data-add="text">🅣 Text</button>
+      <button class="pal-btn" data-add="heading">H Heading</button>
+      <button class="pal-btn" data-add="subheading">h Subheading</button>
+      <button class="pal-btn" data-add="body">≡ Body text</button>
+      <div class="pal-sep"></div>
+      <button class="pal-btn" data-add="rect">▭ Rectangle</button>
+      <button class="pal-btn" data-add="ellipse">● Ellipse</button>
+      <button class="pal-btn" data-add="line">╱ Line</button>
+      <div class="pal-sep"></div>
+      <button class="pal-btn" data-add="image">🖼 Image</button>
+      <button class="pal-btn" data-add="glyph">★ Emoji / Icon</button>
+    </aside>
+
+    <div id="canvasArea">
+      <div id="boardWrap">
+        <div id="board"></div>
+      </div>
+      <div id="pageStrip"></div>
+    </div>
+
+    <aside id="propsPane">
+      <div class="pal-head" id="propsTitle">Properties</div>
+      <div id="propsBody"></div>
+    </aside>
+  </section>
+</main>
+
+<!-- hidden file inputs -->
+<input type="file" id="fileImg" accept="image/*" style="display:none">
+<input type="file" id="fileJson" accept=".json" style="display:none">
+
+<!-- toast -->
+<div id="toast"></div>
+
+<!-- modal -->
+<div id="modal" style="display:none">
+  <div id="modalCard"></div>
+</div>
+
+<script>
+/* ============================================================
+   Aura Studio — Template Library
+   Every template is pure data: pages -> elements.
+   Element types: text, rect, ellipse, line, image, glyph
+   ============================================================ */
+"use strict";
+
+const TEMPLATES = [];
+const CATS = [
+  { id:"social",       name:"Social Media",      icon:"📱" },
+  { id:"magazine",     name:"Magazine",          icon:"📰" },
+  { id:"books",        name:"Books",             icon:"📚" },
+  { id:"docs",         name:"Documents (ODF)",   icon:"📄" },
+  { id:"presentation", name:"Presentations",     icon:"🖥" },
+  { id:"logos",        name:"Logos",             icon:"✒️" },
+  { id:"posters",      name:"Posters",           icon:"🖼" },
+  { id:"video",        name:"Marketing Videos",  icon:"🎬" },
+  { id:"collages",     name:"Photo Collages",    icon:"🎞" },
+  { id:"marketing",    name:"Print & Marketing", icon:"📣" },
+];
+
+/* ---------- tiny builders ---------- */
+const T = (x,y,w,h,text,o={}) => ({type:"text",x,y,w,h,text,
+  fontSize:o.fs||24, fontFamily:o.ff||"Georgia, 'Times New Roman', serif",
+  fontWeight:o.fw||"400", color:o.c||"#111", align:o.al||"left",
+  italic:o.it||false, uppercase:o.up||false, lineHeight:o.lh||1.25,
+  letterSpacing:(o.ls||0)+"px", opacity:(o.op!=null?o.op:1)});
+const R = (x,y,w,h,o={}) => ({type:"rect",x,y,w,h,fill:o.f||"#222",
+  stroke:o.s||"none",strokeWidth:o.sw||0,radius:o.r||0,opacity:(o.op!=null?o.op:1)});
+const EL = (x,y,w,h,o={}) => ({type:"ellipse",x,y,w,h,fill:o.f||"#222",
+  stroke:o.s||"none",strokeWidth:o.sw||0,opacity:(o.op!=null?o.op:1)});
+const LN = (x,y,x2,y2,o={}) => ({type:"line",x,y,w:Math.abs(x2-x),h:Math.abs(y2-y),
+  x1:Math.min(x,x2),y1:Math.min(y,y2),x2a:Math.max(x,x2),y2a:Math.max(y,y2),
+  stroke:o.s||"#111",strokeWidth:o.sw||2,opacity:(o.op!=null?o.op:1)});
+const IM = (x,y,w,h,label,c1,c2,o={}) => ({type:"image",x,y,w,h,
+  src:ph(w,h,label||"Image",c1||"#aab6ff",c2||"#7c5cff"),fit:"cover",radius:o.r||0,opacity:(o.op!=null?o.op:1)});
+const GL = (x,y,w,h,ch,o={}) => ({type:"glyph",x,y,w,h,ch,fontSize:o.fs||64,color:o.c||"#111",opacity:(o.op!=null?o.op:1)});
+
+function ph(w,h,label,c1,c2){
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+  <rect width="100%" height="100%" fill="url(#g)"/>
+  <circle cx="${w*0.5}" cy="${h*0.42}" r="${Math.min(w,h)*0.13}" fill="rgba(255,255,255,0.35)"/>
+  <rect x="${w*0.5-Math.min(w,h)*0.24}" y="${h*0.62}" width="${Math.min(w,h)*0.48}" height="${Math.min(w,h)*0.06}" rx="${Math.min(w,h)*0.03}" fill="rgba(255,255,255,0.45)"/>
+  <text x="50%" y="50%" font-family="Segoe UI,Arial" font-size="${Math.max(12,Math.min(w,h)*0.075)}" fill="#fff" text-anchor="middle" dominant-baseline="middle" font-weight="600">${label}</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+function tpl(cat,name,desc,w,h,pages,tags){
+  TEMPLATES.push({id:cat+"-"+TEMPLATES.length, cat, name, desc, w, h, pages, tags:(tags||"").toLowerCase()});
+}
+
+/* ============================================================
+   SOCIAL MEDIA
+   ============================================================ */
+tpl("social","Bold Gradient Post","Instagram square promo",800,800,[
+ {bg:"#0f0c29",elements:[
+   EL(-160,-200,520,520,{f:"#7c5cff",op:.5}), EL(500,540,440,440,{f:"#ff5c8a",op:.45}),
+   R(70,150,660,4,{f:"#fff"}),
+   T(70,230,660,60,"SUMMER DROP",{fs:22,ff:"Arial, sans-serif",fw:"800",c:"#ffd479",ls:"6",al:"center"}),
+   T(70,300,660,180,"The New\nCollection",{fs:76,ff:"'Segoe UI', Arial, sans-serif",fw:"800",c:"#fff",al:"center",lh:1.1}),
+   T(70,500,660,40,"Up to 40% off — this week only",{fs:24,ff:"Arial, sans-serif",c:"#e8e8ff",al:"center"}),
+   R(280,590,240,64,{f:"#fff",r:32}), T(280,608,240,34,"SHOP NOW",{fs:20,ff:"Arial",fw:"700",c:"#0f0c29",al:"center"}),
+   T(70,700,660,30,"@yourbrand  •  yourbrand.com",{fs:16,ff:"Arial",c:"#9aa0c7",al:"center"})
+ ]}],"instagram post promo sale");
+
+tpl("social","Minimal Quote Story","Vertical story with serif quote",720,1280,[
+ {bg:"#f4efe7",elements:[
+   R(60,60,600,1160,{f:"none",s:"#c9a24b",sw:2}),
+   GL(320,240,80,80,"❝",{fs:90,c:"#c9a24b"}),
+   T(110,380,500,320,"Simplicity is the ultimate sophistication.",{fs:52,ff:"Georgia, serif",it:true,c:"#2b2b2b",al:"center",lh:1.3}),
+   LN(300,760,420,760,{s:"#c9a24b",sw:3}),
+   T(110,800,500,50,"— LEONARDO DA VINCI",{fs:20,ff:"Arial",fw:"600",c:"#7a6a45",al:"center",ls:"3"}),
+   T(110,1080,500,40,"Swipe up for the full story",{fs:16,ff:"Arial",c:"#9a8f7d",al:"center"})
+ ]}],"instagram story quote minimal");
+
+tpl("social","Facebook Page Cover","Header banner for business pages",1120,416,[
+ {bg:"#0b3d91",elements:[
+   R(0,0,1120,416,{f:"#0b3d91"}), R(760,0,360,416,{f:"#1252c4"}),
+   EL(950,-90,260,260,{f:"#4d8dff",op:.4}),
+   T(70,110,620,70,"Northwind Coffee Co.",{fs:46,ff:"Georgia, serif",fw:"700",c:"#fff"}),
+   T(70,200,620,44,"Fresh roasts, delivered weekly to your door.",{fs:22,ff:"Arial",c:"#cfe0ff"}),
+   R(70,280,200,56,{f:"#ffb703",r:28}), T(70,296,200,34,"Order online",{fs:19,ff:"Arial",fw:"700",c:"#3b2600",al:"center"}),
+   GL(830,120,90,90,"☕",{fs:80,c:"#fff"})
+ ]}],"facebook cover banner business");
+
+tpl("social","Pinterest Pin — Recipe","Tall pin with hero image",600,900,[
+ {bg:"#fff8f0",elements:[
+   IM(40,40,520,430,"Food photo","#ffb36b","#ff7b54",{r:16}),
+   T(40,510,520,120,"5-Ingredient\nLemon Pasta",{fs:44,ff:"Georgia, serif",fw:"700",c:"#3d2b1f",lh:1.15}),
+   R(40,660,120,4,{f:"#ff7b54"}),
+   T(40,690,520,60,"Ready in 20 minutes • Vegetarian",{fs:20,ff:"Arial",c:"#8a6f5c"}),
+   T(40,780,520,60,"Get the full recipe at the link below 👇",{fs:22,ff:"Arial",fw:"600",c:"#3d2b1f"})
+ ]}],"pinterest recipe food pin");
+
+tpl("social","YouTube Thumbnail","High contrast click-worthy title",960,540,[
+ {bg:"#111",elements:[
+   IM(540,0,420,540,"Host photo","#ff5c8a","#7c5cff"),
+   R(0,0,560,540,{f:"#111",op:.85}),
+   T(50,90,480,90,"I BUILT",{fs:64,ff:"'Arial Black', Arial",fw:"900",c:"#ffd400",lh:1.05}),
+   T(50,190,480,180,"A $10,000\nGAMING PC",{fs:64,ff:"'Arial Black', Arial",fw:"900",c:"#fff",lh:1.05}),
+   R(50,410,220,52,{f:"#ff0033",r:6}), T(50,422,220,32,"FULL BUILD",{fs:22,ff:"Arial",fw:"800",c:"#fff",al:"center"})
+ ]}],"youtube thumbnail video gaming");
+
+tpl("social","X / Twitter Post","Clean announcement card",800,450,[
+ {bg:"#15202b",elements:[
+   EL(50,50,80,80,{f:"#7c5cff"}), T(50,72,80,40,"A",{fs:36,ff:"Arial",fw:"800",c:"#fff",al:"center"}),
+   T(150,58,300,36,"Aura Labs",{fs:22,ff:"Arial",fw:"700",c:"#fff"}),
+   T(150,96,300,28,"@auralabs · 2h",{fs:16,ff:"Arial",c:"#8899a6"}),
+   T(50,170,700,80,"v2.0 is here — collaborative boards, offline mode, and 3× faster exports. 🚀",{fs:26,ff:"Arial",c:"#e1e8ed",lh:1.4}),
+   R(50,300,340,110,{f:"#1e2f42",s:"#38444d",sw:1,r:12}),
+   T(70,318,300,30,"aura.studio/blog",{fs:15,ff:"Arial",c:"#8899a6"}),
+   T(70,346,300,44,"Introducing Aura Studio 2.0",{fs:19,ff:"Arial",fw:"600",c:"#e1e8ed",lh:1.2})
+ ]}],"twitter x announcement post");
+
+/* ============================================================
+   MAGAZINE
+   ============================================================ */
+tpl("magazine","Modern Magazine Cover","Bold editorial cover",850,1100,[
+ {bg:"#f5f1ea",elements:[
+   IM(0,300,850,800,"Cover model","#d8c7b0","#8a7355"),
+   T(60,50,730,110,"AURORA",{fs:96,ff:"Georgia, serif",fw:"700",c:"#1a1a1a",ls:"18",al:"center"}),
+   LN(60,180,790,180,{s:"#1a1a1a",sw:3}),
+   T(60,200,730,32,"THE DESIGN ISSUE · SPRING 2026",{fs:16,ff:"Arial",fw:"600",c:"#666",al:"center",ls:"4"}),
+   T(60,330,500,260,"The New\nMinimalism",{fs:72,ff:"Georgia, serif",fw:"700",c:"#1a1a1a",lh:1.05}),
+   T(60,600,420,120,"Inside: quiet luxury, slow brands,\nand the spaces that shape us.",{fs:20,ff:"Arial",c:"#444",lh:1.5}),
+   R(60,760,180,50,{f:"#1a1a1a"}), T(60,774,180,30,"£8.90 · ISSUE 42",{fs:14,ff:"Arial",fw:"700",c:"#fff",al:"center"}),
+   T(560,960,240,120,"Interview:\nAna Reyes on\ncolor & light",{fs:22,ff:"Georgia, serif",it:true,c:"#111",lh:1.3})
+ ]}],"magazine cover editorial fashion");
+
+tpl("magazine","Editorial Two-Column Spread","Article layout with pull quote",850,1100,[
+ {bg:"#ffffff",elements:[
+   IM(0,0,850,430,"Hero image","#9db4d0","#5a7ba6"),
+   T(50,470,500,60,"The Quiet Return\nof Print",{fs:40,ff:"Georgia, serif",fw:"700",c:"#111",lh:1.15}),
+   T(560,470,240,60,"WORDS · MAYA CHEN",{fs:13,ff:"Arial",fw:"600",c:"#888",ls:"2"}),
+   LN(50,590,800,590,{s:"#111",sw:1}),
+   T(50,620,360,320,"There is something about holding a magazine that a feed can never replicate. The weight of paper. The smell of ink. The deliberate pacing of a well-edited spread.",{fs:15,ff:"Georgia, serif",c:"#333",lh:1.75}),
+   T(460,620,340,320,"Publishers who survived the digital decade did so by doubling down on craft. Fewer issues, better paper, sharper photography. The lesson: scarcity creates value.",{fs:15,ff:"Georgia, serif",c:"#333",lh:1.75}),
+   R(50,960,4,110,{f:"#c9a24b"}),
+   T(74,960,340,110,"“Print isn't dead — it's just expensive on purpose.”",{fs:22,ff:"Georgia, serif",it:true,c:"#111",lh:1.35})
+ ]}],"magazine article spread editorial");
+
+tpl("magazine","Fashion Lookbook Page","Product grid editorial",850,1100,[
+ {bg:"#fdfbf8",elements:[
+   IM(50,80,360,480,"Look 01","#c7b9a8","#8f7d68"), IM(440,80,360,300,"Look 02","#b8c4c9","#6e8189"),
+   IM(440,420,360,440,"Look 03","#d9c2c2","#a37676"),
+   T(50,600,360,50,"LOOK 01 — Linen Days",{fs:20,ff:"Georgia, serif",c:"#222"}),
+   T(50,650,360,60,"Oversized shirt in sand,\ntailored trouser in ink.",{fs:14,ff:"Arial",c:"#777",lh:1.5}),
+   T(50,960,750,50,"SS26 · RESORT COLLECTION · PAGES 22–48",{fs:13,ff:"Arial",fw:"600",c:"#999",al:"center",ls:"3"})
+ ]}],"magazine lookbook fashion catalog");
+
+/* ============================================================
+   BOOKS
+   ============================================================ */
+tpl("books","Thriller Book Cover","Dark dramatic front cover",800,1200,[
+ {bg:"#0a0e1a",elements:[
+   EL(100,140,600,600,{f:"#132038",op:.9}),
+   T(60,80,680,80,"A. J. MERCER",{fs:26,ff:"Arial",fw:"600",c:"#8fa8d0",al:"center",ls:"6"}),
+   LN(280,170,520,170,{s:"#c9a24b",sw:2}),
+   T(60,380,680,240,"THE SILENT\nHARBOR",{fs:82,ff:"Georgia, serif",fw:"700",c:"#e8edf7",al:"center",lh:1.1}),
+   T(60,660,680,60,"A novel of secrets that refuse to drown.",{fs:22,ff:"Georgia, serif",it:true,c:"#7d92b8",al:"center"}),
+   R(60,1020,680,3,{f:"#c9a24b"}),
+   T(60,1060,680,50,"FROM THE BESTSELLING AUTHOR OF COLD WATER",{fs:15,ff:"Arial",c:"#8fa8d0",al:"center",ls:"2"})
+ ]}],"book cover thriller novel mystery");
+
+tpl("books","Chapter Opening Page","Book interior typography",850,1100,[
+ {bg:"#fbf8f2",elements:[
+   T(80,110,690,70,"CHAPTER ONE",{fs:24,ff:"Arial",c:"#a89878",al:"center",ls:"8"}),
+   LN(360,220,490,220,{s:"#a89878",sw:1}),
+   T(80,260,690,90,"The Letter",{fs:44,ff:"Georgia, serif",c:"#222",al:"center"}),
+   T(120,420,610,520,"Margaret found the envelope where she always did — wedged between the milk bottles and the morning paper, as if the world were being deliberately ordinary about it.\n\nHer name was written in her father's hand. That was impossible. Her father had been dead for eleven years, and yet there it was, in the looping M she had watched him write a thousand times at this very table.",{fs:18,ff:"Georgia, serif",c:"#333",lh:1.8}),
+   T(80,990,690,30,"1",{fs:16,ff:"Georgia, serif",c:"#999",al:"center"})
+ ]}],"book interior chapter novel page");
+
+tpl("books","Children's Book Page","Playful illustrated spread",850,1100,[
+ {bg:"#e8f6ff",elements:[
+   IM(60,80,440,500,"Pip the fox","#ffd166","#ef8354",{r:24}),
+   T(60,640,440,140,"Pip looked up at the tallest tree\nin the whole wide wood.",{fs:26,ff:"'Comic Sans MS', 'Segoe UI', sans-serif",c:"#1d3557",lh:1.5}),
+   IM(540,80,250,250,"Sun","#ffe29a","#ffb703",{r:120}),
+   GL(580,420,180,120,"🌲🌳🐿️",{fs:44}),
+   R(60,850,730,150,{f:"#fff",s:"#1d3557",sw:2,r:18}),
+   T(90,880,670,100,"What do YOU think Pip will do next?\nTurn the page to find out!",{fs:22,ff:"'Comic Sans MS', sans-serif",c:"#1d3557",lh:1.5})
+ ]}],"children book illustration kids story");
+
+/* ============================================================
+   DOCUMENTS (LibreOffice-ready)
+   ============================================================ */
+tpl("docs","Professional Letterhead","Business letter — exports to .odt",850,1100,[
+ {bg:"#ffffff",elements:[
+   R(60,60,40,40,{f:"#1a4f8b",r:8}), T(115,64,400,36,"MERIDIAN CONSULTING",{fs:20,ff:"Arial",fw:"700",c:"#1a4f8b"}),
+   T(115,100,400,24,"strategy · operations · growth",{fs:12,ff:"Arial",c:"#888"}),
+   LN(60,150,790,150,{s:"#1a4f8b",sw:2}),
+   T(60,200,730,30,"March 12, 2026",{fs:13,ff:"Georgia, serif",c:"#444"}),
+   T(60,250,730,60,"Ms. Elena Voss\nDirector of Operations, Halcyon Ltd.",{fs:13,ff:"Georgia, serif",c:"#444",lh:1.6}),
+   T(60,340,730,30,"RE: Proposal for Q2 supply-chain review",{fs:13,ff:"Georgia, serif",fw:"700",c:"#222"}),
+   T(60,390,730,90,"Dear Ms. Voss,\n\nThank you for the opportunity to present our findings from the initial discovery phase.",{fs:13,ff:"Georgia, serif",c:"#333",lh:1.7}),
+   T(60,500,730,260,"Our analysis identified three areas of immediate improvement: consolidation of regional vendors, renegotiation of freight contracts, and automation of the invoice reconciliation cycle. Together these measures represent an estimated 11–14% annualized saving.\n\nWe would welcome the chance to walk your team through the detailed model at your convenience during the week of March 23.",{fs:13,ff:"Georgia, serif",c:"#333",lh:1.7}),
+   T(60,790,730,40,"Sincerely,",{fs:13,ff:"Georgia, serif",c:"#333"}),
+   T(60,870,730,40,"Jordan Blake, Principal",{fs:13,ff:"Georgia, serif",fw:"700",c:"#222"}),
+   LN(60,1000,790,1000,{s:"#ddd",sw:1}),
+   T(60,1015,730,50,"12 Harbour Lane, Suite 400 · Boston, MA · +1 (617) 555-0142 · hello@meridian.example",{fs:11,ff:"Arial",c:"#888",al:"center"})
+ ]}],"letterhead letter business odt libreoffice");
+
+tpl("docs","Modern Resume / CV","One-page resume — exports to .odt",850,1100,[
+ {bg:"#ffffff",elements:[
+   R(0,0,280,1100,{f:"#16324f"}),
+   T(30,70,220,50,"JAMIE\nRIVERA",{fs:34,ff:"Arial",fw:"800",c:"#fff",lh:1.1}),
+   T(30,160,220,40,"Product Designer",{fs:16,ff:"Arial",c:"#9fc3e8"}),
+   LN(30,210,250,210,{s:"#4a7aab",sw:1}),
+   T(30,240,220,24,"CONTACT",{fs:13,ff:"Arial",fw:"700",c:"#9fc3e8",ls:"2"}),
+   T(30,270,220,110,"jamie.rivera@mail.com\n+1 (555) 210-4477\nPortland, OR\njamierivera.design",{fs:12,ff:"Arial",c:"#d8e6f5",lh:1.7}),
+   T(30,420,220,24,"SKILLS",{fs:13,ff:"Arial",fw:"700",c:"#9fc3e8",ls:"2"}),
+   T(30,450,220,150,"UX Research\nDesign Systems\nPrototyping\nFigma / Adobe CC\nHTML & CSS\nData Storytelling",{fs:12,ff:"Arial",c:"#d8e6f5",lh:1.9}),
+   T(30,650,220,24,"LANGUAGES",{fs:13,ff:"Arial",fw:"700",c:"#9fc3e8",ls:"2"}),
+   T(30,680,220,60,"English — native\nSpanish — fluent",{fs:12,ff:"Arial",c:"#d8e6f5",lh:1.7}),
+   T(320,80,480,40,"EXPERIENCE",{fs:18,ff:"Arial",fw:"800",c:"#16324f",ls:"2"}),
+   LN(320,120,790,120,{s:"#16324f",sw:2}),
+   T(320,145,480,24,"Senior Product Designer — Nimbus Software",{fs:14,ff:"Arial",fw:"700",c:"#222"}),
+   T(320,170,480,20,"2022 – Present",{fs:11,ff:"Arial",c:"#999"}),
+   T(320,196,480,80,"Led redesign of the core analytics suite used by 40k teams; cut onboarding drop-off by 31%.",{fs:12,ff:"Arial",c:"#444",lh:1.6}),
+   T(320,300,480,24,"Product Designer — Fathom Labs",{fs:14,ff:"Arial",fw:"700",c:"#222"}),
+   T(320,325,480,20,"2019 – 2022",{fs:11,ff:"Arial",c:"#999"}),
+   T(320,351,480,80,"Shipped 20+ features across web and mobile; built the first company design system.",{fs:12,ff:"Arial",c:"#444",lh:1.6}),
+   T(320,460,480,40,"EDUCATION",{fs:18,ff:"Arial",fw:"800",c:"#16324f",ls:"2"}),
+   LN(320,500,790,500,{s:"#16324f",sw:2}),
+   T(320,525,480,60,"BFA, Interaction Design\nPacific Northwest University, 2019",{fs:12,ff:"Arial",c:"#444",lh:1.6})
+ ]}],"resume cv document odt libreoffice job");
+
+tpl("docs","Clean Invoice","Billing document — exports to .odt",850,1100,[
+ {bg:"#ffffff",elements:[
+   T(60,60,300,50,"INVOICE",{fs:36,ff:"Arial",fw:"800",c:"#222",ls:"4"}),
+   T(520,70,270,60,"INVOICE #2047\nIssued: April 2, 2026",{fs:13,ff:"Arial",c:"#666",al:"right",lh:1.6}),
+   LN(60,140,790,140,{s:"#2f9e6e",sw:3}),
+   T(60,170,300,24,"FROM",{fs:12,ff:"Arial",fw:"700",c:"#2f9e6e",ls:"2"}),
+   T(60,198,300,80,"Willow Design Co.\n88 Alder Street\nPortland, OR 97204",{fs:13,ff:"Arial",c:"#333",lh:1.6}),
+   T(460,170,330,24,"BILL TO",{fs:12,ff:"Arial",fw:"700",c:"#2f9e6e",ls:"2"}),
+   T(460,198,330,80,"Brightside Media LLC\n410 Commerce Ave\nSeattle, WA 98101",{fs:13,ff:"Arial",c:"#333",lh:1.6}),
+   R(60,310,730,44,{f:"#eef7f2"}),
+   T(76,322,200,24,"DESCRIPTION",{fs:12,ff:"Arial",fw:"700",c:"#2f9e6e"}),
+   T(490,322,120,24,"QTY",{fs:12,ff:"Arial",fw:"700",c:"#2f9e6e"}),
+   T(560,322,110,24,"RATE",{fs:12,ff:"Arial",fw:"700",c:"#2f9e6e",al:"right"}),
+   T(690,322,85,24,"AMOUNT",{fs:12,ff:"Arial",fw:"700",c:"#2f9e6e",al:"right"}),
+   T(76,375,400,26,"Brand identity design",{fs:13,ff:"Arial",c:"#333"}),T(490,375,60,26,"1",{fs:13,ff:"Arial",c:"#333"}),T(560,375,110,26,"$4,200.00",{fs:13,ff:"Arial",c:"#333",al:"right"}),T(690,375,85,26,"$4,200.00",{fs:13,ff:"Arial",c:"#333",al:"right"}),
+   LN(60,415,790,415,{s:"#e5e5e5",sw:1}),
+   T(76,430,400,26,"Website UI refresh (12 screens)",{fs:13,ff:"Arial",c:"#333"}),T(490,430,60,26,"12",{fs:13,ff:"Arial",c:"#333"}),T(560,430,110,26,"$180.00",{fs:13,ff:"Arial",c:"#333",al:"right"}),T(690,430,85,26,"$2,160.00",{fs:13,ff:"Arial",c:"#333",al:"right"}),
+   LN(60,470,790,470,{s:"#e5e5e5",sw:1}),
+   T(76,485,400,26,"Design system documentation",{fs:13,ff:"Arial",c:"#333"}),T(490,485,60,26,"1",{fs:13,ff:"Arial",c:"#333"}),T(560,485,110,26,"$980.00",{fs:13,ff:"Arial",c:"#333",al:"right"}),T(690,485,85,26,"$980.00",{fs:13,ff:"Arial",c:"#333",al:"right"}),
+   T(560,560,110,30,"Subtotal",{fs:13,ff:"Arial",fw:"600",c:"#555",al:"right"}),T(690,560,85,30,"$7,340.00",{fs:13,ff:"Arial",c:"#555",al:"right"}),
+   T(560,590,110,30,"Tax (8%)",{fs:13,ff:"Arial",fw:"600",c:"#555",al:"right"}),T(690,590,85,30,"$587.20",{fs:13,ff:"Arial",c:"#555",al:"right"}),
+   R(540,630,250,44,{f:"#2f9e6e",r:8}),
+   T(556,642,110,24,"TOTAL DUE",{fs:12,ff:"Arial",fw:"700",c:"#eafff5"}),
+   T(690,640,85,28,"$7,927.20",{fs:15,ff:"Arial",fw:"800",c:"#fff",al:"right"}),
+   T(60,720,730,60,"Payment due within 30 days. Payable to Willow Design Co. — Acct 0043 2219 88, Routing 121000358. Thank you for your business!",{fs:12,ff:"Arial",c:"#888",lh:1.6})
+ ]}],"invoice billing document odt libreoffice finance");
+
+tpl("docs","Report Cover Page","Business report title page",850,1100,[
+ {bg:"#101828",elements:[
+   R(60,80,60,6,{f:"#2f9e6e"}),
+   T(60,120,730,60,"2026 Annual\nImpact Report",{fs:56,ff:"Georgia, serif",fw:"700",c:"#fff",lh:1.15}),
+   T(60,320,730,40,"Northwind Foundation · Fiscal Year in Review",{fs:20,ff:"Arial",c:"#9fb3c8"}),
+   IM(60,700,730,300,"Report hero","#1f3d5c","#2f9e6e",{r:12}),
+   R(60,420,300,1,{f:"#2a3a52"}),
+   T(60,450,330,140,"Prepared for the Board of Directors\nand program partners.",{fs:15,ff:"Arial",c:"#7e93ab",lh:1.7}),
+   T(560,450,230,60,"CONFIDENTIAL\nDRAFT 2.1",{fs:13,ff:"Arial",c:"#4d6481",al:"right",lh:1.8})
+ ]}],"report cover business document odt annual");
+
+tpl("docs","Project Memo","Internal memo — exports to .odt",850,1100,[
+ {bg:"#ffffff",elements:[
+   R(0,0,850,10,{f:"#4361ee"}),
+   T(60,60,730,44,"INTERNAL MEMO",{fs:26,ff:"Arial",fw:"800",c:"#1d2438",ls:"3"}),
+   LN(60,130,790,130,{s:"#ddd",sw:1}),
+   T(60,150,730,120,"TO:       All Engineering Staff\nFROM:   R. Okafor, VP Engineering\nDATE:    April 14, 2026\nRE:        Platform migration timeline update",{fs:13,ff:"'Courier New', monospace",c:"#333",lh:1.9}),
+   T(60,300,730,40,"1. Purpose",{fs:15,ff:"Arial",fw:"700",c:"#1d2438"}),
+   T(60,335,730,80,"This memo summarizes the revised timeline for the data-platform migration and the support expectations for each team through Q3.",{fs:13,ff:"Arial",c:"#444",lh:1.7}),
+   T(60,430,730,40,"2. Revised schedule",{fs:15,ff:"Arial",fw:"700",c:"#1d2438"}),
+   T(60,465,730,120,"• May 4 — Staging cutover (services A–C)\n• June 1 — Production wave 1 (read traffic)\n• July 6 — Production wave 2 (write traffic)\n• July 27 — Legacy decommission freeze",{fs:13,ff:"Arial",c:"#444",lh:1.9}),
+   T(60,600,730,40,"3. Action required",{fs:15,ff:"Arial",fw:"700",c:"#1d2438"}),
+   T(60,635,730,80,"Team leads should confirm migration windows with their on-call rotations by April 25. Questions to #platform-migration.",{fs:13,ff:"Arial",c:"#444",lh:1.7})
+ ]}],"memo document odt libreoffice internal";
+
+/* ============================================================
+   PRESENTATIONS (16:9)
+   ============================================================ */
+tpl("presentation","Pitch Deck — Title","Opening slide with impact",1280,720,[
+ {bg:"#0e0b1e",elements:[
+   EL(900,-140,500,500,{f:"#7c5cff",op:.35}), EL(-120,500,380,380,{f:"#ff5c8a",op:.3}),
+   T(90,240,760,50,"SERIES A · 2026",{fs:20,ff:"Arial",fw:"700",c:"#8f7bff",ls:"5"}),
+   T(90,300,900,140,"Freight, reinvented\nfor the last mile.",{fs:64,ff:"'Segoe UI', Arial, sans-serif",fw:"800",c:"#fff",lh:1.12}),
+   T(90,470,760,40,"CargoLine — the operating system for regional delivery fleets.",{fs:22,ff:"Arial",c:"#b9b3d9"}),
+   R(90,550,190,56,{f:"#7c5cff",r:28}), T(90,566,190,30,"cargoline.io",{fs:19,ff:"Arial",fw:"600",c:"#fff",al:"center"})
+ ]}],"pitch deck title startup presentation slide");
+
+tpl("presentation","Problem / Solution Slide","Two-column content slide",1280,720,[
+ {bg:"#ffffff",elements:[
+   T(70,60,1140,50,"The problem is routing, not distance.",{fs:40,ff:"'Segoe UI', Arial",fw:"700",c:"#111"}),
+   LN(70,130,1210,130,{s:"#eee",sw:1}),
+   R(70,170,550,380,{f:"#fdecec",r:16}),
+   T(100,200,490,40,"✕  Today",{fs:24,ff:"Arial",fw:"700",c:"#c0392b"}),
+   T(100,260,490,260,"• Drivers wait 47 min/day at docks\n• Paper manifests, no live tracking\n• 22% of loads arrive late\n• Dispatchers juggle 6 tools",{fs:19,ff:"Arial",c:"#6b2d2d",lh:1.9}),
+   R(660,170,550,380,{f:"#e8f6ef",r:16}),
+   T(690,200,490,40,"✓  With CargoLine",{fs:24,ff:"Arial",fw:"700",c:"#1e8e5a"}),
+   T(690,260,490,260,"• Auto-sequenced dock appointments\n• Digital manifests + live ETA\n• 96% on-time delivery\n• One dashboard, all fleets",{fs:19,ff:"Arial",c:"#1d5c43",lh:1.9})
+ ]}],"presentation content slide compare business");
+
+tpl("presentation","Section Divider","Bold interstitial slide",1280,720,[
+ {bg:"#1d3557",elements:[
+   R(0,0,1280,720,{f:"#1d3557"}),
+   EL(1020,420,520,520,{f:"#457b9d",op:.5}),
+   T(90,260,220,44,"02",{fs:80,ff:"Georgia, serif",fw:"700",c:"#a8dadc"}),
+   LN(95,390,300,390,{s:"#a8dadc",sw:2}),
+   T(90,420,1000,80,"The Market",{fs:60,ff:"Georgia, serif",fw:"700",c:"#fff"}),
+   T(90,510,900,40,"Where the opportunity hides in plain sight.",{fs:20,ff:"Arial",c:"#b8c9dd"})
+ ]}],"presentation section divider slide agenda");
+
+tpl("presentation","Quote Slide","Minimal typographic statement",1280,720,[
+ {bg:"#f7f4ef",elements:[
+   GL(120,120,120,100,"❝",{fs:140,c:"#c9a24b"}),
+   T(160,240,960,220,"We don't ship products.\nWe ship decisions people can act on.",{fs:48,ff:"Georgia, serif",it:true,c:"#2b2b2b",lh:1.4}),
+   LN(165,510,300,510,{s:"#c9a24b",sw:3}),
+   T(160,540,700,40,"— CEO, Annual All-Hands",{fs:20,ff:"Arial",c:"#777"})
+ ]}],"presentation quote slide minimal typography");
+
+/* ============================================================
+   LOGOS
+   ============================================================ */
+tpl("logos","Geometric Monogram","Modern lettermark on grid",800,800,[
+ {bg:"#111318",elements:[
+   EL(190,190,420,420,{f:"none",s:"#e8b84b",sw:3}),
+   R(215,215,370,370,{f:"#111318",s:"#e8b84b",sw:1}),
+   T(215,300,370,180,"AK",{fs:130,ff:"Georgia, serif",fw:"700",c:"#e8b84b",al:"center"}),
+   LN(300,520,500,520,{s:"#e8b84b",sw:2}),
+   T(215,545,370,40,"ATELIER KANE",{fs:20,ff:"Arial",c:"#cfcfd8",al:"center",ls:"8"}),
+   T(215,585,370,30,"EST. MMXXVI",{fs:13,ff:"Arial",c:"#6d6d7a",al:"center",ls:"4"})
+ ]}],"logo monogram brand identity luxury");
+
+tpl("logos","Organic Badge Logo","Circular emblem for cafés & makers",800,800,[
+ {bg:"#f6f1e7",elements:[
+   EL(140,140,520,520,{f:"#2e5339"}),
+   EL(165,165,470,470,{f:"none",s:"#f6f1e7",sw:2}),
+   T(140,290,520,120,"WILDSTEM",{fs:56,ff:"Georgia, serif",fw:"700",c:"#f6f1e7",al:"center",ls:"6"}),
+   LN(280,400,520,400,{s:"#e8b84b",sw:2}),
+   T(140,425,520,50,"BOTANICAL APOTHECARY",{fs:17,ff:"Arial",c:"#e8b84b",al:"center",ls:"3"}),
+   GL(370,500,60,60,"🌿",{fs:52}),
+   T(140,600,520,40,"SMALL BATCH · SINCE 2019",{fs:13,ff:"Arial",c:"#cde3d2",al:"center",ls:"2"})
+ ]}],"logo badge emblem cafe organic brand");
+
+tpl("logos","Tech Wordmark","Clean startup wordmark + tagline",1000,500,[
+ {bg:"#ffffff",elements:[
+   EL(90,170,90,90,{f:"#7c5cff"}), EL(150,230,60,60,{f:"#ff5c8a",op:.9}),
+   T(200,175,560,90,"vorteks",{fs:72,ff:"'Segoe UI', Arial",fw:"800",c:"#171717",ls:"-2"}),
+   T(205,280,560,40,"INFRASTRUCTURE THAT DISAPPEARS",{fs:15,ff:"Arial",c:"#8a8a99",ls:"4"})
+ ]}],"logo wordmark tech startup brand");
+
+/* ============================================================
+   POSTERS
+   ============================================================ */
+tpl("posters","Concert Event Poster","Music event with bold type",600,900,[
+ {bg:"#12081f",elements:[
+   EL(-100,300,500,500,{f:"#ff5c8a",op:.4}), EL(300,600,480,480,{f:"#7c5cff",op:.45}),
+   T(50,90,500,60,"LIVE IN CONCERT",{fs:22,ff:"Arial",fw:"700",c:"#ffd479",al:"center",ls:"6"}),
+   T(40,150,520,200,"NEON\nHOLLOW",{fs:90,ff:"'Arial Black', Arial",fw:"900",c:"#fff",al:"center",lh:1.0}),
+   LN(150,380,450,380,{s:"#ffd479",sw:2}),
+   T(50,410,500,50,"with special guests VELVET STATIC",{fs:20,ff:"Arial",it:true,c:"#e0d0ff",al:"center"}),
+   T(50,530,500,90,"SAT · JUNE 20 · 8PM\nTHE ORPHANAGE, PORTLAND",{fs:24,ff:"Arial",fw:"700",c:"#fff",al:"center",lh:1.6}),
+   R(170,700,260,60,{f:"#ffd479",r:30}), T(170,718,260,30,"TICKETS $25",{fs:21,ff:"Arial",fw:"800",c:"#12081f",al:"center"}),
+   T(50,800,500,30,"All ages · Doors at 7 · neonsuited.com",{fs:14,ff:"Arial",c:"#9a8fc0",al:"center"})
+ ]}],"poster concert event music party");
+
+tpl("posters","Movie Poster","Dramatic one-sheet layout",600,900,[
+ {bg:"#0b0f14",elements:[
+   IM(0,0,600,640,"Key art","#2b3a4d","#0b0f14"),
+   R(0,0,600,640,{f:"#0b0f14",op:.25}),
+   T(40,70,520,70,"THE LAST\nLIGHTHOUSE",{fs:56,ff:"Georgia, serif",fw:"700",c:"#f5e9d0",al:"center",lh:1.1}),
+   T(40,470,520,40,"Some nights never end.",{fs:22,ff:"Georgia, serif",it:true,c:"#c8b78f",al:"center"}),
+   T(40,680,520,50,"MARA VOSS  ·  DANIEL OKAFOR  ·  INGRID HALVORSEN",{fs:14,ff:"Arial",c:"#9aa5b1",al:"center",ls:"1"}),
+   T(40,760,520,90,"A film by R. T. Calloway",{fs:26,ff:"Georgia, serif",c:"#e8e0cf",al:"center"}),
+   LN(150,880,450,880,{s:"#c8b78f",sw:1}),
+   T(40,895,520,30,"IN THEATERS OCTOBER 31",{fs:16,ff:"Arial",fw:"700",c:"#c8b78f",al:"center",ls:"3"})
+ ]}],"poster movie film cinema");
+
+tpl("posters","Motivational Quote Poster","Type-driven wall art",600,900,[
+ {bg:"#f2b705",elements:[
+   EL(60,60,480,480,{f:"#f6d560",op:.6}),
+   T(60,220,480,300,"DO THE\nHARD THING\nESPECIALLY\nWHEN IT'S\nBORING.",{fs:44,ff:"'Arial Black', Arial",fw:"900",c:"#20160a",lh:1.18}),
+   T(60,600,480,40,"— HABIT > MOTIVATION",{fs:18,ff:"Arial",fw:"700",c:"#5c4a10",ls:"3"})
+ ]}],"poster quote motivational typography wall");
+
+/* ============================================================
+   MARKETING VIDEOS (storyboards)
+   ============================================================ */
+tpl("video","Product Ad Storyboard","30s spot — 3 scene frames",1280,720,[
+ {bg:"#0d0d0f",elements:[
+   IM(80,80,1120,470,"Scene 1 — product hero shot","#3a4a6b","#141a2e",{r:12}),
+   R(80,590,720,60,{f:"#1c1c24",r:10}),
+   T(100,606,700,36,"SCENE 1 (0–4s) · Slow push-in on product, rim light, no VO.",{fs:17,ff:"'Courier New', monospace",c:"#9be2b0"}),
+   T(1010,600,190,40,"SC 1/3",{fs:18,ff:"Arial",c:"#555",al:"right"})
+ ]},
+ {bg:"#0d0d0f",elements:[
+   IM(80,80,1120,470,"Scene 2 — lifestyle usage","#6b3a4a","#2e141b",{r:12}),
+   R(80,590,720,60,{f:"#1c1c24",r:10}),
+   T(100,606,700,36,"SCENE 2 (4–14s) · Hands using product, natural light, VO begins.",{fs:17,ff:"'Courier New', monospace",c:"#ffd479"}),
+   T(1010,600,190,40,"SC 2/3",{fs:18,ff:"Arial",c:"#555",al:"right"})
+ ]},
+ {bg:"#0d0d0f",elements:[
+   IM(80,80,1120,470,"Scene 3 — logo end card","#1f4d3a","#0d1f18",{r:12}),
+   R(80,590,720,60,{f:"#1c1c24",r:10}),
+   T(100,606,700,36,"SCENE 3 (14–30s) · Logo resolves, tagline, CTA + URL.",{fs:17,ff:"'Courier New', monospace",c:"#9bd0e2"}),
+   T(1010,600,190,40,"SC 3/3",{fs:18,ff:"Arial",c:"#555",al:"right"})
+ ]}],"marketing video storyboard ad commercial scenes");
+
+tpl("video","Reel / TikTok Storyboard","Vertical short-form script frames",720,1280,[
+ {bg:"#101014",elements:[
+   IM(60,70,600,900,"Hook frame — talking head","#4a2e3a","#1a1016",{r:14}),
+   R(60,1020,600,80,{f:"#1c1c24",r:12}),
+   T(80,1040,560,50,"HOOK (0–2s): “Stop scrolling if you\nhate folding laundry.”",{fs:16,ff:"'Courier New', monospace",c:"#ff9ec4",lh:1.4}),
+   T(60,1140,600,30,"REEL 1/3 · 9:16 · 30s total",{fs:14,ff:"Arial",c:"#666",al:"center"})
+ ]},
+ {bg:"#101014",elements:[
+   IM(60,70,600,900,"Body — product demo closeup","#2e4a3a","#101a14",{r:14}),
+   R(60,1020,600,80,{f:"#1c1c24",r:12}),
+   T(80,1040,560,50,"BODY (2–22s): 3 quick cuts of the gadget\nin action, captions burned in.",{fs:16,ff:"'Courier New', monospace",c:"#9be2b0",lh:1.4}),
+   T(60,1140,600,30,"REEL 2/3 · 9:16 · 30s total",{fs:14,ff:"Arial",c:"#666",al:"center"})
+ ]},
+ {bg:"#101014",elements:[
+   IM(60,70,600,900,"End card — offer + logo","#3a3a6b","#16162e",{r:14}),
+   R(60,1020,600,80,{f:"#1c1c24",r:12}),
+   T(80,1040,560,50,"END (22–30s): “20% off with code\nLAUNDRY20” + follow prompt.",{fs:16,ff:"'Courier New', monospace",c:"#ffd479",lh:1.4}),
+   T(60,1140,600,30,"REEL 3/3 · 9:16 · 30s total",{fs:14,ff:"Arial",c:"#666",al:"center"})
+ ]}],"marketing video reel tiktok storyboard social");
+
+/* ============================================================
+   PHOTO COLLAGES
+   ============================================================ */
+tpl("collages","Classic 2×2 Grid","Four equal photos",800,800,[
+ {bg:"#ffffff",elements:[
+   IM(0,0,400,400,"Photo 1","#7c9cc4","#3d5a80"), IM(400,0,400,400,"Photo 2","#c49a7c","#805a3d"),
+   IM(0,400,400,400,"Photo 3","#8ac49a","#3d805a"), IM(400,400,400,400,"Photo 4","#c47c9a","#803d5a")
+ ]}],"collage grid photo 4 square instagram");
+
+tpl("collages","Hero + Strip Collage","One large, three small",800,800,[
+ {bg:"#ffffff",elements:[
+   IM(0,0,800,520,"Hero photo","#6b7fa3","#2e3d5c"),
+   IM(0,540,253,260,"Photo 2","#a37c6b","#5c3d2e"), IM(273,540,253,260,"Photo 3","#7ca36b","#3d5c2e"), IM(547,540,253,260,"Photo 4","#9a7cc4","#5a3d80")
+ ]}],"collage photo hero grid memories");
+
+tpl("collages","Moodboard","Editorial mood tiles",900,1100,[
+ {bg:"#f5f2ec",elements:[
+   IM(60,80,380,300,"Texture","#c9b8a3","#8a7a65",{r:8}), IM(460,80,380,460,"Portrait","#a3b8c9","#65788a",{r:8}),
+   IM(60,400,380,340,"Object","#b8c9a3","#7a8a65",{r:8}), IM(460,560,380,200,"Detail","#c9a3a3","#8a6565",{r:8}),
+   IM(60,760,780,240,"Wide palette","#c9c2a3","#8a8565",{r:8}),
+   T(60,1010,780,40,"SPRING MOODBOARD · WARM NEUTRALS",{fs:16,ff:"Arial",fw:"600",c:"#8a8273",al:"center",ls:"3"})
+ ]}],"collage moodboard inspiration design palette");
+
+/* ============================================================
+   PRINT & MARKETING
+   ============================================================ */
+tpl("marketing","Business Card","Standard 3.5×2in card",1050,600,[
+ {bg:"#132437",elements:[
+   R(0,0,1050,600,{f:"#132437"}),
+   EL(760,-140,440,440,{f:"#1e5f8a",op:.6}),
+   T(70,180,600,60,"SLOANE & PARTNERS",{fs:38,ff:"Georgia, serif",fw:"700",c:"#fff",ls:"4"}),
+   LN(70,260,350,260,{s:"#c9a24b",sw:2}),
+   T(70,290,600,40,"ATTORNEYS AT LAW",{fs:16,ff:"Arial",c:"#8fb3d9",ls:"6"}),
+   T(70,420,600,90,"M. Sloane, Esq. · (503) 555-0181\nmsloane@sloanelaw.example",{fs:15,ff:"Arial",c:"#c8d9ea",lh:1.7})
+ ]}],"business card print professional");
+
+tpl("marketing","Grand Opening Flyer","Retail event flyer",850,1100,[
+ {bg:"#fef6e4",elements:[
+   R(40,40,770,1020,{f:"none",s:"#d1495b",sw:4}),
+   T(90,100,670,60,"GRAND\nOPENING!",{fs:70,ff:"'Arial Black', Arial",fw:"900",c:"#d1495b",al:"center",lh:1.05}),
+   IM(90,320,670,330,"Storefront photo","#f2b705","#d1495b",{r:10}),
+   T(90,690,670,50,"SUNDAY, MAY 3 · 10AM – 6PM",{fs:24,ff:"Arial",fw:"800",c:"#3d2b1f",al:"center"}),
+   T(90,750,670,40,"First 50 customers get a free tote & 15% off everything.",{fs:18,ff:"Arial",c:"#6b5a45",al:"center"}),
+   R(280,830,290,64,{f:"#3d2b1f",r:32}),
+   T(280,850,290,30,"RSVP ON FACEBOOK",{fs:17,ff:"Arial",fw:"700",c:"#fef6e4",al:"center"}),
+   T(90,960,670,60,"128 Maple Street · Downtown · parking behind the store",{fs:15,ff:"Arial",c:"#8a7a65",al:"center"})
+ ]}],"flyer event opening retail marketing");
+
+tpl("marketing","Café Menu","Two-column menu board",850,1100,[
+ {bg:"#1e1a16",elements:[
+   GL(370,60,110,90,"☕",{fs:80,c:"#e8b84b"}),
+   T(120,170,610,60,"THE COPPER KETTLE",{fs:40,ff:"Georgia, serif",c:"#f5efe4",al:"center",ls:"4"}),
+   LN(300,250,550,250,{s:"#e8b84b",sw:1}),
+   T(90,300,320,36,"ESPRESSO",{fs:18,ff:"Arial",fw:"700",c:"#e8b84b",ls:"3"}),
+   T(90,345,320,150,"Espresso .......... 3.00\nCortado ............ 3.75\nFlat White ........ 4.25\nMocha .............. 4.75",{fs:16,ff:"Georgia, serif",c:"#d8cfc0",lh:1.9}),
+   T(440,300,320,36,"BREWED",{fs:18,ff:"Arial",fw:"700",c:"#e8b84b",ls:"3"}),
+   T(440,345,320,150,"Pour Over ......... 4.00\nCold Brew .......... 4.50\nChai ................. 4.25\nMatcha .............. 4.75",{fs:16,ff:"Georgia, serif",c:"#d8cfc0",lh:1.9}),
+   T(90,540,320,36,"PASTRY",{fs:18,ff:"Arial",fw:"700",c:"#e8b84b",ls:"3"}),
+   T(90,585,320,150,"Croissant .......... 3.50\nMorning Bun .... 4.00\nCardamom Knot .. 4.25",{fs:16,ff:"Georgia, serif",c:"#d8cfc0",lh:1.9}),
+   T(440,540,320,36,"TOAST",{fs:18,ff:"Arial",fw:"700",c:"#e8b84b",ls:"3"}),
+   T(440,585,320,150,"Avocado ........... 9.50\nRicotta & Honey . 8.50\nHam & Gruyère ... 9.00",{fs:16,ff:"Georgia, serif",c:"#d8cfc0",lh:1.9}),
+   T(120,900,610,50,"Open daily 7am – 4pm · 42 Alder St",{fs:15,ff:"Arial",c:"#9a8f7d",al:"center"})
+ ]}],"menu cafe restaurant food print");
+
+tpl("marketing","Award Certificate","Elegant recognition document",1100,850,[
+ {bg:"#fdfcf8",elements:[
+   R(30,30,1040,790,{f:"none",s:"#b98d2f",sw:3}),
+   R(42,42,1016,766,{f:"none",s:"#b98d2f",sw:1}),
+   T(150,110,800,40,"CERTIFICATE OF ACHIEVEMENT",{fs:22,ff:"Arial",c:"#8a7a55",al:"center",ls:"6"}),
+   T(150,170,800,60,"Summit Excellence Award",{fs:44,ff:"Georgia, serif",fw:"700",c:"#2b2b2b",al:"center"}),
+   T(150,270,800,40,"This certificate is proudly presented to",{fs:17,ff:"Georgia, serif",it:true,c:"#666",al:"center"}),
+   T(150,330,800,80,"Alex Morgan",{fs:54,ff:"'Brush Script MT', cursive",c:"#b98d2f",al:"center"}),
+   LN(330,420,770,420,{s:"#b98d2f",sw:1}),
+   T(150,440,800,60,"for outstanding leadership in the 2026 Community Innovation Program.",{fs:17,ff:"Georgia, serif",c:"#555",al:"center",lh:1.6}),
+   GL(190,600,120,100,"🏅",{fs:80}), GL(790,600,120,100,"🏛️",{fs:80}),
+   T(150,690,300,30,"Director, Programs",{fs:14,ff:"Arial",c:"#777",al:"center"}),
+   LN(230,680,370,680,{s:"#999",sw:1}),
+   T(660,690,300,30,"October 14, 2026",{fs:14,ff:"Arial",c:"#777",al:"center"}),
+   LN(740,680,880,680,{s:"#999",sw:1})
+ ]}],"certificate award recognition print diploma");
+
+/* expose */
+if (typeof window !== "undefined") window.TEMPLATES = TEMPLATES, window.CATS = CATS;
+
+</script>
+<script>
+/* ============================================================
+   Aura Studio — minimal ZIP writer (store method, no deps)
+   Produces valid .zip / .odt containers entirely in the browser.
+   ============================================================ */
+"use strict";
+
+const ZipWriter = (() => {
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  const crc32 = (u8) => {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  };
+
+  // files: [{name, data(Uint8Array), store(optional bool)}]
+  function build(files) {
+    const enc = new TextEncoder();
+    const chunks = [], central = [];
+    let offset = 0;
+
+    for (const f of files) {
+      const nameBytes = enc.encode(f.name);
+      const data = f.data instanceof Uint8Array ? f.data : enc.encode(f.data);
+      const crc = crc32(data);
+      const useStore = f.store !== false; // default: stored (no compression)
+      const method = useStore ? 0 : 8;
+
+      const local = new Uint8Array(30 + nameBytes.length);
+      const lv = new DataView(local.buffer);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true);          // version needed
+      lv.setUint16(6, 0x0800, true);      // UTF-8 flag
+      lv.setUint16(8, method, true);
+      lv.setUint16(10, 0, true); lv.setUint16(12, 0, true); // time/date (fixed)
+      lv.setUint32(14, crc, true);
+      lv.setUint32(18, data.length, true);
+      lv.setUint32(22, data.length, true);
+      lv.setUint16(26, nameBytes.length, true);
+      lv.setUint16(28, 0, true);
+      local.set(nameBytes, 30);
+
+      chunks.push(local, data);
+
+      const cen = new Uint8Array(46 + nameBytes.length);
+      const cv = new DataView(cen.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, method, true);
+      cv.setUint16(12, 0, true); cv.setUint16(14, 0, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint16(42, offset, true);
+      cen.set(nameBytes, 46);
+      central.push(cen);
+
+      offset += local.length + data.length;
+    }
+
+    const centralSize = central.reduce((s, c) => s + c.length, 0);
+    const end = new Uint8Array(22);
+    const ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, centralSize, true);
+    ev.setUint32(16, offset, true);
+
+    const total = offset + centralSize + 22;
+    const out = new Uint8Array(total);
+    let p = 0;
+    for (const c of chunks) { out.set(c, p); p += c.length; }
+    for (const c of central) { out.set(c, p); p += c.length; }
+    out.set(end, p);
+    return out;
+  }
+
+  return { build, crc32 };
+})();
+if (typeof window !== "undefined") window.ZipWriter = ZipWriter;
+
+</script>
+<script>
+/* ============================================================
+   Aura Studio — Application Engine
+   Gallery, editor, exporters, storage. No external dependencies.
+   ============================================================ */
+"use strict";
+
+const APP_VERSION = "1.0.0";
+const LS = {
+  autosave: "aura.autosave",
+  customTpl: "aura.templates.custom",
+  seenVersion: "aura.seenVersion",
+};
+const FONT_LIST = [
+  "Georgia, 'Times New Roman', serif",
+  "'Times New Roman', serif",
+  "'Segoe UI', Arial, sans-serif",
+  "Arial, sans-serif",
+  "'Arial Black', Arial, sans-serif",
+  "'Courier New', monospace",
+  "'Comic Sans MS', 'Segoe UI', cursive",
+  "'Trebuchet MS', sans-serif",
+  "Verdana, sans-serif",
+  "Impact, 'Arial Black', sans-serif",
+  "'Brush Script MT', cursive",
+  "'Palatino Linotype', 'Book Antiqua', serif",
+];
+
+/* ---------------- state ---------------- */
+let project = null;
+let curPage = 0, selId = null, zoom = 1, zoomMode = "fit";
+let undoStack = [], redoStack = [];
+let activeCat = "social";
+let suppressHistory = false;
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const uid = () => "e" + Math.random().toString(36).slice(2, 9);
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const hex2rgba = (hex, a) => {
+  const h = hex.replace("#",""); const f = h.length===3 ? h.split("").map(c=>c+c).join("") : h;
+  const n = parseInt(f||"000000",16);
+  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a==null?1:a})`;
+};
+
+function toast(msg, ms=2200){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), ms);
+}
+
+/* ---------------- boot ---------------- */
+window.addEventListener("DOMContentLoaded", () => {
+  buildCategoryRail();
+  renderGallery();
+  bindTopbar();
+  bindPalette();
+  bindKeyboard();
+  restoreAutosave();
+  window.addEventListener("resize", applyZoom);
+});
+
+function restoreAutosave(){
+  try {
+    const raw = localStorage.getItem(LS.autosave);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p && p.pages && p.pages.length){
+      project = hydrate(p);
+      openEditor();
+      toast("Restored your last working design");
+    }
+  } catch(e){ /* ignore */ }
+}
+
+function hydrate(p){
+  p.pages.forEach(pg => pg.elements.forEach(el => { if(!el.id) el.id = uid(); }));
+  return p;
+}
+
+/* ---------------- all templates (builtin + custom) ---------------- */
+function allTemplates(){
+  let custom = [];
+  try { custom = JSON.parse(localStorage.getItem(LS.customTpl) || "[]"); } catch(e){}
+  return [...custom, ...TEMPLATES];
+}
+
+/* ================= GALLERY ================= */
+function buildCategoryRail(){
+  const list = $("#catList");
+  list.innerHTML = "";
+  const mk = (id, icon, label) => {
+    const b = document.createElement("button");
+    b.className = "cat-item" + (id===activeCat ? " active":"");
+    b.innerHTML = `<span class="em">${icon}</span> ${label}`;
+    b.onclick = () => { activeCat = id; buildCategoryRail(); renderGallery(); };
+    list.appendChild(b);
+  };
+  CATS.forEach(c => mk(c.id, c.icon, c.name));
+  const hr = document.createElement("div");
+  hr.className = "pal-sep"; list.appendChild(hr);
+  mk("all", "🗂", "All templates");
+}
+
+function renderGallery(){
+  const wrap = $("#gallerySections");
+  wrap.innerHTML = "";
+  const tpl = allTemplates();
+  const cats = activeCat === "all" ? CATS : CATS.filter(c=>c.id===activeCat);
+  for (const cat of cats){
+    const items = tpl.filter(t=>t.cat===cat.id);
+    if (!items.length) continue;
+    const sec = document.createElement("div");
+    sec.className = "gal-section";
+    sec.innerHTML = `<h2>${cat.icon} ${cat.name}</h2><div class="sub">${items.length} template${items.length>1?"s":""}</div>`;
+    const grid = document.createElement("div");
+    grid.className = "tpl-grid";
+    items.forEach(t => grid.appendChild(makeTplCard(t)));
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
+}
+
+function makeTplCard(t){
+  const card = document.createElement("div");
+  card.className = "tpl-card";
+  const thumb = document.createElement("div");
+  thumb.className = "tpl-thumb";
+  const ar = t.w / t.h;
+  let tw = 168, th = 126;
+  if (ar < tw/th){ tw = th * ar; } else { th = tw / ar; }
+  const mini = renderMini(t.pages[0], t.w, t.h, tw / t.w);
+  mini.classList.add("mini");
+  mini.style.width = t.w + "px"; mini.style.height = t.h + "px";
+  thumb.appendChild(mini);
+  const info = document.createElement("div");
+  info.className = "tpl-info";
+  info.innerHTML = `<div class="t">${esc(t.name)}</div><div class="d">${t.w}×${t.h} · ${t.pages.length} page${t.pages.length>1?"s":""}</div>`;
+  if (t.cat === "docs"){
+    const b = document.createElement("div"); b.className = "badge"; b.textContent = "LibreOffice";
+    thumb.appendChild(b);
+  }
+  if (t.custom === true){
+    const b = document.createElement("div"); b.className = "badge"; b.textContent = "Custom"; b.style.color="#9be2b0";
+    thumb.appendChild(b);
+  }
+  card.appendChild(thumb); card.appendChild(info);
+  card.onclick = () => useTemplate(t);
+  return card;
+}
+
+function useTemplate(t){
+  project = hydrate(clone({ name:t.name, cat:t.cat, w:t.w, h:t.h, pages:t.pages }));
+  project.name = t.name;
+  curPage = 0; selId = null; undoStack = []; redoStack = [];
+  openEditor();
+  toast(`Opened “${t.name}”`);
+}
+
+function doSearch(){
+  const q = $("#searchBox").value.trim().toLowerCase();
+  const res = $("#searchResults"), secs = $("#gallerySections");
+  if (!q){ res.style.display="none"; secs.style.display=""; return; }
+  secs.style.display = "none"; res.style.display = "";
+  const matches = allTemplates().filter(t =>
+    (t.name+" "+t.desc+" "+t.tags+" "+(CATS.find(c=>c.id===t.cat)||{}).name).toLowerCase().includes(q));
+  res.innerHTML = "";
+  if (!matches.length){ res.innerHTML = `<div class="gal-section"><p class="sub">No templates match “${esc(q)}”. Try “poster”, “resume”, “instagram”…</p></div>`; return; }
+  const grid = document.createElement("div"); grid.className = "tpl-grid";
+  matches.forEach(t => grid.appendChild(makeTplCard(t)));
+  res.appendChild(grid);
+}
+
+/* ================= MINI RENDERER (thumbs) ================= */
+function renderMini(page, w, h, scale){
+  const d = document.createElement("div");
+  d.style.cssText = `position:relative;width:${w}px;height:${h}px;background:${page.bg||"#fff"};overflow:hidden;transform:scale(${scale});transform-origin:top left;`;
+  (page.elements||[]).forEach(el => d.appendChild(buildElNode(el, false)));
+  const box = document.createElement("div");
+  box.style.cssText = `width:${w*scale}px;height:${h*scale}px;overflow:hidden;`;
+  box.appendChild(d);
+  return box;
+}
+
+/* ================= EDITOR ================= */
+function openEditor(){
+  $("#galleryView").style.display = "none";
+  $("#editorView").style.display = "flex";
+  $("#editorBar").style.display = "flex";
+  $("#projName").value = project.name || "Untitled design";
+  renderBoard(); renderPages(); renderProps();
+}
+
+function openGallery(){
+  $("#galleryView").style.display = "flex";
+  $("#editorView").style.display = "none";
+  $("#editorBar").style.display = "none";
+  saveAutosave();
+}
+
+function curPageData(){ return project.pages[curPage]; }
+function selElement(){ return curPageData().elements.find(e=>e.id===selId) || null; }
+
+function renderBoard(){
+  const board = $("#board");
+  board.innerHTML = "";
+  board.style.width = project.w + "px";
+  board.style.height = project.h + "px";
+  board.style.background = curPageData().bg || "#fff";
+  curPageData().elements.forEach(el => board.appendChild(buildElNode(el, true)));
+  applyZoom();
+}
+
+function buildElNode(el, interactive){
+  const d = document.createElement("div");
+  d.className = "el" + (interactive ? "" : " static");
+  d.style.left = el.x+"px"; d.style.top = el.y+"px";
+  d.style.width = el.w+"px"; d.style.height = el.h+"px";
+  d.style.opacity = el.opacity != null ? el.opacity : 1;
+  if (interactive){
+    d.dataset.id = el.id;
+    if (el.id === selId) d.classList.add("sel");
+    d.addEventListener("mousedown", (e) => startDrag(e, el, d));
+    d.addEventListener("dblclick", () => { if (el.type==="text"||el.type==="glyph") startTextEdit(el, d); });
+  }
+  fillNode(d, el);
+  return d;
+}
+
+function fillNode(d, el){
+  d.innerHTML = "";
+  if (el.type === "text" || el.type === "glyph"){
+    const t = document.createElement("div");
+    t.className = "el-text";
+    t.style.cssText = `font-family:${el.fontFamily||"Arial"};font-size:${el.fontSize||24}px;`+
+      `font-weight:${el.fontWeight||400};font-style:${el.italic?"italic":"normal"};color:${el.color||"#111"};`+
+      `text-align:${el.align||"left"};line-height:${el.lineHeight||1.25};letter-spacing:${el.letterSpacing||"0px"};`+
+      `text-transform:${el.uppercase?"uppercase":"none"};white-space:pre-wrap;word-break:break-word;`;
+    t.textContent = el.text || "";
+    d.appendChild(t);
+  } else if (el.type === "rect"){
+    d.style.background = (el.fill && el.fill !== "none") ? el.fill : "transparent";
+    d.style.borderRadius = (el.radius||0) + "px";
+    if (el.stroke && el.stroke !== "none") d.style.border = `${el.strokeWidth||1}px solid ${el.stroke}`;
+  } else if (el.type === "ellipse"){
+    d.style.background = (el.fill && el.fill !== "none") ? el.fill : "transparent";
+    d.style.borderRadius = "50%";
+    if (el.stroke && el.stroke !== "none") d.style.border = `${el.strokeWidth||1}px solid ${el.stroke}`;
+  } else if (el.type === "line"){
+    const horiz = (el.y2a - el.y1) < 2;
+    d.style.background = el.stroke || "#111";
+    if (horiz){ d.style.top = (el.y + (el.h-el.strokeWidth)/2) + "px"; d.style.height = el.strokeWidth+"px"; d.style.left = el.x+"px"; d.style.width = el.w+"px"; }
+    else { d.style.left = (el.x + (el.w-el.strokeWidth)/2) + "px"; d.style.width = el.strokeWidth+"px"; d.style.top = el.y+"px"; d.style.height = el.h+"px"; }
+    d.style.borderRadius = el.strokeWidth+"px";
+  } else if (el.type === "image"){
+    const img = document.createElement("img");
+    img.src = el.src; img.draggable = false;
+    img.style.cssText = `width:100%;height:100%;object-fit:${el.fit||"cover"};display:block;`+
+      `border-radius:${el.radius||0}px;pointer-events:none;`;
+    d.appendChild(img);
+  }
+}
+
+/* ---------- zoom ---------- */
+function applyZoom(){
+  if (!project) return;
+  const wrap = $("#boardWrap");
+  if (zoomMode === "fit"){
+    zoom = Math.min((wrap.clientWidth - 60) / project.w, (wrap.clientHeight - 40) / project.h, 1);
+  } else zoom = parseFloat(zoomMode);
+  const b = $("#board");
+  b.style.transform = `scale(${zoom})`;
+  b.style.marginBottom = (project.h * (zoom-1)) + "px";
+  $("#zoomSel").value = zoomMode;
+}
+
+/* ---------- drag / resize ---------- */
+function boardScale(){
+  const r = $("#board").getBoundingClientRect();
+  return r.width / $("#board").offsetWidth;
+}
+
+function startDrag(e, el, node){
+  if (e.button !== 0) return;
+  e.stopPropagation(); e.preventDefault();
+  select(el.id);
+  const scale = boardScale();
+  const startX = e.clientX, startY = e.clientY;
+  const ox = el.x, oy = el.y, ow = el.w, oh = el.h;
+  let moved = false, histPushed = false;
+  const move = (ev) => {
+    const dx = (ev.clientX - startX)/scale, dy = (ev.clientY - startY)/scale;
+    if (!moved && (Math.abs(dx)>2||Math.abs(dy)>2)){ moved = true; pushHistory(); histPushed = true; }
+    if (!moved) return;
+    let nx = ox + dx, ny = oy + dy;
+    // snap
+    const th = 7/scale;
+    const snapTargets = [{v:0,ax:"x"},{v:project.w/2,ax:"xc"},{v:project.w,ax:"xr"}];
+    [nx, ny] = applySnap(el, nx, ny, th);
+    el.x = Math.round(nx); el.y = Math.round(ny);
+    node.style.left = el.x+"px"; node.style.top = el.y+"px";
+  };
+  const up = () => {
+    document.removeEventListener("mousemove", move);
+    document.removeEventListener("mouseup", up);
+    if (histPushed){ renderProps(); saveAutosave(); }
+  };
+  document.addEventListener("mousemove", move);
+  document.addEventListener("mouseup", up);
+  attachHandles(node, el, scale);
+}
+
+function applySnap(el, nx, ny, th){
+  const others = curPageData().elements.filter(e=>e.id!==el.id);
+  const linesX = [0, project.w/2, project.w];
+  const linesY = [0, project.h/2, project.h];
+  others.forEach(o=>{ linesX.push(o.x, o.x+o.w, o.x+o.w/2); linesY.push(o.y, o.y+o.h, o.y+o.h/2); });
+  const cx = nx + el.w/2, cy = ny + el.h/2;
+  for (const L of linesX){
+    if (Math.abs(nx - L) < th) { nx = L; break; }
+    if (Math.abs(nx + el.w - L) < th) { nx = L - el.w; break; }
+    if (Math.abs(cx - L) < th) { nx = L - el.w/2; break; }
+  }
+  for (const L of linesY){
+    if (Math.abs(ny - L) < th) { ny = L; break; }
+    if (Math.abs(ny + el.h - L) < th) { ny = L - el.h; break; }
+    if (Math.abs(cy - L) < th) { ny = L - el.h/2; break; }
+  }
+  return [nx, ny];
+}
+
+function attachHandles(node, el, scale){
+  $$(".handle").forEach(h=>h.remove());
+  if (el.type === "line") return;
+  ["nw","ne","sw","se"].forEach(pos=>{
+    const h = document.createElement("div");
+    h.className = "handle " + pos;
+    node.appendChild(h);
+    h.addEventListener("mousedown", (e)=>{
+      e.stopPropagation(); e.preventDefault();
+      pushHistory();
+      const sx = e.clientX, sy = e.clientY;
+      const ox = el.x, oy = el.y, ow = el.w, oh = el.h;
+      const move = (ev)=>{
+        let dx = (ev.clientX - sx)/scale, dy = (ev.clientY - sy)/scale;
+        if (pos.includes("e")) el.w = Math.max(16, Math.round(ow + dx));
+        if (pos.includes("s")) el.h = Math.max(16, Math.round(oh + dy));
+        if (pos.includes("w")){ el.w = Math.max(16, Math.round(ow - dx)); el.x = Math.round(ox + dx); }
+        if (pos.includes("n")){ el.h = Math.max(16, Math.round(oh - dy)); el.y = Math.round(oy + dy); }
+        node.style.left = el.x+"px"; node.style.top = el.y+"px";
+        node.style.width = el.w+"px"; node.style.height = el.h+"px";
+      };
+      const up = ()=>{ document.removeEventListener("mousemove",move); document.removeEventListener("mouseup",up); renderProps(); saveAutosave(); };
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
+    });
+  });
+}
+
+/* ---------- text editing ---------- */
+function startTextEdit(el, node){
+  pushHistory();
+  const board = $("#board");
+  const ta = document.createElement("textarea");
+  ta.id = "el-textarea";
+  ta.value = el.text || "";
+  ta.style.left = el.x+"px"; ta.style.top = el.y+"px";
+  ta.style.width = el.w+"px"; ta.style.height = Math.max(el.h, el.fontSize*1.6)+"px";
+  ta.style.cssText += `font-family:${el.fontFamily};font-size:${el.fontSize}px;font-weight:${el.fontWeight};
+    font-style:${el.italic?"italic":"normal"};color:${el.color};text-align:${el.align};line-height:${el.lineHeight};
+    letter-spacing:${el.letterSpacing||"0px"};text-transform:${el.uppercase?"uppercase":"none"};`;
+  board.appendChild(ta);
+  ta.style.display = "block";
+  node.style.opacity = "0.15";
+  ta.focus(); ta.select();
+  const commit = (save) => {
+    if (save) el.text = ta.value;
+    ta.remove(); node.style.opacity = el.opacity != null ? el.opacity : 1;
+    fillNode(node, el); renderProps(); saveAutosave();
+  };
+  ta.addEventListener("blur", ()=>commit(true));
+  ta.addEventListener("keydown", (e)=>{
+    if (e.key==="Escape"){ e.preventDefault(); ta.blur(); }
+    if (e.key==="Enter" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); ta.blur(); }
+    e.stopPropagation();
+  });
+}
+
+/* ---------- selection / props ---------- */
+function select(id){
+  selId = id;
+  $$("#board .el").forEach(n=>{
+    const on = n.dataset.id === id;
+    n.classList.toggle("sel", on);
+    $$(".handle").forEach(h=>{ if (h.parentElement!==n || !on) h.remove(); });
+    if (on) attachHandles(n, curPageData().elements.find(e=>e.id===id), boardScale());
+  });
+  renderProps();
+}
+
+$("#board") && null; // noop guard
+
+document.addEventListener("mousedown", (e)=>{
+  if (e.target.id === "board" || e.target.id === "boardWrap") select(null);
+});
+
+function renderProps(){
+  const el = selElement();
+  const body = $("#propsBody");
+  $("#propsTitle").textContent = el ? (el.type==="image"?"Image":el.type==="text"?"Text":el.type.charAt(0).toUpperCase()+el.type.slice(1)) : "Properties";
+  body.innerHTML = "";
+  if (!el){
+    const pg = curPageData();
+    body.innerHTML = `<div class="prop-group"><div class="prop-label" style="width:auto;margin-bottom:6px">Page background</div></div>`;
+    const row = document.createElement("div"); row.className="prop-row";
+    row.innerHTML = `<input type="color" class="prop-input" value="${pg.bg && pg.bg[0]==="#" ? pg.bg : "#ffffff"}">`;
+    row.querySelector("input").addEventListener("input", (e)=>{ pushHistory(); pg.bg = e.target.value; renderBoard(); renderPages(); saveAutosave(); });
+    body.appendChild(row);
+    const note = document.createElement("div"); note.className = "prop-empty";
+    note.textContent = "Select an element on the canvas to edit it, or add new elements from the left panel.";
+    body.appendChild(note);
+    return;
+  }
+  const grp = (title) => { const g=document.createElement("div"); g.className="prop-group"; if(title) g.innerHTML=`<div class="prop-label" style="width:auto;margin-bottom:6px">${title}</div>`; body.appendChild(g); return g; };
+  const row = (g, label, inputHtml) => {
+    const r = document.createElement("div"); r.className = "prop-row";
+    r.innerHTML = `<span class="prop-label">${label}</span>` + inputHtml;
+    g.appendChild(r); return r;
+  };
+  const bind = (r, sel, evt, fn) => { const n = r.querySelector(sel); if(n) n.addEventListener(evt, fn); return n; };
+
+  // position & size
+  const g1 = grp("Position & size");
+  const num = (v)=>`<input type="number" class="prop-input" value="${Math.round(v)}">`;
+  [["X", "x"],["Y","y"],["W","w"],["H","h"]].forEach(([lab,key])=>{
+    const r = row(g1, lab, num(el[key]));
+    bind(r, "input", "change", (e)=>{ pushHistory(); el[key] = Math.round(+e.target.value||0); refreshEl(el); });
+  });
+
+  if (el.type==="text" || el.type==="glyph"){
+    const g2 = grp("Typography");
+    if (el.type==="text"){
+      const r = row(g2, "Content", `<textarea class="prop-input" rows="3" style="resize:vertical">${esc(el.text||"")}</textarea>`);
+      bind(r, "textarea", "change", (e)=>{ pushHistory(); el.text = e.target.value; refreshEl(el); });
+    }
+    const rf = row(g2, "Font", `<select class="prop-select">${FONT_LIST.map(f=>`<option value="${esc(f)}" ${el.fontFamily===f?"selected":""}>${f.split(",")[0].replace(/'/g,"")}</option>`).join("")}</select>`);
+    bind(rf, "select", "change", (e)=>{ pushHistory(); el.fontFamily = e.target.value; refreshEl(el); });
+    const rs = row(g2, "Size", `<input type="number" class="prop-input" value="${el.fontSize||24}">`);
+    bind(rs, "input", "change", (e)=>{ pushHistory(); el.fontSize = +e.target.value||24; refreshEl(el); });
+    const rw = row(g2, "Weight", `<select class="prop-select">${[300,400,600,700,800,900].map(w=>`<option ${el.fontWeight==w?"selected":""} value="${w}">${w}</option>`).join("")}</select>`);
+    bind(rw, "select", "change", (e)=>{ pushHistory(); el.fontWeight = e.target.value; refreshEl(el); });
+    const rc = row(g2, "Color", `<input type="color" class="prop-input" value="${el.color && el.color[0]==="#" ? el.color.slice(0,7) : "#111111"}">`);
+    bind(rc, "input", "input", (e)=>{ pushHistory(); el.color = e.target.value; refreshEl(el); });
+    const ra = row(g2, "Align", `<select class="prop-select">${["left","center","right"].map(a=>`<option ${el.align===a?"selected":""}>${a}</option>`).join("")}</select>`);
+    bind(ra, "select", "change", (e)=>{ pushHistory(); el.align = e.target.value; refreshEl(el); });
+    const rl = row(g2, "Line H", `<input type="number" step="0.05" class="prop-input" value="${el.lineHeight||1.25}">`);
+    bind(rl, "input", "change", (e)=>{ pushHistory(); el.lineHeight = +e.target.value||1.25; refreshEl(el); });
+    if (el.type==="text"){
+      const ru = row(g2, "Caps", `<input type="checkbox" ${el.uppercase?"checked":""}>`);
+      bind(ru, "input", "change", (e)=>{ pushHistory(); el.uppercase = e.target.checked; refreshEl(el); });
+    }
+  }
+
+  if (el.type==="rect" || el.type==="ellipse"){
+    const g3 = grp("Appearance");
+    const rc = row(g3, "Fill", `<input type="color" class="prop-input" value="${(el.fill&&el.fill[0]==="#")?el.fill.slice(0,7):"#222222"}">`);
+    bind(rc, "input", "input", (e)=>{ pushHistory(); el.fill = e.target.value; refreshEl(el); });
+    const rs = row(g3, "Stroke", `<input type="color" class="prop-input" value="${(el.stroke&&el.stroke[0]==="#")?el.stroke.slice(0,7):"#000000"}">`);
+    bind(rs, "input", "input", (e)=>{ pushHistory(); el.stroke = e.target.value; refreshEl(el); });
+    const rsw = row(g3, "Stroke W", `<input type="number" class="prop-input" value="${el.strokeWidth||0}">`);
+    bind(rsw, "input", "change", (e)=>{ pushHistory(); el.strokeWidth = +e.target.value||0; refreshEl(el); });
+    if (el.type==="rect"){
+      const rr = row(g3, "Radius", `<input type="number" class="prop-input" value="${el.radius||0}">`);
+      bind(rr, "input", "change", (e)=>{ pushHistory(); el.radius = +e.target.value||0; refreshEl(el); });
+    }
+  }
+
+  if (el.type==="image"){
+    const g4 = grp("Image");
+    const rb = row(g4, "", `<button class="prop-btn">🔄 Replace image…</button>`);
+    bind(rb, "button", "click", ()=> pickImage(el));
+    const rf2 = row(g4, "Fit", `<select class="prop-select">${["cover","contain","fill"].map(f=>`<option ${el.fit===f?"selected":""}>${f}</option>`).join("")}</select>`);
+    bind(rf2, "select", "change", (e)=>{ pushHistory(); el.fit = e.target.value; refreshEl(el); });
+    const rr = row(g4, "Radius", `<input type="number" class="prop-input" value="${el.radius||0}">`);
+    bind(rr, "input", "change", (e)=>{ pushHistory(); el.radius = +e.target.value||0; refreshEl(el); });
+  }
+
+  const g5 = grp("Layer");
+  const g5r = row(g5, "Opacity", `<input type="range" min="0.05" max="1" step="0.05" class="prop-input" value="${el.opacity!=null?el.opacity:1}">`);
+  bind(g5r, "input", "input", (e)=>{ el.opacity = +e.target.value; $("#board").querySelector(`[data-id="${el.id}"]`).style.opacity = el.opacity; saveAutosave(); });
+  const b1 = document.createElement("button"); b1.className="prop-btn"; b1.textContent="⬆ Bring to front";
+  b1.onclick = ()=>{ pushHistory(); reorder(el, "front"); };
+  const b2 = document.createElement("button"); b2.className="prop-btn"; b2.textContent="⬇ Send to back";
+  b2.onclick = ()=>{ pushHistory(); reorder(el, "back"); };
+  const b3 = document.createElement("button"); b3.className="prop-btn"; b3.textContent="⧉ Duplicate";
+  b3.onclick = ()=> duplicateSel();
+  const b4 = document.createElement("button"); b4.className="prop-btn"; b4.textContent="🗑 Delete element";
+  b4.onclick = ()=> deleteSel();
+  body.appendChild(b1); body.appendChild(b2); body.appendChild(b3); body.appendChild(b4);
+}
+
+function refreshEl(el){
+  const node = $(`#board [data-id="${el.id}"]`);
+  if (node){ node.style.left=el.x+"px"; node.style.top=el.y+"px"; node.style.width=el.w+"px"; node.style.height=el.h+"px"; fillNode(node, el); }
+  renderProps(); saveAutosave();
+}
+
+function reorder(el, dir){
+  const arr = curPageData().elements;
+  const i = arr.indexOf(el); if (i<0) return;
+  arr.splice(i,1);
+  if (dir==="front") arr.push(el); else arr.unshift(el);
+  renderBoard(); select(el.id); saveAutosave();
+}
+
+/* ---------- pages ---------- */
+function renderPages(){
+  const strip = $("#pageStrip");
+  strip.innerHTML = "";
+  project.pages.forEach((pg, i)=>{
+    const th = document.createElement("div");
+    th.className = "page-thumb" + (i===curPage?" active":"");
+    th.appendChild(renderMini(pg, project.w, project.h, 70/project.w));
+    const n = document.createElement("span"); n.className="num"; n.textContent=(i+1); th.appendChild(n);
+    if (project.pages.length>1){
+      const del = document.createElement("span"); del.className="del"; del.textContent="×";
+      del.onclick = (e)=>{ e.stopPropagation(); pushHistory(); project.pages.splice(i,1); if(curPage>=project.pages.length) curPage=project.pages.length-1; renderBoard(); renderPages(); renderProps(); saveAutosave(); };
+      th.appendChild(del);
+    }
+    th.onclick = ()=>{ curPage=i; selId=null; renderBoard(); renderPages(); renderProps(); };
+    strip.appendChild(th);
+  });
+  const add = document.createElement("button");
+  add.className = "pstrip-btn"; add.textContent = "+"; add.title = "Add page";
+  add.onclick = ()=>{
+    pushHistory();
+    project.pages.splice(curPage+1, 0, { bg:"#ffffff", elements:[] });
+    curPage++; selId=null; renderBoard(); renderPages(); renderProps(); saveAutosave();
+  };
+  strip.appendChild(add);
+}
+
+/* ---------- element factory ---------- */
+function addElement(type){
+  pushHistory();
+  const pg = curPageData();
+  const cx = project.w/2, cy = project.h/2;
+  let el;
+  if (type==="text") el = {type:"text",x:cx-220,y:cy-40,w:440,h:80,text:"Double-click to edit",fontSize:36,fontFamily:FONT_LIST[0],fontWeight:"400",color:"#111",align:"center",lineHeight:1.25,letterSpacing:"0px",opacity:1};
+  else if (type==="heading") el = {type:"text",x:cx-320,y:cy-60,w:640,h:100,text:"Your heading",fontSize:64,fontFamily:FONT_LIST[0],fontWeight:"700",color:"#111",align:"center",lineHeight:1.15,letterSpacing:"0px",opacity:1};
+  else if (type==="subheading") el = {type:"text",x:cx-260,y:cy-30,w:520,h:60,text:"Subheading",fontSize:30,fontFamily:FONT_LIST[3],fontWeight:"600",color:"#333",align:"center",lineHeight:1.3,letterSpacing:"1px",opacity:1};
+  else if (type==="body") el = {type:"text",x:cx-240,y:cy-70,w:480,h:140,text:"Body text — write your paragraph here.",fontSize:17,fontFamily:FONT_LIST[3],fontWeight:"400",color:"#444",align:"left",lineHeight:1.7,letterSpacing:"0px",opacity:1};
+  else if (type==="rect") el = {type:"rect",x:cx-140,y:cy-90,w:280,h:180,fill:"#7c5cff",stroke:"none",strokeWidth:0,radius:0,opacity:1};
+  else if (type==="ellipse") el = {type:"ellipse",x:cx-100,y:cy-100,w:200,h:200,fill:"#ff5c8a",stroke:"none",strokeWidth:0,opacity:1};
+  else if (type==="line") el = {type:"line",x:cx-150,y:cy,w:300,h:4,x1:cx-150,y1:cy,x2a:cx+150,y2a:cy,stroke:"#111",strokeWidth:3,opacity:1};
+  else if (type==="glyph") { pickGlyph((ch)=>{ if(!ch) return; pushHistory(); const g={type:"glyph",x:cx-60,y:cy-60,w:120,h:120,ch,fontSize:96,color:"#111",opacity:1}; g.id=uid(); pg.elements.push(g); select(g.id); renderBoard(); saveAutosave(); }); undoLast(); return; }
+  else if (type==="image") { pickImage(null); undoLast(); return; }
+  el.id = uid();
+  pg.elements.push(el);
+  select(el.id); renderBoard(); saveAutosave();
+}
+function undoLast(){ if (undoStack.length) undoStack.pop(); }
+
+function pickImage(existing){
+  const inp = $("#fileImg");
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      if (existing){ pushHistory(); existing.src = rd.result; refreshEl(existing); }
+      else {
+        pushHistory();
+        const el = {id:uid(), type:"image", x:project.w*0.2, y:project.h*0.2, w:project.w*0.6, h:project.h*0.4, src:rd.result, fit:"cover", radius:0, opacity:1};
+        curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave();
+      }
+      toast("Image added");
+    };
+    rd.readAsDataURL(f);
+    inp.value = "";
+  };
+  inp.click();
+}
+
+function pickGlyph(cb){
+  const chars = ["★","❤","☀","☾","✿","☕","✈","⚓","♫","⚡","🌿","🔥","💫","🎯","🏆","👑","🐱","🌸","🎉","📌","✉","☑","♥","❝","⚙","🔔","🍋","🥑","🌈","🦋"];
+  showModal(`<h3>Choose an icon / emoji</h3><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">${
+    chars.map(c=>`<button class="pal-btn" style="text-align:center;font-size:22px" data-ch="${c}">${c}</button>`).join("")
+  }</div><div class="m-actions"><button class="abtn ghost" data-close>Cancel</button></div>`);
+  $$("#modalCard [data-ch]").forEach(b=>b.onclick=()=>{ closeModal(); cb(b.dataset.ch); });
+  $("#modalCard [data-close]").onclick = ()=>{ closeModal(); cb(null); };
+}
+
+/* ---------- actions ---------- */
+function duplicateSel(){
+  const el = selElement(); if (!el) return;
+  pushHistory();
+  const c = clone(el); c.id = uid(); c.x += 20; c.y += 20;
+  curPageData().elements.push(c);
+  select(c.id); renderBoard(); saveAutosave(); toast("Duplicated");
+}
+function deleteSel(){
+  const el = selElement(); if (!el) return;
+  pushHistory();
+  const arr = curPageData().elements;
+  arr.splice(arr.indexOf(el),1);
+  selId = null; renderBoard(); renderProps(); saveAutosave();
+}
+function pushHistory(){
+  if (suppressHistory || !project) return;
+  undoStack.push(JSON.stringify(project));
+  if (undoStack.length > 60) undoStack.shift();
+  redoStack = [];
+}
+function doUndo(){
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(project));
+  project = hydrate(JSON.parse(undoStack.pop()));
+  if (curPage >= project.pages.length) curPage = project.pages.length-1;
+  selId = null; renderBoard(); renderPages(); renderProps(); saveAutosave(); toast("Undo");
+}
+function doRedo(){
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(project));
+  project = hydrate(JSON.parse(redoStack.pop()));
+  if (curPage >= project.pages.length) curPage = project.pages.length-1;
+  selId = null; renderBoard(); renderPages(); renderProps(); saveAutosave(); toast("Redo");
+}
+
+/* ---------- persistence ---------- */
+function saveAutosave(){
+  if (!project) return;
+  try { localStorage.setItem(LS.autosave, JSON.stringify(project)); $("#saveState").textContent = "Saved"; }
+  catch(e){ $("#saveState").textContent = "Storage full"; }
+}
+
+/* ================= TOPBAR / EVENTS ================= */
+function bindTopbar(){
+  $("#brandHome").onclick = openGallery;
+  $("#projName").addEventListener("change", ()=>{ if(project){ project.name = $("#projName").value; saveAutosave(); } });
+  $("#btnUndo").onclick = doUndo; $("#btnRedo").onclick = doRedo;
+  $("#btnDup").onclick = duplicateSel; $("#btnDel").onclick = deleteSel;
+  $("#btnFront").onclick = ()=>{ const el=selElement(); if(el){ pushHistory(); reorder(el,"front"); } };
+  $("#btnBack").onclick = ()=>{ const el=selElement(); if(el){ pushHistory(); reorder(el,"back"); } };
+  $("#zoomSel").onchange = (e)=>{ zoomMode = e.target.value; applyZoom(); };
+  $("#btnAdmin").onclick = ()=> window.open("admin.html", "_blank");
+  $("#searchBox").addEventListener("input", doSearch);
+
+  // dropdowns
+  $$(".dropdown > button").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{ e.stopPropagation(); const dd = btn.parentElement; $$(".dropdown").forEach(d=>d!==dd&&d.classList.remove("open")); dd.classList.toggle("open"); });
+  });
+  document.addEventListener("click", ()=> $$(".dropdown").forEach(d=>d.classList.remove("open")));
+
+  $("#menuProject").addEventListener("click", (e)=>{
+    const act = e.target.dataset.act; if(!act) return;
+    $$(".dropdown").forEach(d=>d.classList.remove("open"));
+    if (act==="save-local"){ if(project){ saveAutosave(); toast("Saved to browser storage"); } }
+    if (act==="open-local") showOpenSaved();
+    if (act==="export-json"){ downloadBlob(JSON.stringify(project,null,2), (project.name||"design")+".aura.json", "application/json"); }
+    if (act==="import-json"){ $("#fileJson").onchange = ()=>{ const f=$("#fileJson").files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ try{ project = hydrate(JSON.parse(rd.result)); curPage=0; undoStack=[]; openEditor(); saveAutosave(); toast("Project imported"); }catch(err){ toast("Invalid project file"); } }; rd.readAsText(f); $("#fileJson").value=""; }; $("#fileJson").click(); }
+    if (act==="new-blank"){ showModal(`<h3>New blank design</h3><div class="m-row"><select id="npPreset">
+      <option value="1080x1080">Square — 1080×1080</option><option value="850x1100">Document — 850×1100</option>
+      <option value="1280x720">Presentation 16:9 — 1280×720</option><option value="720x1280">Story 9:16 — 720×1280</option>
+      <option value="600x900">Poster — 600×900</option><option value="1050x600">Business card — 1050×600</option></select></div>
+      <div class="m-actions"><button class="abtn ghost" data-close>Cancel</button><button class="abtn primary" id="npGo">Create</button></div>`);
+      $("#npGo").onclick = ()=>{ const [w,h] = $("#npPreset").value.split("x").map(Number); closeModal();
+        project = hydrate({name:"Untitled design",cat:"custom",w,h,pages:[{bg:"#ffffff",elements:[]}]}); curPage=0; undoStack=[]; openEditor(); saveAutosave(); };
+    }
+    if (act==="help") showHelp();
+  });
+
+  $("#menuExport").addEventListener("click", async (e)=>{
+    const act = e.target.dataset.act; if(!act || !project) return;
+    $$(".dropdown").forEach(d=>d.classList.remove("open"));
+    try {
+      if (act==="png"){ const blob = await renderPagePng(curPageData(), 2); downloadBlob(blob, pageFile("png"), "image/png"); toast("PNG exported"); }
+      if (act==="png-all"){ const files = []; for (let i=0;i<project.pages.length;i++){ const b = await renderPagePng(project.pages[i], 2); files.push({name:`page-${i+1}.png`, data:new Uint8Array(await b.arrayBuffer())}); }
+        const zip = ZipWriter.build(files); downloadBlob(new Blob([zip]), baseName()+".png-pages.zip", "application/zip"); toast("All pages exported"); }
+      if (act==="svg"){ downloadBlob(renderPageSvg(curPageData()), pageFile("svg"), "image/svg+xml"); toast("SVG exported"); }
+      if (act==="odt"){ downloadBlob(new Blob([buildOdt(project)]), baseName()+".odt", "application/vnd.oasis.opendocument.text"); toast("ODT exported — opens in LibreOffice"); }
+      if (act==="fodt"){ downloadBlob(new Blob([buildFodt(project)]), baseName()+".fodt", "application/vnd.oasis.opendocument.text"); toast("Flat ODF exported — opens in LibreOffice"); }
+      if (act==="print"){ printProject(); }
+    } catch(err){ console.error(err); toast("Export failed: "+err.message); }
+  });
+}
+
+function baseName(){ return (project.name||"design").replace(/[^\w\- ]+/g,"").trim().replace(/ +/g,"-") || "design"; }
+function pageFile(ext){ return baseName() + "-p" + (curPage+1) + "." + ext; }
+function downloadBlob(blob, name, type){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob instanceof Blob ? blob : new Blob([blob], {type}));
+  a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+function showOpenSaved(){
+  const keys = Object.keys(localStorage).filter(k=>k.startsWith("aura.project."));
+  if (!keys.length){ toast("No saved designs yet — use Save to browser first"); return; }
+  showModal(`<h3>Open saved design</h3>` + keys.map(k=>{
+    let p; try{ p = JSON.parse(localStorage.getItem(k)); }catch(e){ return ""; }
+    return `<button class="prop-btn" data-k="${k}">📄 ${esc(p.name||k)} <span style="color:#888">(${p.w}×${p.h})</span></button>`;
+  }).join("") + `<div class="m-actions"><button class="abtn ghost" data-close>Close</button></div>`);
+  $$("#modalCard [data-k]").forEach(b=>b.onclick=()=>{ closeModal();
+    project = hydrate(JSON.parse(localStorage.getItem(b.dataset.k))); curPage=0; undoStack=[]; openEditor(); });
+  $("#modalCard [data-close]").onclick = closeModal;
+}
+
+function showHelp(){
+  showModal(`<h3>Help & shortcuts</h3>
+  <p><b>Double-click</b> any text to edit it. Drag to move — snapping guides appear near edges and centers. Drag the corner handles to resize.</p>
+  <p><b>Pages:</b> add pages with + in the bottom strip. Presentations, storyboards and multi-page documents are all just pages.</p>
+  <p><b>Shortcuts:</b> Del = delete · Ctrl+D = duplicate · Ctrl+Z / Ctrl+Y = undo/redo · Arrow keys = nudge (Shift = 10px) · Ctrl+S = save</p>
+  <p><b>Documents & LibreOffice:</b> any design can be exported as <b>.odt</b> or <b>.fodt</b> (flat ODF) and opens directly in LibreOffice Writer — text, fonts, colors and alignment are preserved. Documents-category templates are designed for this.</p>
+  <p><b>Admin agent:</b> the ⚙ Admin button opens the local admin panel for template management, updates and upgrades.</p>
+  <div class="m-actions"><button class="abtn primary" data-close>Got it</button></div>`);
+  $("#modalCard [data-close]").onclick = closeModal;
+}
+
+function bindPalette(){
+  $$("#elemPalette .pal-btn").forEach(b=> b.onclick = ()=> addElement(b.dataset.add));
+}
+
+function bindKeyboard(){
+  document.addEventListener("keydown", (e)=>{
+    if (e.target.matches("input,textarea,select")) return;
+    if (!project) return;
+    const el = selElement();
+    if ((e.key==="Delete"||e.key==="Backspace") && el){ e.preventDefault(); deleteSel(); }
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="d"){ e.preventDefault(); duplicateSel(); }
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="z"){ e.preventDefault(); e.shiftKey ? doRedo() : doUndo(); }
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="y"){ e.preventDefault(); doRedo(); }
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="s"){ e.preventDefault(); saveAutosave(); toast("Saved to browser storage"); }
+    if (el && e.key.startsWith("Arrow")){
+      e.preventDefault(); pushHistory();
+      const d = e.shiftKey ? 10 : 1;
+      if (e.key==="ArrowLeft") el.x -= d; if (e.key==="ArrowRight") el.x += d;
+      if (e.key==="ArrowUp") el.y -= d; if (e.key==="ArrowDown") el.y += d;
+      refreshEl(el);
+    }
+  });
+}
+
+/* ---------- modal ---------- */
+function showModal(html){ $("#modalCard").innerHTML = html; $("#modal").style.display = "flex"; }
+function closeModal(){ $("#modal").style.display = "none"; }
+$("#modal") && null;
+
+/* ============================================================
+   RENDERERS — canvas (PNG), SVG, ODF
+   ============================================================ */
+function wrapText(ctx, text, maxWidth){
+  const out = [];
+  for (const raw of String(text).split("\n")){
+    if (!raw){ out.push(""); continue; }
+    let line = "";
+    for (const word of raw.split(" ")){
+      const test = line ? line+" "+word : word;
+      if (ctx.measureText(test).width > maxWidth && line){ out.push(line); line = word; }
+      else line = test;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+function loadImage(src){
+  return new Promise((res, rej)=>{
+    const img = new Image();
+    img.onload = ()=>res(img); img.onerror = ()=>res(null);
+    img.src = src;
+  });
+}
+
+async function renderPagePng(page, scale){
+  const c = document.createElement("canvas");
+  c.width = project.w * scale; c.height = project.h * scale;
+  const ctx = c.getContext("2d");
+  ctx.scale(scale, scale);
+  // preload images
+  const imgs = {};
+  await Promise.all(page.elements.filter(e=>e.type==="image").map(async e=>{ imgs[e.id] = await loadImage(e.src); }));
+  drawPage(ctx, page, imgs);
+  return new Promise(res => c.toBlob(res, "image/png"));
+}
+
+function drawPage(ctx, page, imgs){
+  ctx.fillStyle = page.bg || "#fff";
+  ctx.fillRect(0,0,project.w,project.h);
+  for (const el of page.elements){
+    ctx.save();
+    ctx.globalAlpha = el.opacity != null ? el.opacity : 1;
+    if (el.type==="rect"){
+      const r = el.radius||0;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(el.x, el.y, el.w, el.h, r); else ctx.rect(el.x, el.y, el.w, el.h);
+      if (el.fill && el.fill!=="none"){ ctx.fillStyle = el.fill; ctx.fill(); }
+      if (el.stroke && el.stroke!=="none"){ ctx.strokeStyle = el.stroke; ctx.lineWidth = el.strokeWidth||1; ctx.stroke(); }
+    } else if (el.type==="ellipse"){
+      ctx.beginPath(); ctx.ellipse(el.x+el.w/2, el.y+el.h/2, el.w/2, el.h/2, 0, 0, Math.PI*2);
+      if (el.fill && el.fill!=="none"){ ctx.fillStyle = el.fill; ctx.fill(); }
+      if (el.stroke && el.stroke!=="none"){ ctx.strokeStyle = el.stroke; ctx.lineWidth = el.strokeWidth||1; ctx.stroke(); }
+    } else if (el.type==="line"){
+      ctx.fillStyle = el.stroke||"#111";
+      const horiz = (el.y2a - el.y1) < 2;
+      if (horiz) ctx.fillRect(el.x, el.y + (el.h-el.strokeWidth)/2, el.w, el.strokeWidth);
+      else ctx.fillRect(el.x + (el.w-el.strokeWidth)/2, el.y, el.strokeWidth, el.h);
+    } else if (el.type==="image" && imgs[el.id]){
+      const img = imgs[el.id];
+      const iw = img.width, ih = img.height;
+      let sw=iw, sh=ih, sx=0, sy=0, dx=el.x, dy=el.y, dw=el.w, dh=el.h;
+      if (el.fit!=="fill"){
+        const s = el.fit==="contain" ? Math.min(el.w/iw, el.h/ih) : Math.max(el.w/iw, el.h/ih);
+        if (el.fit==="cover"){ sw = el.w/s; sh = el.h/s; sx = (iw-sw)/2; sy = (ih-sh)/2; }
+        else { dw = iw*s; dh = ih*s; dx = el.x + (el.w-dw)/2; dy = el.y + (el.h-dh)/2; }
+      }
+      const r = el.radius||0;
+      if (r > 0){
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(el.x, el.y, el.w, el.h, r);
+        ctx.clip();
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+    } else if (el.type==="text" || el.type==="glyph"){
+      const txt = el.uppercase ? String(el.text||"").toUpperCase() : String(el.text||"");
+      const italic = el.italic ? "italic " : "";
+      ctx.font = `${italic}${el.fontWeight||400} ${el.fontSize||24}px ${(el.fontFamily||"Arial").split(",").map(s=>s.trim()).join(", ")}`;
+      try { ctx.letterSpacing = el.letterSpacing || "0px"; } catch(e){}
+      ctx.fillStyle = el.color || "#111";
+      ctx.textBaseline = "top";
+      const lines = wrapText(ctx, txt, el.w);
+      const lh = (el.fontSize||24) * (el.lineHeight||1.25);
+      lines.forEach((line, i)=>{
+        let tx = el.x;
+        if (el.align==="center") tx = el.x + (el.w - ctx.measureText(line).width)/2;
+        else if (el.align==="right") tx = el.x + el.w - ctx.measureText(line).width;
+        ctx.fillText(line, tx, el.y + i*lh + (lh-(el.fontSize||24))/2.6);
+      });
+    }
+    ctx.restore();
+  }
+}
+
+function renderPageSvg(page){
+  const parts = [];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${project.w}" height="${project.h}" viewBox="0 0 ${project.w} ${project.h}">`);
+  parts.push(`<rect width="100%" height="100%" fill="${page.bg||"#fff"}"/>`);
+  const meas = document.createElement("canvas").getContext("2d");
+  for (const el of page.elements){
+    const op = el.opacity != null ? el.opacity : 1;
+    if (el.type==="rect"){
+      parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"/>`);
+    } else if (el.type==="ellipse"){
+      parts.push(`<ellipse cx="${el.x+el.w/2}" cy="${el.y+el.h/2}" rx="${el.w/2}" ry="${el.h/2}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"/>`);
+    } else if (el.type==="line"){
+      const horiz = (el.y2a-el.y1)<2;
+      if (horiz) parts.push(`<rect x="${el.x}" y="${el.y+(el.h-el.strokeWidth)/2}" width="${el.w}" height="${el.strokeWidth}" fill="${el.stroke}" opacity="${op}"/>`);
+      else parts.push(`<rect x="${el.x+(el.w-el.strokeWidth)/2}" y="${el.y}" width="${el.strokeWidth}" height="${el.h}" fill="${el.stroke}" opacity="${op}"/>`);
+    } else if (el.type==="image"){
+      parts.push(`<clipPath id="c${el.id}"><rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}"/></clipPath>`+
+        `<image href="${el.src}" x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" preserveAspectRatio="${el.fit==="contain"?"xMidYMid meet":"xMidYMid slice"}" clip-path="url(#c${el.id})" opacity="${op}"/>`);
+    } else if (el.type==="text" || el.type==="glyph"){
+      const txt = el.uppercase ? String(el.text||"").toUpperCase() : String(el.text||"");
+      const style = `font-family="${(el.fontFamily||"Arial").replace(/"/g,"'")}" font-size="${el.fontSize||24}" font-weight="${el.fontWeight||400}" ${el.italic?'font-style="italic"':""} fill="${el.color||"#111"}" letter-spacing="${el.letterSpacing||0}" opacity="${op}"`;
+      const anchor = el.align==="center" ? "middle" : el.align==="right" ? "end" : "start";
+      const ax = el.align==="center" ? el.x+el.w/2 : el.align==="right" ? el.x+el.w : el.x;
+      const italic = el.italic ? "italic " : "";
+      meas.font = `${italic}${el.fontWeight||400} ${el.fontSize||24}px ${el.fontFamily||"Arial"}`;
+      const lines = wrapText(meas, txt, el.w);
+      const lh = (el.fontSize||24)*(el.lineHeight||1.25);
+      lines.forEach((line,i)=>{
+        parts.push(`<text x="${ax}" y="${el.y + i*lh + (el.fontSize||24)}" text-anchor="${anchor}" ${style}>${esc(line)}</text>`);
+      });
+    }
+  }
+  parts.push("</svg>");
+  return new Blob(parts, {type:"image/svg+xml"});
+}
+
+/* ---------- ODF (LibreOffice) ---------- */
+function odfEscape(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function buildFodt(projectData){
+  return odfDoc(projectData, true);
+}
+function buildOdt(projectData){
+  return ZipWriter.build([
+    { name:"mimetype", data:"application/vnd.oasis.opendocument.text", store:true },
+    { name:"META-INF/manifest.xml", data: odfManifest() },
+    { name:"styles.xml", data: odfStyles() },
+    { name:"content.xml", data: odfDoc(projectData, false) },
+  ]);
+}
+function odfManifest(){
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2">
+ <manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+ <manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
+ <manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>
+</manifest:manifest>`;
+}
+function odfStyles(){
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+ xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+ xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2">
+ <office:styles>
+  <style:default-style style:family="paragraph">
+   <style:text-properties fo:font-size="12pt"/>
+  </style:default-style>
+ </office:styles>
+</office:document-styles>`;
+}
+
+function odfDoc(projectData, flat){
+  // Build automatic text styles from text elements
+  const styles = [];
+  const usedStyles = new Map();
+  let styleIdx = 0;
+  const styleFor = (el) => {
+    const key = [el.fontSize, el.fontFamily, el.fontWeight, el.color, el.align, el.italic, el.uppercase, el.lineHeight].join("|");
+    if (usedStyles.has(key)) return usedStyles.get(key);
+    const name = "P" + (++styleIdx);
+    usedStyles.set(key, name);
+    const fam = (el.fontFamily||"Arial").split(",")[0].replace(/'/g,"").trim();
+    const color = (el.color||"#111111");
+    const align = el.align==="center" ? "center" : el.align==="right" ? "end" : "start";
+    const weight = (+el.fontWeight>=600) ? "bold" : "normal";
+    const lh = (el.lineHeight||1.25)*100;
+    styles.push(
+     `<style:style style:name="${name}" style:family="paragraph">`+
+     `<style:paragraph-properties fo:text-align="${align}" fo:line-height="${lh}%"/>`+
+     `<style:text-properties style:font-name="${odfEscape(fam)}" fo:font-size="${Math.round((el.fontSize||24)*0.75)}pt" fo:color="${color}" fo:font-weight="${weight}" ${el.italic?'fo:font-style="italic"':""} ${el.uppercase?'fo:text-transform="uppercase"':""}/>`.replace("  "," ")+
+     `</style:style>`);
+    return name;
+  };
+
+  const bodyPages = projectData.pages.map((pg, pi) => {
+    const paras = [];
+    // sort text elements by y for sensible reading order
+    const texts = pg.elements.filter(e=>e.type==="text"||e.type==="glyph").sort((a,b)=>a.y-b.y || a.x-b.x);
+    for (const el of texts){
+      const st = styleFor(el);
+      const txt = el.uppercase ? String(el.text||"").toUpperCase() : String(el.text||"");
+      for (const line of txt.split("\n")){
+        paras.push(`<text:p text:style-name="${st}">${odfEscape(line)}</text:p>`);
+      }
+    }
+    const first = pi===0 ? "" : `<text:p text:style-name="PageBreak"/>`;
+    return first + paras.join("");
+  }).join("");
+
+  const autoStyles = `<office:automatic-styles>
+   <style:style style:name="PageBreak" style:family="paragraph"><style:paragraph-properties fo:break-before="page"/></style:style>
+   ${styles.join("\n   ")}
+  </office:automatic-styles>`;
+
+  if (flat){
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+ xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+ xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+ xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+ office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.text">
+ <office:automatic-styles>
+   <style:style style:name="PageBreak" style:family="paragraph"><style:paragraph-properties fo:break-before="page"/></style:style>
+   ${styles.join("\n   ")}
+ </office:automatic-styles>
+ <office:body><office:text>${bodyPages}</office:text></office:body>
+</office:document>`;
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+ xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+ xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+ xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+ office:version="1.2">
+ ${autoStyles}
+ <office:body><office:text>${bodyPages}</office:text></office:body>
+</office:document-content>`;
+}
+
+/* ---------- print ---------- */
+async function printProject(){
+  const imgs = [];
+  for (const pg of project.pages) imgs.push(await blobToDataUrl(await renderPagePng(pg, 2)));
+  const w = window.open("", "_blank");
+  w.document.write(`<html><head><title>${esc(project.name)}</title><style>
+    body{margin:0;font-family:Arial} .pg{page-break-after:always;text-align:center}
+    img{max-width:100vw;max-height:100vh} @page{size:auto;margin:0}</style></head><body>${
+    imgs.map(d=>`<div class="pg"><img src="${d}"></div>`).join("")
+  }<script>setTimeout(()=>window.print(),400)<\/script>
+<script>
+/* --- single-file build: admin embedded --- */
+(function(){
+  const ADMIN_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Aura Studio \u2014 Admin Agent</title>\n<style>\n:root{--bg:#0f1222;--bg2:#171b31;--bg3:#1f2444;--panel:#141831;--line:#2a2f55;--ink:#eef0ff;--dim:#9aa0c7;--accent:#7c5cff;--ok:#4ad48a;--warn:#ffd479;--err:#ff7b7b}\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:24px}\n.wrap{max-width:960px;margin:0 auto}\nheader{display:flex;align-items:center;gap:12px;margin-bottom:6px}\n.dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#7c5cff,#ff5c8a);display:flex;align-items:center;justify-content:center;font-weight:800}\nh1{font-size:20px} .sub{color:var(--dim);font-size:13px;margin-bottom:22px}\n.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}\n.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}\n.card h2{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}\n.card p.desc{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:12px}\n.btn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;width:100%;text-align:left;margin-bottom:8px}\n.btn:hover{background:var(--bg3);border-color:var(--accent)}\n.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;text-align:center}\n.btn.danger:hover{border-color:var(--err);color:var(--err)}\n.row{display:flex;gap:8px;margin-bottom:8px}\n.row .btn{margin-bottom:0}\ninput[type=text],input[type=url]{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;outline:none}\ninput:focus{border-color:var(--accent)}\n.stat{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}\n.stat:last-child{border-bottom:none}\n.stat .v{font-weight:700}\n.tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}\n.tag.ok{color:var(--ok);border-color:var(--ok)}\n.tag.new{color:var(--warn);border-color:var(--warn)}\n#log{background:#0b0d1a;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:'Cascadia Code','Courier New',monospace;font-size:12px;height:190px;overflow-y:auto;line-height:1.7}\n#log .t{color:#556} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}\n.tlist{max-height:230px;overflow-y:auto;margin-top:8px}\n.titem{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;font-size:12.5px}\n.titem .x{color:var(--err);cursor:pointer;font-weight:700;background:none;border:none}\n.full{grid-column:1 / -1}\na{color:#a78bff}\nfooter{color:#55608c;font-size:11px;margin-top:24px;text-align:center}\n@media(max-width:760px){.grid{grid-template-columns:1fr}}\n</style>\n</head>\n<body>\n<div class=\"wrap\">\n  <header><div class=\"dot\">A</div><div><h1>Aura Studio \u2014 Admin Agent</h1><div class=\"sub\">Local template management \u00b7 updates \u00b7 upgrades \u00b7 maintenance</div></div></header>\n\n  <div class=\"grid\">\n    <div class=\"card\">\n      <h2>\ud83d\udccb Status</h2>\n      <div class=\"stat\"><span>App version</span><span class=\"v\" id=\"stVer\">\u2014</span></div>\n      <div class=\"stat\"><span>Latest known version</span><span class=\"v\" id=\"stLatest\">\u2014</span></div>\n      <div class=\"stat\"><span>Built-in templates</span><span class=\"v\" id=\"stBuiltin\">\u2014</span></div>\n      <div class=\"stat\"><span>Custom templates</span><span class=\"v\" id=\"stCustom\">\u2014</span></div>\n      <div class=\"stat\"><span>Update source</span><span class=\"v\" id=\"stSource\">\u2014</span></div>\n      <div class=\"stat\"><span>Autosave present</span><span class=\"v\" id=\"stAutosave\">\u2014</span></div>\n    </div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udd04 Updates & upgrades</h2>\n      <p class=\"desc\">The agent checks a manifest for newer versions. On <code>file://</code>, place <b>aura-update.json</b> next to the app files and press \u201cCheck locally\u201d, or point to any URL below (run via a local server or the web).</p>\n      <div class=\"row\"><input type=\"url\" id=\"updateUrl\" placeholder=\"https://example.com/aura-update.json (optional)\"><button class=\"btn\" style=\"width:auto\" id=\"btnCheckUrl\">Check URL</button></div>\n      <button class=\"btn\" id=\"btnCheckLocal\">\ud83d\udcc2 Check for local update file (aura-update.json)</button>\n      <button class=\"btn\" id=\"btnImportUpdate\">\u2b06 Import update / upgrade package (.json)</button>\n      <div id=\"updateResult\"></div>\n    </div>\n\n    <div class=\"card full\">\n      <h2>\ud83c\udfa8 Template manager <span class=\"tag\" id=\"tplCount\"></span></h2>\n      <p class=\"desc\">Custom templates appear in the main gallery immediately. Distribute template packs as JSON \u2014 colleagues or future-you can import them below.</p>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnExportTpl\">\u2b07 Export custom templates (pack)</button>\n        <button class=\"btn\" id=\"btnImportTpl\">\u2b06 Import template pack (.json)</button>\n      </div>\n      <div class=\"tlist\" id=\"tplList\"></div>\n    </div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udee0 Maintenance</h2>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnClearAutosave\">Clear working autosave</button>\n        <button class=\"btn danger\" id=\"btnResetTpl\">Remove ALL custom templates</button>\n        <button class=\"btn danger\" id=\"btnFactory\">\u26a0 Factory reset (everything)</button>\n      </div>\n      <p class=\"desc\" style=\"margin-top:6px\">Factory reset clears autosave, custom templates and remembered version \u2014 built-in templates are never touched.</p>\n    </div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udda5 Agent log</h2>\n      <div id=\"log\"></div>\n    </div>\n  </div>\n  <footer>Aura Studio Admin Agent \u00b7 runs fully offline \u00b7 data stays in this browser's localStorage</footer>\n</div>\n\n<script>\n\"use strict\";\nconst LS = {\n  customTpl: \"aura.templates.custom\",\n  autosave: \"aura.autosave\",\n  seenVersion: \"aura.seenVersion\",\n  updateUrl: \"aura.updateUrl\",\n  appVer: \"aura.appVersion\",\n};\nfunction getCustom(){ try { return JSON.parse(localStorage.getItem(LS.customTpl) || \"[]\"); } catch(e){ return []; } }\nfunction setCustom(arr){ localStorage.setItem(LS.customTpl, JSON.stringify(arr)); }\nfunction log(msg, cls){\n  const l = document.getElementById(\"log\");\n  const t = new Date().toLocaleTimeString();\n  l.innerHTML = `<div><span class=\"t\">[${t}]</span> <span class=\"${cls||\"\"}\">${msg}</span></div>` + l.innerHTML;\n}\nfunction $(s){ return document.querySelector(s); }\n\nfunction init(){\n  const appVer = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  $(\"#stVer\").textContent = appVer;\n  $(\"#stBuiltin\").textContent = \"36 templates (10 categories)\";\n  $(\"#stSource\").textContent = localStorage.getItem(LS.updateUrl) || \"local file (aura-update.json)\";\n  $(\"#updateUrl\").value = localStorage.getItem(LS.updateUrl) || \"\";\n  refresh();\n  log(`Admin agent started. App version ${appVer}.`, \"ok\");\n}\n\nfunction refresh(){\n  const c = getCustom();\n  $(\"#stCustom\").textContent = c.length;\n  $(\"#tplCount\").textContent = c.length + \" custom\";\n  $(\"#stAutosave\").textContent = localStorage.getItem(LS.autosave) ? \"Yes\" : \"No\";\n  const list = $(\"#tplList\");\n  list.innerHTML = c.length ? \"\" : `<div class=\"titem\" style=\"color:var(--dim)\">No custom templates yet \u2014 import a pack or an upgrade package.</div>`;\n  c.forEach((t,i)=>{\n    const d = document.createElement(\"div\"); d.className = \"titem\";\n    d.innerHTML = `<span>\ud83c\udfa8 <b>${(t.name||\"unnamed\").replace(/</g,\"&lt;\")}</b> &nbsp;<span style=\"color:var(--dim)\">${t.w}\u00d7${t.h} \u00b7 ${(t.pages||[]).length} page(s) \u00b7 cat: ${t.cat||\"custom\"}</span></span>`;\n    const x = document.createElement(\"button\"); x.className=\"x\"; x.textContent=\"\u2715\"; x.title=\"Delete\";\n    x.onclick = ()=>{ const arr=getCustom(); arr.splice(i,1); setCustom(arr); log(`Deleted custom template \u201c${t.name}\u201d`,\"warn\"); refresh(); };\n    d.appendChild(x); list.appendChild(d);\n  });\n}\n\n/* ---------- update checking ---------- */\nasync function fetchManifest(url){\n  const r = await fetch(url, {cache:\"no-store\"});\n  if (!r.ok) throw new Error(\"HTTP \" + r.status);\n  return r.json();\n}\nfunction showUpdate(m){\n  const cur = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  const isNewer = compare(m.version, cur) > 0;\n  $(\"#stLatest\").textContent = m.version + (isNewer ? \"  \u2b06\" : \"\");\n  const el = $(\"#updateResult\");\n  el.innerHTML = `\n    <div style=\"margin-top:10px;padding:12px;background:var(--bg2);border:1px solid ${isNewer?\"var(--warn)\":\"var(--line)\"};border-radius:10px;font-size:13px\">\n      <b>${m.version}</b> ${isNewer?'<span class=\"tag new\">upgrade available</span>':'<span class=\"tag ok\">up to date</span>'}\n      ${m.notes?`<div style=\"color:var(--dim);margin-top:6px;line-height:1.6\">${String(m.notes).replace(/</g,\"&lt;\").replace(/\\n/g,\"<br>\")}</div>`:\"\"}\n      ${m.templates?`<div style=\"margin-top:6px\">Includes <b>${m.templates.length}</b> template(s).</div>`:\"\"}\n      ${isNewer?`<button class=\"btn primary\" id=\"btnApply\" style=\"margin-top:10px\">\u2b06 Apply update ${m.version}</button>`:\"\"}\n    </div>`;\n  const btn = $(\"#btnApply\");\n  if (btn) btn.onclick = ()=> applyUpdate(m);\n}\nfunction applyUpdate(m){\n  if (m.templates && m.templates.length){\n    const cur = getCustom();\n    let added = 0;\n    for (const t of m.templates){\n      if (!t || !t.pages || !t.name) continue;\n      t.custom = true;\n      const idx = cur.findIndex(x => x.name === t.name);\n      if (idx >= 0) cur[idx] = t; else { cur.push(t); added++; }\n    }\n    setCustom(cur);\n    log(`Applied update ${m.version}: ${added} template(s) installed, ${m.templates.length-added} refreshed.`, \"ok\");\n  } else log(`Applied update ${m.version} (manifest only).`, \"ok\");\n  localStorage.setItem(LS.appVer, m.version);\n  localStorage.setItem(LS.seenVersion, m.version);\n  $(\"#stVer\").textContent = m.version;\n  showUpdate(m);\n  refresh();\n}\nfunction compare(a,b){\n  const pa = String(a).split(\".\").map(Number), pb = String(b).split(\".\").map(Number);\n  for (let i=0;i<3;i++){ if ((pa[i]||0) > (pb[i]||0)) return 1; if ((pa[i]||0) < (pb[i]||0)) return -1; }\n  return 0;\n}\n\n$(\"#btnCheckLocal\").onclick = async ()=>{\n  log(\"Checking for local update file aura-update.json\u2026\");\n  try {\n    const m = await fetchManifest(\"aura-update.json\");\n    log(\"Found update manifest v\" + m.version, \"ok\");\n    showUpdate(m);\n  } catch(e){\n    log(\"No local aura-update.json found (\" + e.message + \"). Drop the file next to index.html and retry.\", \"warn\");\n    $(\"#updateResult\").innerHTML = `<div style=\"margin-top:10px;color:var(--warn);font-size:12.5px\">No aura-update.json next to the app files. Note: on <code>file://</code> some browsers block local fetches \u2014 use \u201cImport update package\u201d instead, it always works.</div>`;\n  }\n};\n$(\"#btnCheckUrl\").onclick = async ()=>{\n  const url = $(\"#updateUrl\").value.trim();\n  if (!url){ log(\"No update URL provided.\", \"warn\"); return; }\n  localStorage.setItem(LS.updateUrl, url);\n  $(\"#stSource\").textContent = url;\n  log(\"Checking \" + url + \"\u2026\");\n  try { const m = await fetchManifest(url); log(\"Fetched manifest v\" + m.version, \"ok\"); showUpdate(m); }\n  catch(e){ log(\"Update check failed: \" + e.message, \"err\"); }\n};\n$(\"#btnImportUpdate\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const m = JSON.parse(txt);\n      if (!m.version){ throw new Error(\"manifest missing 'version'\"); }\n      log(\"Imported update package v\" + m.version, \"ok\");\n      showUpdate(m);\n    } catch(e){ log(\"Invalid update package: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- template packs ---------- */\n$(\"#btnExportTpl\").onclick = ()=>{\n  const c = getCustom();\n  if (!c.length){ log(\"Nothing to export \u2014 no custom templates.\", \"warn\"); return; }\n  download(JSON.stringify({type:\"aura-template-pack\",version:1,templates:c},null,2), \"aura-template-pack.json\");\n  log(`Exported ${c.length} custom template(s).`, \"ok\");\n};\n$(\"#btnImportTpl\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const p = JSON.parse(txt);\n      const arr = p.templates || (Array.isArray(p) ? p : null);\n      if (!arr) throw new Error(\"no 'templates' array\");\n      const cur = getCustom(); let n = 0;\n      for (const t of arr){ if (t && t.pages && t.name){ t.custom = true; cur.push(t); n++; } }\n      setCustom(cur); refresh();\n      log(`Imported ${n} template(s) from pack.`, \"ok\");\n    } catch(e){ log(\"Invalid template pack: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- maintenance ---------- */\n$(\"#btnClearAutosave\").onclick = ()=>{ localStorage.removeItem(LS.autosave); log(\"Working autosave cleared.\", \"warn\"); refresh(); };\n$(\"#btnResetTpl\").onclick = ()=>{ if(confirm(\"Remove ALL custom templates?\")){ setCustom([]); log(\"All custom templates removed.\", \"err\"); refresh(); } };\n$(\"#btnFactory\").onclick = ()=>{\n  if (confirm(\"Factory reset: clears autosave, custom templates and version memory. Continue?\")){\n    Object.values(LS).forEach(k=>localStorage.removeItem(k));\n    log(\"Factory reset complete. Built-in templates untouched.\", \"err\");\n    init();\n  }\n};\n\n/* ---------- utils ---------- */\nfunction pick(accept, cb){\n  const i = document.createElement(\"input\"); i.type = \"file\"; i.accept = accept;\n  i.onchange = ()=>{ const f = i.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>cb(r.result); r.readAsText(f); };\n  i.click();\n}\nfunction download(text, name){\n  const a = document.createElement(\"a\");\n  a.href = URL.createObjectURL(new Blob([text], {type:\"application/json\"}));\n  a.download = name; a.click();\n}\ninit();\n</script>\n</body>\n</html>\n";
+  const btn = document.getElementById("btnAdmin");
+  btn.onclick = function(){
+    const w = window.open("", "_blank");
+    if (!w) { alert("Allow popups to open the Admin Agent."); return; }
+    w.document.open(); w.document.write(ADMIN_HTML); w.document.close();
+  };
+})();
+</script>
+</body></html>`);
+  w.document.close();
+}
+function blobToDataUrl(blob){
+  return new Promise(res=>{ const r = new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
+}
+
+/* expose for admin page debugging */
+if (typeof window !== "undefined"){ window.__aura = { APP_VERSION, LS, allTemplates }; }
+
+</script>
+
+<script>
+/* --- single-file build: admin embedded --- */
+(function(){
+  const ADMIN_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Aura Studio \u2014 Admin Agent</title>\n<style>\n:root{--bg:#0f1222;--bg2:#171b31;--bg3:#1f2444;--panel:#141831;--line:#2a2f55;--ink:#eef0ff;--dim:#9aa0c7;--accent:#7c5cff;--ok:#4ad48a;--warn:#ffd479;--err:#ff7b7b}\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:24px}\n.wrap{max-width:960px;margin:0 auto}\nheader{display:flex;align-items:center;gap:12px;margin-bottom:6px}\n.dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#7c5cff,#ff5c8a);display:flex;align-items:center;justify-content:center;font-weight:800}\nh1{font-size:20px} .sub{color:var(--dim);font-size:13px;margin-bottom:22px}\n.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}\n.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}\n.card h2{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}\n.card p.desc{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:12px}\n.btn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;width:100%;text-align:left;margin-bottom:8px}\n.btn:hover{background:var(--bg3);border-color:var(--accent)}\n.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;text-align:center}\n.btn.danger:hover{border-color:var(--err);color:var(--err)}\n.row{display:flex;gap:8px;margin-bottom:8px}\n.row .btn{margin-bottom:0}\ninput[type=text],input[type=url]{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;outline:none}\ninput:focus{border-color:var(--accent)}\n.stat{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}\n.stat:last-child{border-bottom:none}\n.stat .v{font-weight:700}\n.tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}\n.tag.ok{color:var(--ok);border-color:var(--ok)}\n.tag.new{color:var(--warn);border-color:var(--warn)}\n#log{background:#0b0d1a;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:'Cascadia Code','Courier New',monospace;font-size:12px;height:190px;overflow-y:auto;line-height:1.7}\n#log .t{color:#556} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}\n.tlist{max-height:230px;overflow-y:auto;margin-top:8px}\n.titem{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;font-size:12.5px}\n.titem .x{color:var(--err);cursor:pointer;font-weight:700;background:none;border:none}\n.full{grid-column:1 / -1}\na{color:#a78bff}\nfooter{color:#55608c;font-size:11px;margin-top:24px;text-align:center}\n@media(max-width:760px){.grid{grid-template-columns:1fr}}\n</style>\n</head>\n<body>\n<div class=\"wrap\">\n  <header><div class=\"dot\">A</div><div><h1>Aura Studio \u2014 Admin Agent</h1><div class=\"sub\">Local template management \u00b7 updates \u00b7 upgrades \u00b7 maintenance</div></div></header>\n\n  <div class=\"grid\">\n    <div class=\"card\">\n      <h2>\ud83d\udccb Status</h2>\n      <div class=\"stat\"><span>App version</span><span class=\"v\" id=\"stVer\">\u2014</span></div>\n      <div class=\"stat\"><span>Latest known version</span><span class=\"v\" id=\"stLatest\">\u2014</span></div>\n      <div class=\"stat\"><span>Built-in templates</span><span class=\"v\" id=\"stBuiltin\">\u2014</span></div>\n      <div class=\"stat\"><span>Custom templates</span><span class=\"v\" id=\"stCustom\">\u2014</span></div>\n      <div class=\"stat\"><span>Update source</span><span class=\"v\" id=\"stSource\">\u2014</span></div>\n      <div class=\"stat\"><span>Autosave present</span><span class=\"v\" id=\"stAutosave\">\u2014</span></div>\n    </div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udd04 Updates & upgrades</h2>\n      <p class=\"desc\">The agent checks a manifest for newer versions. On <code>file://</code>, place <b>aura-update.json</b> next to the app files and press \u201cCheck locally\u201d, or point to any URL below (run via a local server or the web).</p>\n      <div class=\"row\"><input type=\"url\" id=\"updateUrl\" placeholder=\"https://example.com/aura-update.json (optional)\"><button class=\"btn\" style=\"width:auto\" id=\"btnCheckUrl\">Check URL</button></div>\n      <button class=\"btn\" id=\"btnCheckLocal\">\ud83d\udcc2 Check for local update file (aura-update.json)</button>\n      <button class=\"btn\" id=\"btnImportUpdate\">\u2b06 Import update / upgrade package (.json)</button>\n      <div id=\"updateResult\"></div>\n    </div>\n\n    <div class=\"card full\">\n      <h2>\ud83c\udfa8 Template manager <span class=\"tag\" id=\"tplCount\"></span></h2>\n      <p class=\"desc\">Custom templates appear in the main gallery immediately. Distribute template packs as JSON \u2014 colleagues or future-you can import them below.</p>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnExportTpl\">\u2b07 Export custom templates (pack)</button>\n        <button class=\"btn\" id=\"btnImportTpl\">\u2b06 Import template pack (.json)</button>\n      </div>\n      <div class=\"tlist\" id=\"tplList\"></div>\n    </div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udee0 Maintenance</h2>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnClearAutosave\">Clear working autosave</button>\n        <button class=\"btn danger\" id=\"btnResetTpl\">Remove ALL custom templates</button>\n        <button class=\"btn danger\" id=\"btnFactory\">\u26a0 Factory reset (everything)</button>\n      </div>\n      <p class=\"desc\" style=\"margin-top:6px\">Factory reset clears autosave, custom templates and remembered version \u2014 built-in templates are never touched.</p>\n    </div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udda5 Agent log</h2>\n      <div id=\"log\"></div>\n    </div>\n  </div>\n  <footer>Aura Studio Admin Agent \u00b7 runs fully offline \u00b7 data stays in this browser's localStorage</footer>\n</div>\n\n<script>\n\"use strict\";\nconst LS = {\n  customTpl: \"aura.templates.custom\",\n  autosave: \"aura.autosave\",\n  seenVersion: \"aura.seenVersion\",\n  updateUrl: \"aura.updateUrl\",\n  appVer: \"aura.appVersion\",\n};\nfunction getCustom(){ try { return JSON.parse(localStorage.getItem(LS.customTpl) || \"[]\"); } catch(e){ return []; } }\nfunction setCustom(arr){ localStorage.setItem(LS.customTpl, JSON.stringify(arr)); }\nfunction log(msg, cls){\n  const l = document.getElementById(\"log\");\n  const t = new Date().toLocaleTimeString();\n  l.innerHTML = `<div><span class=\"t\">[${t}]</span> <span class=\"${cls||\"\"}\">${msg}</span></div>` + l.innerHTML;\n}\nfunction $(s){ return document.querySelector(s); }\n\nfunction init(){\n  const appVer = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  $(\"#stVer\").textContent = appVer;\n  $(\"#stBuiltin\").textContent = \"36 templates (10 categories)\";\n  $(\"#stSource\").textContent = localStorage.getItem(LS.updateUrl) || \"local file (aura-update.json)\";\n  $(\"#updateUrl\").value = localStorage.getItem(LS.updateUrl) || \"\";\n  refresh();\n  log(`Admin agent started. App version ${appVer}.`, \"ok\");\n}\n\nfunction refresh(){\n  const c = getCustom();\n  $(\"#stCustom\").textContent = c.length;\n  $(\"#tplCount\").textContent = c.length + \" custom\";\n  $(\"#stAutosave\").textContent = localStorage.getItem(LS.autosave) ? \"Yes\" : \"No\";\n  const list = $(\"#tplList\");\n  list.innerHTML = c.length ? \"\" : `<div class=\"titem\" style=\"color:var(--dim)\">No custom templates yet \u2014 import a pack or an upgrade package.</div>`;\n  c.forEach((t,i)=>{\n    const d = document.createElement(\"div\"); d.className = \"titem\";\n    d.innerHTML = `<span>\ud83c\udfa8 <b>${(t.name||\"unnamed\").replace(/</g,\"&lt;\")}</b> &nbsp;<span style=\"color:var(--dim)\">${t.w}\u00d7${t.h} \u00b7 ${(t.pages||[]).length} page(s) \u00b7 cat: ${t.cat||\"custom\"}</span></span>`;\n    const x = document.createElement(\"button\"); x.className=\"x\"; x.textContent=\"\u2715\"; x.title=\"Delete\";\n    x.onclick = ()=>{ const arr=getCustom(); arr.splice(i,1); setCustom(arr); log(`Deleted custom template \u201c${t.name}\u201d`,\"warn\"); refresh(); };\n    d.appendChild(x); list.appendChild(d);\n  });\n}\n\n/* ---------- update checking ---------- */\nasync function fetchManifest(url){\n  const r = await fetch(url, {cache:\"no-store\"});\n  if (!r.ok) throw new Error(\"HTTP \" + r.status);\n  return r.json();\n}\nfunction showUpdate(m){\n  const cur = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  const isNewer = compare(m.version, cur) > 0;\n  $(\"#stLatest\").textContent = m.version + (isNewer ? \"  \u2b06\" : \"\");\n  const el = $(\"#updateResult\");\n  el.innerHTML = `\n    <div style=\"margin-top:10px;padding:12px;background:var(--bg2);border:1px solid ${isNewer?\"var(--warn)\":\"var(--line)\"};border-radius:10px;font-size:13px\">\n      <b>${m.version}</b> ${isNewer?'<span class=\"tag new\">upgrade available</span>':'<span class=\"tag ok\">up to date</span>'}\n      ${m.notes?`<div style=\"color:var(--dim);margin-top:6px;line-height:1.6\">${String(m.notes).replace(/</g,\"&lt;\").replace(/\\n/g,\"<br>\")}</div>`:\"\"}\n      ${m.templates?`<div style=\"margin-top:6px\">Includes <b>${m.templates.length}</b> template(s).</div>`:\"\"}\n      ${isNewer?`<button class=\"btn primary\" id=\"btnApply\" style=\"margin-top:10px\">\u2b06 Apply update ${m.version}</button>`:\"\"}\n    </div>`;\n  const btn = $(\"#btnApply\");\n  if (btn) btn.onclick = ()=> applyUpdate(m);\n}\nfunction applyUpdate(m){\n  if (m.templates && m.templates.length){\n    const cur = getCustom();\n    let added = 0;\n    for (const t of m.templates){\n      if (!t || !t.pages || !t.name) continue;\n      t.custom = true;\n      const idx = cur.findIndex(x => x.name === t.name);\n      if (idx >= 0) cur[idx] = t; else { cur.push(t); added++; }\n    }\n    setCustom(cur);\n    log(`Applied update ${m.version}: ${added} template(s) installed, ${m.templates.length-added} refreshed.`, \"ok\");\n  } else log(`Applied update ${m.version} (manifest only).`, \"ok\");\n  localStorage.setItem(LS.appVer, m.version);\n  localStorage.setItem(LS.seenVersion, m.version);\n  $(\"#stVer\").textContent = m.version;\n  showUpdate(m);\n  refresh();\n}\nfunction compare(a,b){\n  const pa = String(a).split(\".\").map(Number), pb = String(b).split(\".\").map(Number);\n  for (let i=0;i<3;i++){ if ((pa[i]||0) > (pb[i]||0)) return 1; if ((pa[i]||0) < (pb[i]||0)) return -1; }\n  return 0;\n}\n\n$(\"#btnCheckLocal\").onclick = async ()=>{\n  log(\"Checking for local update file aura-update.json\u2026\");\n  try {\n    const m = await fetchManifest(\"aura-update.json\");\n    log(\"Found update manifest v\" + m.version, \"ok\");\n    showUpdate(m);\n  } catch(e){\n    log(\"No local aura-update.json found (\" + e.message + \"). Drop the file next to index.html and retry.\", \"warn\");\n    $(\"#updateResult\").innerHTML = `<div style=\"margin-top:10px;color:var(--warn);font-size:12.5px\">No aura-update.json next to the app files. Note: on <code>file://</code> some browsers block local fetches \u2014 use \u201cImport update package\u201d instead, it always works.</div>`;\n  }\n};\n$(\"#btnCheckUrl\").onclick = async ()=>{\n  const url = $(\"#updateUrl\").value.trim();\n  if (!url){ log(\"No update URL provided.\", \"warn\"); return; }\n  localStorage.setItem(LS.updateUrl, url);\n  $(\"#stSource\").textContent = url;\n  log(\"Checking \" + url + \"\u2026\");\n  try { const m = await fetchManifest(url); log(\"Fetched manifest v\" + m.version, \"ok\"); showUpdate(m); }\n  catch(e){ log(\"Update check failed: \" + e.message, \"err\"); }\n};\n$(\"#btnImportUpdate\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const m = JSON.parse(txt);\n      if (!m.version){ throw new Error(\"manifest missing 'version'\"); }\n      log(\"Imported update package v\" + m.version, \"ok\");\n      showUpdate(m);\n    } catch(e){ log(\"Invalid update package: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- template packs ---------- */\n$(\"#btnExportTpl\").onclick = ()=>{\n  const c = getCustom();\n  if (!c.length){ log(\"Nothing to export \u2014 no custom templates.\", \"warn\"); return; }\n  download(JSON.stringify({type:\"aura-template-pack\",version:1,templates:c},null,2), \"aura-template-pack.json\");\n  log(`Exported ${c.length} custom template(s).`, \"ok\");\n};\n$(\"#btnImportTpl\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const p = JSON.parse(txt);\n      const arr = p.templates || (Array.isArray(p) ? p : null);\n      if (!arr) throw new Error(\"no 'templates' array\");\n      const cur = getCustom(); let n = 0;\n      for (const t of arr){ if (t && t.pages && t.name){ t.custom = true; cur.push(t); n++; } }\n      setCustom(cur); refresh();\n      log(`Imported ${n} template(s) from pack.`, \"ok\");\n    } catch(e){ log(\"Invalid template pack: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- maintenance ---------- */\n$(\"#btnClearAutosave\").onclick = ()=>{ localStorage.removeItem(LS.autosave); log(\"Working autosave cleared.\", \"warn\"); refresh(); };\n$(\"#btnResetTpl\").onclick = ()=>{ if(confirm(\"Remove ALL custom templates?\")){ setCustom([]); log(\"All custom templates removed.\", \"err\"); refresh(); } };\n$(\"#btnFactory\").onclick = ()=>{\n  if (confirm(\"Factory reset: clears autosave, custom templates and version memory. Continue?\")){\n    Object.values(LS).forEach(k=>localStorage.removeItem(k));\n    log(\"Factory reset complete. Built-in templates untouched.\", \"err\");\n    init();\n  }\n};\n\n/* ---------- utils ---------- */\nfunction pick(accept, cb){\n  const i = document.createElement(\"input\"); i.type = \"file\"; i.accept = accept;\n  i.onchange = ()=>{ const f = i.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>cb(r.result); r.readAsText(f); };\n  i.click();\n}\nfunction download(text, name){\n  const a = document.createElement(\"a\");\n  a.href = URL.createObjectURL(new Blob([text], {type:\"application/json\"}));\n  a.download = name; a.click();\n}\ninit();\n</script>\n</body>\n</html>\n";
+  const btn = document.getElementById("btnAdmin");
+  btn.onclick = function(){
+    const w = window.open("", "_blank");
+    if (!w) { alert("Allow popups to open the Admin Agent."); return; }
+    w.document.open(); w.document.write(ADMIN_HTML); w.document.close();
+  };
+})();
+</script>
+</body>
+</html>
