@@ -4,12 +4,32 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
   seenVersion: "aura.seenVersion",
+  brand: "aura.brand",
 };
+const IMG_FILTERS = [
+  { n:"None", v:"none" },
+  { n:"Grayscale", v:"grayscale(1)" },
+  { n:"Sepia / vintage", v:"sepia(0.7) saturate(1.2)" },
+  { n:"B&W dramatic", v:"grayscale(1) contrast(1.4)" },
+  { n:"Vivid", v:"saturate(1.7) contrast(1.1)" },
+  { n:"Soft glow", v:"brightness(1.12) saturate(1.15)" },
+  { n:"Cool tone", v:"hue-rotate(-15deg) saturate(1.25)" },
+  { n:"Warm tone", v:"hue-rotate(12deg) saturate(1.2) brightness(1.05)" },
+  { n:"Blur", v:"blur(2px)" },
+  { n:"Invert", v:"invert(1)" },
+];
+
+/* ---------------- brand kit ---------------- */
+function getBrand(){
+  try { return JSON.parse(localStorage.getItem(LS.brand) || "") || { colors:[], font:"", logo:"" }; }
+  catch(e){ return { colors:[], font:"", logo:"" }; }
+}
+function setBrand(b){ localStorage.setItem(LS.brand, JSON.stringify(b)); }
 const FONT_LIST = [
   "Georgia, 'Times New Roman', serif",
   "'Times New Roman', serif",
@@ -255,7 +275,7 @@ function fillNode(d, el){
     const img = document.createElement("img");
     img.src = el.src; img.draggable = false;
     img.style.cssText = `width:100%;height:100%;object-fit:${el.fit||"cover"};display:block;`+
-      `border-radius:${el.radius||0}px;pointer-events:none;`;
+      `border-radius:${el.radius||0}px;pointer-events:none;filter:${el.filter||"none"};`;
     d.appendChild(img);
   }
 }
@@ -415,6 +435,7 @@ function renderProps(){
     row.innerHTML = `<input type="color" class="prop-input" value="${pg.bg && pg.bg[0]==="#" ? pg.bg : "#ffffff"}">`;
     row.querySelector("input").addEventListener("input", (e)=>{ pushHistory(); pg.bg = e.target.value; renderBoard(); renderPages(); saveAutosave(); });
     body.appendChild(row);
+    addSwatches(row, body, (c)=>{ pushHistory(); pg.bg = c; renderBoard(); renderPages(); saveAutosave(); });
     const note = document.createElement("div"); note.className = "prop-empty";
     note.textContent = "Select an element on the canvas to edit it, or add new elements from the left panel.";
     body.appendChild(note);
@@ -435,6 +456,9 @@ function renderProps(){
     const r = row(g1, lab, num(el[key]));
     bind(r, "input", "change", (e)=>{ pushHistory(); el[key] = Math.round(+e.target.value||0); refreshEl(el); });
   });
+  const ga = row(g1, "Align", ["left","hcenter","right","top","vcenter","bottom"]
+    .map(m=>`<button class="align-btn" data-al="${m}" title="Align ${m}">${{left:"\u2b05",hcenter:"\u2194",right:"\u27a1",top:"\u2b06",vcenter:"\u2195",bottom:"\u2b07"}[m]}</button>`).join(""));
+  ga.querySelectorAll(".align-btn").forEach(btn=> btn.onclick = ()=> alignSel(el, btn.dataset.al));
 
   if (el.type==="text" || el.type==="glyph"){
     const g2 = grp("Typography");
@@ -442,7 +466,10 @@ function renderProps(){
       const r = row(g2, "Content", `<textarea class="prop-input" rows="3" style="resize:vertical">${esc(el.text||"")}</textarea>`);
       bind(r, "textarea", "change", (e)=>{ pushHistory(); el.text = e.target.value; refreshEl(el); });
     }
-    const rf = row(g2, "Font", `<select class="prop-select">${FONT_LIST.map(f=>`<option value="${esc(f)}" ${el.fontFamily===f?"selected":""}>${f.split(",")[0].replace(/'/g,"")}</option>`).join("")}</select>`);
+    const bFont = getBrand().font;
+    const fontOpts = (bFont ? `<option value="${esc(bFont)}" ${el.fontFamily===bFont?"selected":""}>\u2605 ${bFont.split(",")[0].replace(/'/g,"")}</option>` : "")
+      + FONT_LIST.map(f=>`<option value="${esc(f)}" ${el.fontFamily===f?"selected":""}>${f.split(",")[0].replace(/'/g,"")}</option>`).join("");
+    const rf = row(g2, "Font", `<select class="prop-select">${fontOpts}</select>`);
     bind(rf, "select", "change", (e)=>{ pushHistory(); el.fontFamily = e.target.value; refreshEl(el); });
     const rs = row(g2, "Size", `<input type="number" class="prop-input" value="${el.fontSize||24}">`);
     bind(rs, "input", "change", (e)=>{ pushHistory(); el.fontSize = +e.target.value||24; refreshEl(el); });
@@ -450,6 +477,7 @@ function renderProps(){
     bind(rw, "select", "change", (e)=>{ pushHistory(); el.fontWeight = e.target.value; refreshEl(el); });
     const rc = row(g2, "Color", `<input type="color" class="prop-input" value="${el.color && el.color[0]==="#" ? el.color.slice(0,7) : "#111111"}">`);
     bind(rc, "input", "input", (e)=>{ pushHistory(); el.color = e.target.value; refreshEl(el); });
+    addSwatches(rc, g2, (c)=>{ pushHistory(); el.color = c; refreshEl(el); });
     const ra = row(g2, "Align", `<select class="prop-select">${["left","center","right"].map(a=>`<option ${el.align===a?"selected":""}>${a}</option>`).join("")}</select>`);
     bind(ra, "select", "change", (e)=>{ pushHistory(); el.align = e.target.value; refreshEl(el); });
     const rl = row(g2, "Line H", `<input type="number" step="0.05" class="prop-input" value="${el.lineHeight||1.25}">`);
@@ -464,8 +492,10 @@ function renderProps(){
     const g3 = grp("Appearance");
     const rc = row(g3, "Fill", `<input type="color" class="prop-input" value="${(el.fill&&el.fill[0]==="#")?el.fill.slice(0,7):"#222222"}">`);
     bind(rc, "input", "input", (e)=>{ pushHistory(); el.fill = e.target.value; refreshEl(el); });
+    addSwatches(rc, g3, (c)=>{ pushHistory(); el.fill = c; refreshEl(el); });
     const rs = row(g3, "Stroke", `<input type="color" class="prop-input" value="${(el.stroke&&el.stroke[0]==="#")?el.stroke.slice(0,7):"#000000"}">`);
     bind(rs, "input", "input", (e)=>{ pushHistory(); el.stroke = e.target.value; refreshEl(el); });
+    addSwatches(rs, g3, (c)=>{ pushHistory(); el.stroke = c; refreshEl(el); });
     const rsw = row(g3, "Stroke W", `<input type="number" class="prop-input" value="${el.strokeWidth||0}">`);
     bind(rsw, "input", "change", (e)=>{ pushHistory(); el.strokeWidth = +e.target.value||0; refreshEl(el); });
     if (el.type==="rect"){
@@ -480,6 +510,8 @@ function renderProps(){
     bind(rb, "button", "click", ()=> pickImage(el));
     const rf2 = row(g4, "Fit", `<select class="prop-select">${["cover","contain","fill"].map(f=>`<option ${el.fit===f?"selected":""}>${f}</option>`).join("")}</select>`);
     bind(rf2, "select", "change", (e)=>{ pushHistory(); el.fit = e.target.value; refreshEl(el); });
+    const rflt = row(g4, "Filter", `<select class="prop-select">${IMG_FILTERS.map(f=>`<option value="${f.v}" ${(el.filter||"none")===f.v?"selected":""}>${f.n}</option>`).join("")}</select>`);
+    bind(rflt, "select", "change", (e)=>{ pushHistory(); el.filter = e.target.value; refreshEl(el); });
     const rr = row(g4, "Radius", `<input type="number" class="prop-input" value="${el.radius||0}">`);
     bind(rr, "input", "change", (e)=>{ pushHistory(); el.radius = +e.target.value||0; refreshEl(el); });
   }
@@ -560,12 +592,19 @@ function addElement(type){
 }
 function undoLast(){ if (undoStack.length) undoStack.pop(); }
 
-function pickImage(existing){
+function pickImage(existing, forBrand){
   const inp = $("#fileImg");
   inp.onchange = () => {
     const f = inp.files[0]; if (!f) return;
     const rd = new FileReader();
     rd.onload = () => {
+      if (forBrand){
+        const b = getBrand(); b.logo = rd.result; setBrand(b);
+        const prev = $("#bkLogoPrev"); if (prev) prev.innerHTML = `<img src="${rd.result}" style="height:36px;border-radius:6px">`;
+        const place = $("#bkPlace"); if (place){ place.disabled = false; place.onclick = placeBrandLogo; }
+        toast("Logo saved to brand kit");
+        return;
+      }
       if (existing){ pushHistory(); existing.src = rd.result; refreshEl(existing); }
       else {
         pushHistory();
@@ -714,8 +753,86 @@ function showHelp(){
   $("#modalCard [data-close]").onclick = closeModal;
 }
 
+function placeBrandLogo(){
+  const b = getBrand(); if (!b.logo) return;
+  closeModal();
+  pushHistory();
+  const el = { id:uid(), type:"image", x:Math.round(project.w*0.06), y:Math.round(project.h*0.06), w:Math.min(200,Math.round(project.w*0.25)), h:Math.min(200,Math.round(project.w*0.25)), src:b.logo, fit:"contain", radius:0, opacity:1, filter:"none" };
+  curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("Logo placed");
+}
+
+function alignSel(el, mode){
+  pushHistory();
+  if (mode==="left") el.x = 0;
+  if (mode==="hcenter") el.x = Math.round((project.w - el.w)/2);
+  if (mode==="right") el.x = project.w - el.w;
+  if (mode==="top") el.y = 0;
+  if (mode==="vcenter") el.y = Math.round((project.h - el.h)/2);
+  if (mode==="bottom") el.y = project.h - el.h;
+  refreshEl(el);
+}
+
+/* brand-color quick swatches under a color input */
+function addSwatches(afterEl, container, apply){
+  const b = getBrand();
+  if (!b.colors || !b.colors.length) return;
+  const r = document.createElement("div");
+  r.className = "prop-row";
+  r.innerHTML = `<span class="prop-label"></span><div class="swatches">`+
+    b.colors.map(c=>`<button class="sw" style="background:${c}" title="${c}" data-c="${c}"></button>`).join("")+`</div>`;
+  r.querySelectorAll(".sw").forEach(s=> s.onclick = ()=> apply(s.dataset.c));
+  container.insertBefore(r, afterEl.nextSibling);
+}
+
+/* ---------------- brand kit modal ---------------- */
+function showBrandKit(){
+  const b = getBrand();
+  showModal(`<h3>\u{1F3A8} Brand Kit</h3>
+    <p>Your colors, font and logo \u2014 saved on this computer and offered in every design.</p>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:70px;flex-shrink:0">Add color</span>
+      <input type="color" id="bkColor" value="#7c5cff" style="flex:0 0 64px;padding:2px;height:34px">
+      <button class="abtn ghost" id="bkAdd" style="padding:8px 12px">+ Add</button></div>
+    <div id="bkColors" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:70px;flex-shrink:0">Font</span>
+      <select id="bkFont" class="prop-select">${FONT_LIST.map(f=>`<option value="${esc(f)}" ${b.font===f?"selected":""}>${f.split(",")[0].replace(/'/g,"")}</option>`).join("")}</select></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:70px;flex-shrink:0">Logo</span>
+      <button class="abtn ghost" id="bkLogo" style="padding:8px 12px">Upload logo\u2026</button>
+      <span id="bkLogoPrev" style="display:flex;align-items:center;gap:8px">${b.logo?`<img src="${b.logo}" style="height:36px;border-radius:6px">`:""}</span></div>
+    <div class="m-actions">
+      <button class="abtn ghost" id="bkPlace" ${b.logo?"":"disabled"} style="padding:8px 12px;margin-right:auto">\u2197 Place logo on page</button>
+      <button class="abtn ghost" id="bkClear">Clear kit</button>
+      <button class="abtn primary" data-close>Done</button></div>`);
+
+  const renderColors = () => {
+    const bb = getBrand();
+    $("#bkColors").innerHTML = bb.colors.length
+      ? bb.colors.map((c,i)=>`<span class="bk-swatch" style="background:${c}"><button data-i="${i}" title="Remove">\u00d7</button></span>`).join("")
+      : `<span style="font-size:12px;color:var(--ink-dim)">No colors yet \u2014 add one above. They will appear as quick swatches next to every color picker.</span>`;
+    $$("#bkColors button[data-i]").forEach(btn=> btn.onclick = ()=>{
+      const arr = getBrand(); arr.colors.splice(+btn.dataset.i,1); setBrand(arr); renderColors(); renderProps();
+    });
+  };
+  renderColors();
+
+  $("#bkAdd").onclick = ()=>{
+    const arr = getBrand();
+    const c = $("#bkColor").value;
+    if (!arr.colors.includes(c)) arr.colors.push(c);
+    if (arr.colors.length > 12) arr.colors = arr.colors.slice(-12);
+    setBrand(arr); renderColors(); renderProps(); toast("Color added to brand kit");
+  };
+  $("#bkFont").onchange = (e)=>{ const arr = getBrand(); arr.font = e.target.value; setBrand(arr); renderProps(); toast("Brand font saved"); };
+  $("#bkLogo").onclick = ()=> pickImage(null, true); // dataURL-only capture via brand hook
+  if (b.logo) $("#bkPlace").onclick = placeBrandLogo;
+  $("#bkClear").onclick = ()=>{ setBrand({colors:[],font:"",logo:""}); renderColors(); renderProps(); toast("Brand kit cleared"); };
+  $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
+}
+
 function bindPalette(){
-  $$("#elemPalette .pal-btn").forEach(b=> b.onclick = ()=> addElement(b.dataset.add));
+  $$("#elemPalette .pal-btn").forEach(b=>{
+    if (b.dataset.brand){ b.onclick = showBrandKit; return; }
+    b.onclick = ()=> addElement(b.dataset.add);
+  });
 }
 
 function bindKeyboard(){
@@ -817,6 +934,7 @@ function drawPage(ctx, page, imgs){
         if (ctx.roundRect) ctx.roundRect(el.x, el.y, el.w, el.h, r);
         ctx.clip();
       }
+      if (el.filter && el.filter !== "none"){ try { ctx.filter = el.filter; } catch(e){} }
       ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
     } else if (el.type==="text" || el.type==="glyph"){
       const txt = el.uppercase ? String(el.text||"").toUpperCase() : String(el.text||"");
@@ -855,7 +973,7 @@ function renderPageSvg(page){
       else parts.push(`<rect x="${el.x+(el.w-el.strokeWidth)/2}" y="${el.y}" width="${el.strokeWidth}" height="${el.h}" fill="${el.stroke}" opacity="${op}"/>`);
     } else if (el.type==="image"){
       parts.push(`<clipPath id="c${el.id}"><rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}"/></clipPath>`+
-        `<image href="${el.src}" x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" preserveAspectRatio="${el.fit==="contain"?"xMidYMid meet":"xMidYMid slice"}" clip-path="url(#c${el.id})" opacity="${op}"/>`);
+        `<image href="${el.src}" x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" preserveAspectRatio="${el.fit==="contain"?"xMidYMid meet":"xMidYMid slice"}" clip-path="url(#c${el.id})" opacity="${op}" style="filter:${el.filter||'none'}"/>`);
     } else if (el.type==="text" || el.type==="glyph"){
       const txt = el.uppercase ? String(el.text||"").toUpperCase() : String(el.text||"");
       const style = `font-family="${(el.fontFamily||"Arial").replace(/"/g,"'")}" font-size="${el.fontSize||24}" font-weight="${el.fontWeight||400}" ${el.italic?'font-style="italic"':""} fill="${el.color||"#111"}" letter-spacing="${el.letterSpacing||0}" opacity="${op}"`;
