@@ -1,0 +1,98 @@
+{
+  "version": "1.1.0",
+  "notes": "Example upgrade package. Rename this file to aura-update.json (next to the app) and press 'Check locally' in the Admin Agent, or import it directly.",
+  "templates": [
+    {
+      "name": "Holiday Sale Post",
+      "cat": "social",
+      "w": 800,
+      "h": 800,
+      "tags": "holiday sale instagram post custom",
+      "pages": [
+        {
+          "bg": "#b3001b",
+          "elements": [
+            {
+              "type": "rect",
+              "x": 60,
+              "y": 60,
+              "w": 680,
+              "h": 680,
+              "fill": "none",
+              "stroke": "#ffd479",
+              "strokeWidth": 4,
+              "radius": 16,
+              "opacity": 1
+            },
+            {
+              "type": "text",
+              "x": 80,
+              "y": 240,
+              "w": 640,
+              "h": 90,
+              "text": "HOLIDAY SALE",
+              "fontSize": 64,
+              "fontFamily": "'Arial Black', Arial",
+              "fontWeight": "900",
+              "color": "#ffffff",
+              "align": "center",
+              "italic": false,
+              "uppercase": false,
+              "lineHeight": 1.15,
+              "letterSpacing": "4px",
+              "opacity": 1
+            },
+            {
+              "type": "text",
+              "x": 80,
+              "y": 360,
+              "w": 640,
+              "h": 60,
+              "text": "Up to 50% off everything",
+              "fontSize": 28,
+              "fontFamily": "Arial",
+              "fontWeight": "400",
+              "color": "#ffd479",
+              "align": "center",
+              "italic": false,
+              "uppercase": false,
+              "lineHeight": 1.3,
+              "letterSpacing": "0px",
+              "opacity": 1
+            },
+            {
+              "type": "rect",
+              "x": 280,
+              "y": 480,
+              "w": 240,
+              "h": 64,
+              "fill": "#ffffff",
+              "stroke": "none",
+              "strokeWidth": 0,
+              "radius": 32,
+              "opacity": 1
+            },
+            {
+              "type": "text",
+              "x": 280,
+              "y": 500,
+              "w": 240,
+              "h": 30,
+              "text": "SHOP NOW",
+              "fontSize": 22,
+              "fontFamily": "Arial",
+              "fontWeight": "800",
+              "color": "#b3001b",
+              "align": "center",
+              "italic": false,
+              "uppercase": false,
+              "lineHeight": 1.2,
+              "letterSpacing": "0px",
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
