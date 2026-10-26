@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -62,6 +62,55 @@ const hex2rgba = (hex, a) => {
   const n = parseInt(f||"000000",16);
   return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a==null?1:a})`;
 };
+
+/* ---------------- CMYK color engine ----------------
+   The screen renders RGB; CMYK values are stored with each element
+   (el.cmyk / page.cmyk) and exported as print-reference metadata. */
+function hexToRgb(hex){
+  const h = String(hex||"#000000").replace("#","");
+  const f = h.length===3 ? h.split("").map(c=>c+c).join("") : (h || "000000").slice(0,6).padEnd(6,"0");
+  const n = parseInt(f,16);
+  return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+}
+function rgbToHex(r,g,b){
+  const c = (x)=>Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,"0");
+  return "#"+c(r)+c(g)+c(b);
+}
+function cmykToRgb(c,m,y,k){
+  const C=c/100, M=m/100, Y=y/100, K=k/100;
+  return { r:255*(1-C)*(1-K), g:255*(1-M)*(1-K), b:255*(1-Y)*(1-K) };
+}
+function cmykToHex(c,m,y,k){ const {r,g,b} = cmykToRgb(c,m,y,k); return rgbToHex(r,g,b); }
+function rgbToCmyk(hex){
+  const {r,g,b} = hexToRgb(hex);
+  const R=r/255, G=g/255, B=b/255;
+  const K = 1 - Math.max(R,G,B);
+  if (K >= 0.999) return { c:0, m:0, y:0, k:100 };
+  return {
+    c: Math.round(((1-R-K)/(1-K))*100),
+    m: Math.round(((1-G-K)/(1-K))*100),
+    y: Math.round(((1-B-K)/(1-K))*100),
+    k: Math.round(K*100),
+  };
+}
+const CMYK_PRESETS = [
+  { n:"Process Cyan",     cmyk:[100,  0,  0,  0] },
+  { n:"Process Magenta",  cmyk:[  0,100,  0,  0] },
+  { n:"Process Yellow",   cmyk:[  0,  0,100,  0] },
+  { n:"Process Black",    cmyk:[  0,  0,  0,100] },
+  { n:"Rich Black",       cmyk:[ 60, 40, 40, 90] },
+  { n:"Red (M+Y)",        cmyk:[  0,100,100,  0] },
+  { n:"Green (C+Y)",      cmyk:[100,  0,100,  0] },
+  { n:"Blue (C+M)",       cmyk:[100,100,  0,  0] },
+  { n:"Orange",           cmyk:[  0, 60,100,  0] },
+  { n:"Violet",           cmyk:[ 40,100,  0, 20] },
+  { n:"Warm Gray 40%",    cmyk:[  0,  5, 10, 40] },
+  { n:"Cool Gray 60%",    cmyk:[ 20, 10,  0, 60] },
+];
+function cmykLabel(v){ return `C${v.c} M${v.m} Y${v.y} K${v.k}`; }
+function cmykAttr(el){
+  return el.cmyk ? ` data-cmyk="${el.cmyk.c} ${el.cmyk.m} ${el.cmyk.y} ${el.cmyk.k}"` : "";
+}
 
 function toast(msg, ms=2200){
   const t = $("#toast"); t.textContent = msg; t.classList.add("show");
@@ -433,9 +482,11 @@ function renderProps(){
     body.innerHTML = `<div class="prop-group"><div class="prop-label" style="width:auto;margin-bottom:6px">Page background</div></div>`;
     const row = document.createElement("div"); row.className="prop-row";
     row.innerHTML = `<input type="color" class="prop-input" value="${pg.bg && pg.bg[0]==="#" ? pg.bg : "#ffffff"}">`;
-    row.querySelector("input").addEventListener("input", (e)=>{ pushHistory(); pg.bg = e.target.value; renderBoard(); renderPages(); saveAutosave(); });
+    row.querySelector("input").addEventListener("input", (e)=>{ pushHistory(); pg.bg = e.target.value; pg.cmyk = rgbToCmyk(pg.bg); renderBoard(); renderPages(); saveAutosave(); });
     body.appendChild(row);
-    addSwatches(row, body, (c)=>{ pushHistory(); pg.bg = c; renderBoard(); renderPages(); saveAutosave(); });
+    addSwatches(row, body, (c)=>{ pushHistory(); pg.bg = c; pg.cmyk = rgbToCmyk(c); renderBoard(); renderPages(); saveAutosave(); });
+    addCmykRow(row, body, ()=> pg.cmyk || rgbToCmyk(pg.bg||"#ffffff"),
+      (v)=>{ pushHistory(); pg.bg = cmykToHex(v.c,v.m,v.y,v.k); pg.cmyk = v; renderBoard(); renderPages(); saveAutosave(); });
     const note = document.createElement("div"); note.className = "prop-empty";
     note.textContent = "Select an element on the canvas to edit it, or add new elements from the left panel.";
     body.appendChild(note);
@@ -476,8 +527,10 @@ function renderProps(){
     const rw = row(g2, "Weight", `<select class="prop-select">${[300,400,600,700,800,900].map(w=>`<option ${el.fontWeight==w?"selected":""} value="${w}">${w}</option>`).join("")}</select>`);
     bind(rw, "select", "change", (e)=>{ pushHistory(); el.fontWeight = e.target.value; refreshEl(el); });
     const rc = row(g2, "Color", `<input type="color" class="prop-input" value="${el.color && el.color[0]==="#" ? el.color.slice(0,7) : "#111111"}">`);
-    bind(rc, "input", "input", (e)=>{ pushHistory(); el.color = e.target.value; refreshEl(el); });
-    addSwatches(rc, g2, (c)=>{ pushHistory(); el.color = c; refreshEl(el); });
+    bind(rc, "input", "input", (e)=>{ pushHistory(); el.color = e.target.value; el.cmyk = rgbToCmyk(el.color); refreshEl(el); });
+    addSwatches(rc, g2, (c)=>{ pushHistory(); el.color = c; el.cmyk = rgbToCmyk(c); refreshEl(el); });
+    addCmykRow(rc, g2, ()=> el.cmyk || rgbToCmyk(el.color||"#111111"),
+      (v)=>{ pushHistory(); el.color = cmykToHex(v.c,v.m,v.y,v.k); el.cmyk = v; refreshEl(el); });
     const ra = row(g2, "Align", `<select class="prop-select">${["left","center","right"].map(a=>`<option ${el.align===a?"selected":""}>${a}</option>`).join("")}</select>`);
     bind(ra, "select", "change", (e)=>{ pushHistory(); el.align = e.target.value; refreshEl(el); });
     const rl = row(g2, "Line H", `<input type="number" step="0.05" class="prop-input" value="${el.lineHeight||1.25}">`);
@@ -491,11 +544,15 @@ function renderProps(){
   if (el.type==="rect" || el.type==="ellipse"){
     const g3 = grp("Appearance");
     const rc = row(g3, "Fill", `<input type="color" class="prop-input" value="${(el.fill&&el.fill[0]==="#")?el.fill.slice(0,7):"#222222"}">`);
-    bind(rc, "input", "input", (e)=>{ pushHistory(); el.fill = e.target.value; refreshEl(el); });
-    addSwatches(rc, g3, (c)=>{ pushHistory(); el.fill = c; refreshEl(el); });
+    bind(rc, "input", "input", (e)=>{ pushHistory(); el.fill = e.target.value; el.cmyk = rgbToCmyk(el.fill); refreshEl(el); });
+    addSwatches(rc, g3, (c)=>{ pushHistory(); el.fill = c; el.cmyk = rgbToCmyk(c); refreshEl(el); });
+    addCmykRow(rc, g3, ()=> el.cmyk || rgbToCmyk(el.fill||"#222222"),
+      (v)=>{ pushHistory(); el.fill = cmykToHex(v.c,v.m,v.y,v.k); el.cmyk = v; refreshEl(el); });
     const rs = row(g3, "Stroke", `<input type="color" class="prop-input" value="${(el.stroke&&el.stroke[0]==="#")?el.stroke.slice(0,7):"#000000"}">`);
-    bind(rs, "input", "input", (e)=>{ pushHistory(); el.stroke = e.target.value; refreshEl(el); });
-    addSwatches(rs, g3, (c)=>{ pushHistory(); el.stroke = c; refreshEl(el); });
+    bind(rs, "input", "input", (e)=>{ pushHistory(); el.stroke = e.target.value; el.cmyk = rgbToCmyk(el.stroke); refreshEl(el); });
+    addSwatches(rs, g3, (c)=>{ pushHistory(); el.stroke = c; el.cmyk = rgbToCmyk(c); refreshEl(el); });
+    addCmykRow(rs, g3, ()=> el.cmyk || rgbToCmyk(el.stroke||"#000000"),
+      (v)=>{ pushHistory(); el.stroke = cmykToHex(v.c,v.m,v.y,v.k); el.cmyk = v; refreshEl(el); });
     const rsw = row(g3, "Stroke W", `<input type="number" class="prop-input" value="${el.strokeWidth||0}">`);
     bind(rsw, "input", "change", (e)=>{ pushHistory(); el.strokeWidth = +e.target.value||0; refreshEl(el); });
     if (el.type==="rect"){
@@ -772,6 +829,32 @@ function alignSel(el, mode){
   refreshEl(el);
 }
 
+/* CMYK input row + process-color presets, under a color control */
+function addCmykRow(afterEl, container, getVal, setVal){
+  const cur = getVal();
+  const r = document.createElement("div");
+  r.className = "prop-row";
+  r.innerHTML = `<span class="prop-label">CMYK</span>` +
+    ["c","m","y","k"].map(k=>`<input type="number" min="0" max="100" step="1" class="prop-input cmyk-in" data-k="${k}" value="${cur[k]||0}">`).join("");
+  container.insertBefore(r, afterEl.nextSibling);
+  const read = () => ({
+    c: Math.max(0,Math.min(100,+r.querySelector('[data-k="c"]').value||0)),
+    m: Math.max(0,Math.min(100,+r.querySelector('[data-k="m"]').value||0)),
+    y: Math.max(0,Math.min(100,+r.querySelector('[data-k="y"]').value||0)),
+    k: Math.max(0,Math.min(100,+r.querySelector('[data-k="k"]').value||0)),
+  });
+  r.querySelectorAll(".cmyk-in").forEach(inp=> inp.addEventListener("change", ()=> setVal(read())));
+  const pr = document.createElement("div");
+  pr.className = "prop-row";
+  pr.innerHTML = `<span class="prop-label">Process</span><div class="swatches">` +
+    CMYK_PRESETS.map((p,i)=>`<button class="sw" data-i="${i}" title="${p.n} \u00b7 ${cmykLabel({c:p.cmyk[0],m:p.cmyk[1],y:p.cmyk[2],k:p.cmyk[3]})}" style="background:${cmykToHex(p.cmyk[0],p.cmyk[1],p.cmyk[2],p.cmyk[3])}"></button>`).join("") + `</div>`;
+  container.insertBefore(pr, r.nextSibling);
+  pr.querySelectorAll(".sw").forEach(btn=> btn.onclick = ()=>{
+    const p = CMYK_PRESETS[+btn.dataset.i];
+    setVal({ c:p.cmyk[0], m:p.cmyk[1], y:p.cmyk[2], k:p.cmyk[3] });
+  });
+}
+
 /* brand-color quick swatches under a color input */
 function addSwatches(afterEl, container, apply){
   const b = getBrand();
@@ -964,9 +1047,9 @@ function renderPageSvg(page){
   for (const el of page.elements){
     const op = el.opacity != null ? el.opacity : 1;
     if (el.type==="rect"){
-      parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"/>`);
+      parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"${cmykAttr(el)}/>`);
     } else if (el.type==="ellipse"){
-      parts.push(`<ellipse cx="${el.x+el.w/2}" cy="${el.y+el.h/2}" rx="${el.w/2}" ry="${el.h/2}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"/>`);
+      parts.push(`<ellipse cx="${el.x+el.w/2}" cy="${el.y+el.h/2}" rx="${el.w/2}" ry="${el.h/2}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"${cmykAttr(el)}/>`);
     } else if (el.type==="line"){
       const horiz = (el.y2a-el.y1)<2;
       if (horiz) parts.push(`<rect x="${el.x}" y="${el.y+(el.h-el.strokeWidth)/2}" width="${el.w}" height="${el.strokeWidth}" fill="${el.stroke}" opacity="${op}"/>`);
@@ -984,7 +1067,7 @@ function renderPageSvg(page){
       const lines = wrapText(meas, txt, el.w);
       const lh = (el.fontSize||24)*(el.lineHeight||1.25);
       lines.forEach((line,i)=>{
-        parts.push(`<text x="${ax}" y="${el.y + i*lh + (el.fontSize||24)}" text-anchor="${anchor}" ${style}>${esc(line)}</text>`);
+        parts.push(`<text x="${ax}" y="${el.y + i*lh + (el.fontSize||24)}" text-anchor="${anchor}" ${style}${cmykAttr(el)}>${esc(line)}</text>`);
       });
     }
   }
