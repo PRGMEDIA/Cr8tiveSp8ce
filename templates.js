@@ -687,5 +687,30 @@ tpl("marketing","Gift Certificate","Elegant voucher",1000,600,[
    T(740,120,200,160,"No. 00417\n\nIssued: Oct 2026\nSigned: ________",{fs:14,ff:"Arial",c:"#666",lh:2.0})
  ]}],"gift certificate voucher print reward");
 
+/* ============ v1.4 — Pretty Rich Girl logo set ============ */
+
+tpl("logos","Pretty Rich Girl — Crown Monogram","Glam gold-ring monogram badge",800,800,[
+ {bg:"#ffd6ea",elements:[
+   EL(-120,520,420,420,{f:"#ff9ec4",op:.5}), EL(560,-140,400,400,{f:"#ffb6d5",op:.55}),
+   EL(170,170,460,460,{f:"none",s:"#d4af37",sw:4}),
+   EL(192,192,416,416,{f:"#ffe9f4",s:"#d4af37",sw:1}),
+   GL(315,255,170,100,"\uD83D\uDC51",{fs:88}),
+   T(170,370,460,140,"PRG",{fs:112,ff:"'Brush Script MT', cursive",c:"#4a1d38",al:"center",lh:1.0}),
+   LN(295,525,505,525,{s:"#d4af37",sw:2}),
+   T(170,548,460,40,"PRETTY RICH GIRL",{fs:24,ff:"Georgia, serif",fw:"700",c:"#4a1d38",al:"center",ls:"6"}),
+   T(170,600,460,30,"LUXE \u00b7 BOSS \u00b7 UNBOTHERED",{fs:13,ff:"Arial",c:"#b0608c",al:"center",ls:"3"}),
+   GL(355,662,90,60,"\u2728",{fs:38,c:"#d4af37"})
+ ]}],"pretty rich girl logo monogram glam crown pink gold luxe");
+
+tpl("logos","Pretty Rich Girl — Script Wordmark","Crowned script wordmark",1000,500,[
+ {bg:"#fff5fa",elements:[
+   EL(760,-80,300,300,{f:"#ffd6ea",op:.6}), EL(-60,320,240,240,{f:"#ffe9f4",op:.8}),
+   GL(430,38,140,100,"\uD83D\uDC51",{fs:78}),
+   T(100,148,800,140,"Pretty Rich Girl",{fs:96,ff:"'Brush Script MT', cursive",c:"#ff5c8a",al:"center",lh:1.1}),
+   LN(250,302,750,302,{s:"#d4af37",sw:2}),
+   T(100,322,800,40,"LUXE LIFESTYLE \u00b7 EST. 2026",{fs:16,ff:"Georgia, serif",c:"#4a1d38",al:"center",ls:"5"}),
+   GL(78,120,80,60,"\u2728",{fs:34,c:"#d4af37"}), GL(852,120,80,60,"\u2728",{fs:34,c:"#d4af37"})
+ ]}],"pretty rich girl wordmark script glam crown pink gold");
+
 /* expose */
 if (typeof window !== "undefined") window.TEMPLATES = TEMPLATES, window.CATS = CATS;

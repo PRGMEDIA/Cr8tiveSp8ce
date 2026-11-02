@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.4.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -48,6 +48,7 @@ const FONT_LIST = [
 /* ---------------- state ---------------- */
 let project = null;
 let curPage = 0, selId = null, zoom = 1, zoomMode = "fit";
+let guidesOn = false;
 let undoStack = [], redoStack = [];
 let activeCat = "social";
 let suppressHistory = false;
@@ -296,6 +297,7 @@ function renderBoard(){
   board.style.height = project.h + "px";
   board.style.background = curPageData().bg || "#fff";
   curPageData().elements.forEach(el => board.appendChild(buildElNode(el, true)));
+  drawGuides();
   applyZoom();
 }
 
@@ -504,7 +506,7 @@ function renderProps(){
     row.innerHTML = `<input type="color" class="prop-input" value="${pg.bg && pg.bg[0]==="#" ? pg.bg : "#ffffff"}">`;
     row.querySelector("input").addEventListener("input", (e)=>{ pushHistory(); pg.bg = e.target.value; pg.cmyk = rgbToCmyk(pg.bg); renderBoard(); renderPages(); saveAutosave(); });
     body.appendChild(row);
-    addSwatches(row, body, (c)=>{ pushHistory(); pg.bg = c; pg.cmyk = rgbToCmyk(c); renderBoard(); renderPages(); saveAutosave(); });
+    addSwatches(row, body, (c, cm)=>{ pushHistory(); pg.bg = c; pg.cmyk = cm ? {c:cm[0],m:cm[1],y:cm[2],k:cm[3]} : rgbToCmyk(c); renderBoard(); renderPages(); saveAutosave(); });
     addCmykRow(row, body, ()=> pg.cmyk || rgbToCmyk(pg.bg||"#ffffff"),
       (v)=>{ pushHistory(); pg.bg = cmykToHex(v.c,v.m,v.y,v.k); pg.cmyk = v; renderBoard(); renderPages(); saveAutosave(); });
     const note = document.createElement("div"); note.className = "prop-empty";
@@ -548,7 +550,7 @@ function renderProps(){
     bind(rw, "select", "change", (e)=>{ pushHistory(); el.fontWeight = e.target.value; refreshEl(el); });
     const rc = row(g2, "Color", `<input type="color" class="prop-input" value="${el.color && el.color[0]==="#" ? el.color.slice(0,7) : "#111111"}">`);
     bind(rc, "input", "input", (e)=>{ pushHistory(); el.color = e.target.value; el.cmyk = rgbToCmyk(el.color); refreshEl(el); });
-    addSwatches(rc, g2, (c)=>{ pushHistory(); el.color = c; el.cmyk = rgbToCmyk(c); refreshEl(el); });
+    addSwatches(rc, g2, (c, cm)=>{ pushHistory(); el.color = c; el.cmyk = cm ? {c:cm[0],m:cm[1],y:cm[2],k:cm[3]} : rgbToCmyk(c); refreshEl(el); });
     addCmykRow(rc, g2, ()=> el.cmyk || rgbToCmyk(el.color||"#111111"),
       (v)=>{ pushHistory(); el.color = cmykToHex(v.c,v.m,v.y,v.k); el.cmyk = v; refreshEl(el); });
     const ra = row(g2, "Align", `<select class="prop-select">${["left","center","right"].map(a=>`<option ${el.align===a?"selected":""}>${a}</option>`).join("")}</select>`);
@@ -565,12 +567,12 @@ function renderProps(){
     const g3 = grp("Appearance");
     const rc = row(g3, "Fill", `<input type="color" class="prop-input" value="${(el.fill&&el.fill[0]==="#")?el.fill.slice(0,7):"#222222"}">`);
     bind(rc, "input", "input", (e)=>{ pushHistory(); el.fill = e.target.value; el.cmyk = rgbToCmyk(el.fill); refreshEl(el); });
-    addSwatches(rc, g3, (c)=>{ pushHistory(); el.fill = c; el.cmyk = rgbToCmyk(c); refreshEl(el); });
+    addSwatches(rc, g3, (c, cm)=>{ pushHistory(); el.fill = c; el.cmyk = cm ? {c:cm[0],m:cm[1],y:cm[2],k:cm[3]} : rgbToCmyk(c); refreshEl(el); });
     addCmykRow(rc, g3, ()=> el.cmyk || rgbToCmyk(el.fill||"#222222"),
       (v)=>{ pushHistory(); el.fill = cmykToHex(v.c,v.m,v.y,v.k); el.cmyk = v; refreshEl(el); });
     const rs = row(g3, "Stroke", `<input type="color" class="prop-input" value="${(el.stroke&&el.stroke[0]==="#")?el.stroke.slice(0,7):"#000000"}">`);
     bind(rs, "input", "input", (e)=>{ pushHistory(); el.stroke = e.target.value; el.cmyk = rgbToCmyk(el.stroke); refreshEl(el); });
-    addSwatches(rs, g3, (c)=>{ pushHistory(); el.stroke = c; el.cmyk = rgbToCmyk(c); refreshEl(el); });
+    addSwatches(rs, g3, (c, cm)=>{ pushHistory(); el.stroke = c; el.cmyk = cm ? {c:cm[0],m:cm[1],y:cm[2],k:cm[3]} : rgbToCmyk(c); refreshEl(el); });
     addCmykRow(rs, g3, ()=> el.cmyk || rgbToCmyk(el.stroke||"#000000"),
       (v)=>{ pushHistory(); el.stroke = cmykToHex(v.c,v.m,v.y,v.k); el.cmyk = v; refreshEl(el); });
     const rsw = row(g3, "Stroke W", `<input type="number" class="prop-input" value="${el.strokeWidth||0}">`);
@@ -757,6 +759,12 @@ function bindTopbar(){
   $("#btnFront").onclick = ()=>{ const el=selElement(); if(el){ pushHistory(); reorder(el,"front"); } };
   $("#btnBack").onclick = ()=>{ const el=selElement(); if(el){ pushHistory(); reorder(el,"back"); } };
   $("#zoomSel").onchange = (e)=>{ zoomMode = e.target.value; applyZoom(); };
+  $("#btnGuides").onclick = ()=>{
+    guidesOn = !guidesOn;
+    $("#btnGuides").classList.toggle("on", guidesOn);
+    drawGuides();
+    toast(guidesOn ? "Print guides on \u2014 backgrounds to the edge, text inside cyan" : "Print guides off");
+  };
   $("#btnAdmin").onclick = ()=> window.open("admin.html", "_blank");
   $("#searchBox").addEventListener("input", doSearch);
 
@@ -843,7 +851,7 @@ function openCmykPalette(target){
     const items = CMYK_PALETTE.filter(p => !q || p.n.toLowerCase().includes(q) || `${p.c} ${p.m} ${p.y} ${p.k}`.includes(q));
     $("#cmkGrid").innerHTML = items.length ? items.map(p=>`
       <div class="cmyk-cell" data-i="${CMYK_PALETTE.indexOf(p)}">
-        <div class="chip" style="background:${cmykToHex(p.c,p.m,p.y,p.k)}"></div>
+        <div class="chip" style="background:${cmykToHex(p.c,p.m,p.y,p.k)}"><button class="star" data-hex="${cmykToHex(p.c,p.m,p.y,p.k)}" data-cmyk="${p.c},${p.m},${p.y},${p.k}" title="Add to Brand Kit">\u2605</button></div>
         <div class="nm">${esc(p.n)}</div>
         <div class="rc">${p.c}\u00b7${p.m}\u00b7${p.y}\u00b7${p.k}</div>
       </div>`).join("") : `<div style="color:var(--ink-dim);font-size:12.5px">No swatches match \u201c${esc(q)}\u201d \u2014 try a name or four numbers.</div>`;
@@ -851,6 +859,11 @@ function openCmykPalette(target){
       const p = CMYK_PALETTE[+cell.dataset.i];
       apply({ c:p.c, m:p.m, y:p.y, k:p.k });
       toast(`${p.n} \u2014 ${cmykLabel(p)}`);
+    });
+    $$("#cmkGrid .star").forEach(st => st.onclick = (e)=>{
+      e.stopPropagation();
+      addBrandColor(st.dataset.hex, st.dataset.cmyk.split(",").map(Number));
+      toast(`${st.dataset.hex.toUpperCase()} added to Brand Kit (${st.dataset.cmyk.split(",").join("\u00b7")})`);
     });
   };
   render();
@@ -924,7 +937,7 @@ function addSwatches(afterEl, container, apply){
   r.className = "prop-row";
   r.innerHTML = `<span class="prop-label"></span><div class="swatches">`+
     b.colors.map(c=>`<button class="sw" style="background:${c}" title="${c}" data-c="${c}"></button>`).join("")+`</div>`;
-  r.querySelectorAll(".sw").forEach(s=> s.onclick = ()=> apply(s.dataset.c));
+  r.querySelectorAll(".sw").forEach(s=> s.onclick = ()=> apply(s.dataset.c, (b.cmyk||{})[s.dataset.c]));
   container.insertBefore(r, afterEl.nextSibling);
 }
 
@@ -970,6 +983,35 @@ function showBrandKit(){
   if (b.logo) $("#bkPlace").onclick = placeBrandLogo;
   $("#bkClear").onclick = ()=>{ setBrand({colors:[],font:"",logo:""}); renderColors(); renderProps(); toast("Brand kit cleared"); };
   $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
+}
+
+function addBrandColor(hex, cmykArr){
+  const b = getBrand();
+  if (!b.colors.includes(hex)) b.colors.push(hex);
+  if (b.colors.length > 12) b.colors = b.colors.slice(-12);
+  if (cmykArr){ b.cmyk = b.cmyk || {}; b.cmyk[hex] = cmykArr; }
+  setBrand(b);
+}
+
+/* ---------------- print guides (bleed + safe area) ----------------
+   The artboard edge is the final trim size. The magenta line marks the
+   bleed minimum (background ink must reach the true page edge) and the
+   cyan line is the safe zone for text & logos. DOM overlay only —
+   never included in PNG/SVG/ODT exports. */
+function drawGuides(){
+  $$("#board .guide").forEach(g=>g.remove());
+  if (!guidesOn || !project) return;
+  const board = $("#board");
+  const bleed = 12, safe = 30;
+  const mk = (cls, inset, label) => {
+    const d = document.createElement("div");
+    d.className = "guide " + cls;
+    d.style.cssText = `left:${inset}px;top:${inset}px;width:${project.w - 2*inset}px;height:${project.h - 2*inset}px;`;
+    d.innerHTML = `<span>${label}</span>`;
+    board.appendChild(d);
+  };
+  mk("guide-bleed", bleed, "BLEED 0.125\u2033 \u2014 background ink must reach the page edge");
+  mk("guide-safe", safe, "SAFE ZONE 0.25\u2033 \u2014 keep text & logos inside");
 }
 
 function bindPalette(){

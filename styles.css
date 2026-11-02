@@ -142,6 +142,20 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
 .cmyk-cell:hover .chip{outline:2px solid var(--accent);outline-offset:1px}
 .cmyk-cell .nm{font-size:10.5px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmyk-cell .rc{font-size:9.5px;color:var(--ink-dim);font-family:'Courier New',monospace}
+.cmyk-cell .chip{position:relative}
+.cmyk-cell .chip .star{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
+  background:var(--panel);border:1px solid #ffd479;color:#ffd479;font-size:11px;line-height:1;
+  cursor:pointer;display:none;padding:0}
+.cmyk-cell:hover .chip .star{display:block}
+.cmyk-cell .chip .star:hover{background:#ffd479;color:#111}
+.tbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.guide{position:absolute;pointer-events:none;z-index:5}
+.guide-bleed{border:1.5px dashed #ff2fa0}
+.guide-safe{border:1.5px dashed #00a4e4}
+.guide span{position:absolute;top:-20px;left:4px;font-size:10px;font-weight:700;letter-spacing:.5px;
+  white-space:nowrap;background:rgba(255,255,255,.85);padding:1px 6px;border-radius:4px}
+.guide-bleed span{color:#c41e7a}
+.guide-safe span{color:#007bb8;top:auto;bottom:-20px}
 .bk-swatch{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);position:relative;display:inline-block}
 .bk-swatch button{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;
   background:#e33;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:none}
