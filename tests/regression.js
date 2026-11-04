@@ -403,8 +403,10 @@ check("23a", "Members: hashed credentials, no plaintext passwords, scoped storag
 });
 check("23c", "Photo\u2192Video: generator wired (canvas stream + MediaRecorder + library storage)", () => {
   for (const s of ["function showPhotoToVideo", "function pvDrawPhoto", "function pvPaintWatermark",
-                   "canvas.captureStream", "new MediaRecorder", "mediaPut({ id: uid(), name, type: blob.type, blob", "function pvRenderClip"])
+                   "canvas.captureStream", "new MediaRecorder", "mediaPut({ id: uid(), name, type: blob.type, blob", "function pvRenderClip",
+                   "cancelToken", "Rendering cancelled"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(SRC.app.includes("id=\"pvCancel\""), "Cancel button missing from generator UI");
   const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   assert(idx.includes("data-photovid"), "index.html missing Photo\u2192Video button");
   return "motion presets, crossfades, watermark bake-in, IndexedDB storage";
