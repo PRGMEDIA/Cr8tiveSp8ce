@@ -163,7 +163,11 @@ function restoreAutosave(){
 }
 
 function hydrate(p){
-  p.pages.forEach(pg => pg.elements.forEach(el => { if(!el.id) el.id = uid(); }));
+  p.pages.forEach(pg => pg.elements.forEach(el => {
+    if(!el.id) el.id = uid();
+    // legacy normalization: glyph elements once stored their character only in .ch
+    if (el.type === "glyph" && el.text == null && el.ch != null) el.text = el.ch;
+  }));
   return p;
 }
 
@@ -453,7 +457,7 @@ function startTextEdit(el, node){
   const board = $("#board");
   const ta = document.createElement("textarea");
   ta.id = "el-textarea";
-  ta.value = el.text || "";
+  ta.value = el.text != null ? el.text : (el.ch || "");
   ta.style.left = el.x+"px"; ta.style.top = el.y+"px";
   ta.style.width = el.w+"px"; ta.style.height = Math.max(el.h, el.fontSize*1.6)+"px";
   ta.style.cssText += `font-family:${el.fontFamily};font-size:${el.fontSize}px;font-weight:${el.fontWeight};

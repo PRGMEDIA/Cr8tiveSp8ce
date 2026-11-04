@@ -25,6 +25,9 @@ jobs:
           node --check app.js
           node --check zip.js
 
+      - name: Run regression validation suite
+        run: node tests/regression.js
+
       - name: Rebuild single-file bundle
         run: python tools/build_single.py
 

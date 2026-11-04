@@ -34,7 +34,7 @@ const LN = (x,y,x2,y2,o={}) => ({type:"line",x,y,w:Math.abs(x2-x),h:Math.abs(y2-
   stroke:o.s||"#111",strokeWidth:o.sw||2,opacity:(o.op!=null?o.op:1)});
 const IM = (x,y,w,h,label,c1,c2,o={}) => ({type:"image",x,y,w,h,
   src:ph(w,h,label||"Image",c1||"#aab6ff",c2||"#7c5cff"),fit:"cover",radius:o.r||0,opacity:(o.op!=null?o.op:1)});
-const GL = (x,y,w,h,ch,o={}) => ({type:"glyph",x,y,w,h,ch,fontSize:o.fs||64,color:o.c||"#111",opacity:(o.op!=null?o.op:1)});
+const GL = (x,y,w,h,ch,o={}) => ({type:"glyph",x,y,w,h,ch,text:ch,fontSize:o.fs||64,color:o.c||"#111",opacity:(o.op!=null?o.op:1)});
 
 function ph(w,h,label,c1,c2){
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
