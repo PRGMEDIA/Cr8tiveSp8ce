@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.8.0";
+const APP_VERSION = "1.9.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -692,6 +692,8 @@ function renderProps(){
     const g4 = grp("Image");
     const rb = row(g4, "", `<button class="prop-btn">🔄 Replace image…</button>`);
     bind(rb, "button", "click", ()=> pickImage(el));
+    const rcut = row(g4, "", `<button class="prop-btn">\u2702 Crop image…</button>`);
+    bind(rcut, "button", "click", ()=> showCropModal(el));
     const rf2 = row(g4, "Fit", `<select class="prop-select">${["cover","contain","fill"].map(f=>`<option ${el.fit===f?"selected":""}>${f}</option>`).join("")}</select>`);
     bind(rf2, "select", "change", (e)=>{ pushHistory(); el.fit = e.target.value; refreshEl(el); });
     const rflt = row(g4, "Filter", `<select class="prop-select">${IMG_FILTERS.map(f=>`<option value="${f.v}" ${(el.filter||"none")===f.v?"selected":""}>${f.n}</option>`).join("")}</select>`);
@@ -700,6 +702,11 @@ function renderProps(){
     bind(rr, "input", "change", (e)=>{ pushHistory(); el.radius = +e.target.value||0; refreshEl(el); });
   }
 
+  const gL = grp("Link");
+  const rlu = row(gL, "URL", `<input class="prop-input" value="${esc(el.link || "")}" placeholder="https://\u2026">`);
+  bind(rlu, "input", "change", (e)=>{ pushHistory(); const v = e.target.value.trim(); if (v) el.link = v; else delete el.link; refreshEl(el); });
+  const rlo = row(gL, "", `<button class="prop-btn">\u{1F517} Open link</button>`);
+  bind(rlo, "button", "click", ()=>{ if (el.link) window.open(el.link, "_blank", "noopener"); else toast("No link set on this element"); });
   const g5 = grp("Layer");
   const g5r = row(g5, "Opacity", `<input type="range" min="0.05" max="1" step="0.05" class="prop-input" value="${el.opacity!=null?el.opacity:1}">`);
   bind(g5r, "input", "input", (e)=>{ el.opacity = +e.target.value; $("#board").querySelector(`[data-id="${el.id}"]`).style.opacity = el.opacity; saveAutosave(); });
@@ -1266,6 +1273,7 @@ function renderPageSvg(page){
   parts.push(`<rect width="100%" height="100%" fill="${page.bg||"#fff"}"/>`);
   const meas = document.createElement("canvas").getContext("2d");
   for (const el of page.elements){
+    const elStart = parts.length;
     const op = el.opacity != null ? el.opacity : 1;
     if (el.type==="rect"){
       parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"${cmykAttr(el)}/>`);
@@ -1290,6 +1298,11 @@ function renderPageSvg(page){
       lines.forEach((line,i)=>{
         parts.push(`<text x="${ax}" y="${el.y + i*lh + (el.fontSize||24)}" text-anchor="${anchor}" ${style}${cmykAttr(el)}>${esc(line)}</text>`);
       });
+    }
+    // hyperlink: wrap the element's SVG markup in an anchor so exports stay clickable
+    if (el.link && String(el.link).trim()){
+      const inner = parts.splice(elStart).join("");
+      parts.push(`<a href="${esc(String(el.link).trim())}" target="_blank" rel="noopener">${inner}</a>`);
     }
   }
   parts.push(watermarkSvg());
@@ -2010,6 +2023,79 @@ async function showPhotoToVideo(){
     if (go){ go.disabled = false; go.textContent = "\u25B6 Generate again"; }
     toast("Video generated and stored locally");
   };
+}
+
+/* ============================================================
+   IMAGE CROP — drag-select crop applied as a true pixel crop.
+   Works on any image element; undo restores the original.
+   ============================================================ */
+function showCropModal(el){
+  if (!el || el.type !== "image"){ toast("Select an image first"); return; }
+  const img = new Image();
+  img.onload = () => openCropUI(el, img);
+  img.onerror = () => toast("Could not load image for cropping");
+  img.src = el.src;
+}
+function openCropUI(el, img){
+  const maxW = 480;
+  const scale = Math.min(1, maxW / img.width, 340 / img.height);
+  const dw = Math.max(1, Math.round(img.width * scale));
+  const dh = Math.max(1, Math.round(img.height * scale));
+  showModal(`<h3>\u2702 Crop image</h3>
+    <p>Drag on the image to select the region to keep, then apply. Undo (Ctrl+Z) restores the original.</p>
+    <canvas id="cropCv" width="${dw}" height="${dh}" style="max-width:100%;cursor:crosshair;border:1px solid var(--line);border-radius:8px;display:block;margin:0 auto"></canvas>
+    <div class="m-actions">
+      <button class="abtn ghost" id="cropReset" style="margin-right:auto">Reset</button>
+      <button class="abtn ghost" data-close>Cancel</button>
+      <button class="abtn primary" id="cropApply">\u2702 Apply crop</button></div>`);
+  const cv = $("#cropCv"), ctx = cv.getContext("2d");
+  let rect = { x:0, y:0, w:dw, h:dh };
+  let dragStart = null;
+  function paint(){
+    ctx.drawImage(img, 0, 0, dw, dh);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, dw, dh);
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fill("evenodd");
+    ctx.restore();
+    ctx.strokeStyle = "#7c5cff"; ctx.lineWidth = 2;
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  }
+  function toCanvas(e){
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * (dw / r.width), y: (e.clientY - r.top) * (dh / r.height) };
+  }
+  function clampRect(x0, y0, x1, y1){
+    const x = Math.max(0, Math.min(x0, x1)), y = Math.max(0, Math.min(y0, y1));
+    return { x, y, w: Math.min(dw, Math.max(x0, x1)) - x, h: Math.min(dh, Math.max(y0, y1)) - y };
+  }
+  cv.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    dragStart = toCanvas(e);
+    rect = { x: dragStart.x, y: dragStart.y, w: 0, h: 0 };
+    paint();
+    const mv = (ev) => { const p = toCanvas(ev); rect = clampRect(dragStart.x, dragStart.y, p.x, p.y); paint(); };
+    const up = () => { dragStart = null; document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); };
+    document.addEventListener("mousemove", mv);
+    document.addEventListener("mouseup", up);
+  });
+  $("#cropApply").onclick = () => {
+    if (rect.w < 4 || rect.h < 4){ toast("Drag a region on the image first"); return; }
+    const sx = rect.x / scale, sy = rect.y / scale, sw = rect.w / scale, sh = rect.h / scale;
+    const out = document.createElement("canvas");
+    out.width = Math.max(1, Math.round(sw)); out.height = Math.max(1, Math.round(sh));
+    out.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, out.width, out.height);
+    const type = el.src.startsWith("data:image/png") ? "image/png" : "image/jpeg";
+    pushHistory();
+    el.src = out.toDataURL(type, 0.92);
+    refreshEl(el); closeModal();
+    toast("Image cropped \u2014 " + out.width + "\u00d7" + out.height);
+  };
+  $("#cropReset").onclick = () => { rect = { x:0, y:0, w:dw, h:dh }; dragStart = null; paint(); };
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+  paint();
 }
 
 /* expose for admin page debugging */
