@@ -124,7 +124,7 @@ function init(){
     const dot = document.querySelector(".dot");
     if (dot) dot.innerHTML = `<img src="${S3_LOGO_DATAURL}" alt="S3" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:9px">`;
   }
-  const appVer = localStorage.getItem(LS.appVer) || "1.6.1";
+  const appVer = localStorage.getItem(LS.appVer) || "2.0.0";
   $("#stVer").textContent = appVer;
   $("#stBuiltin").textContent = "55 templates (10 categories)";
   $("#stSource").textContent = localStorage.getItem(LS.updateUrl) || "local file (aura-update.json)";
