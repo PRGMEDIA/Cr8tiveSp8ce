@@ -44,6 +44,52 @@ for (const [name, src] of Object.entries(SRC)) {
   });
 }
 
+/* Undo/redo driver: runs INSIDE the combined script so it can touch the app's
+   top-level state (project, undoStack, curPage...). Exercises the real
+   pushHistory/doUndo/doRedo code paths headlessly. */
+const UNDO_DRIVER = `
+this.__undoResults = (function(){
+  const out = {};
+  project = { name:"t", cat:"custom", w:200, h:200, pages:[{ bg:"#ffffff", elements:[
+    { id:"e1", type:"rect", x:10, y:10, w:50, h:50, fill:"#123456", stroke:"none", strokeWidth:0, radius:0, opacity:1 } ] }] };
+  curPage = 0; selId = null; undoStack = []; redoStack = []; guidesOn = false;
+  // 1) move -> undo -> redo -> undo
+  pushHistory();
+  project.pages[0].elements[0].x = 99;
+  doUndo();
+  out.move = project.pages[0].elements[0].x === 10;
+  doRedo();
+  out.redo = project.pages[0].elements[0].x === 99;
+  doUndo();
+  out.moveAgain = project.pages[0].elements[0].x === 10;
+  // 2) add element -> undo removes -> redo restores
+  pushHistory();
+  project.pages[0].elements.push({ id:"e2", type:"rect", x:1, y:1, w:5, h:5, fill:"#000000", stroke:"none", strokeWidth:0, radius:0, opacity:1 });
+  doUndo();
+  out.add = project.pages[0].elements.length === 1;
+  doRedo();
+  out.addRedo = project.pages[0].elements.length === 2;
+  doUndo();
+  out.addAgain = project.pages[0].elements.length === 1;
+  // 3) page add -> undo removes
+  pushHistory();
+  project.pages.push({ bg:"#ffffff", elements:[] });
+  doUndo();
+  out.page = project.pages.length === 1;
+  // 4) watermark: snapshot must happen BEFORE mutation (regression for the
+  //    push-order defect where Apply/Remove could not be undone)
+  pushHistory();
+  project.watermark = { enabled:true };
+  doUndo();
+  out.watermark = !(project.watermark && project.watermark.enabled);
+  doRedo();
+  out.watermarkRedo = !!(project.watermark && project.watermark.enabled);
+  doUndo();
+  out.watermarkUndo = !(project.watermark && project.watermark.enabled);
+  return out;
+})();
+`;
+
 /* ---------------- sandboxed load of the real app ---------------- */
 function makeElementStub() {
   return { style: { cssText: "" }, classList: { add(){}, remove(){}, toggle(){} },
@@ -52,15 +98,35 @@ function makeElementStub() {
     setAttribute(){}, querySelector(){ return null; }, querySelectorAll(){ return []; } };
 }
 const storage = new Map();
+/* Universal element stub: any property read returns another stub (functions
+   callable, primitives coerce to 0), any write is accepted. Lets the REAL app
+   code (renderBoard/doUndo/etc.) run headlessly without a browser. */
+function makeUniversal(){
+  const fn = function(){ return proxy; };
+  const proxy = new Proxy(fn, {
+    get(t, prop){
+      if (prop === Symbol.toPrimitive) return () => 0;
+      if (prop === "length" || prop === "clientWidth" || prop === "clientHeight" || prop === "offsetWidth") return 0;
+      if (prop === "value") return "fit";
+      if (prop === "checked") return false;
+      if (prop === "files") return [];
+      return proxy;
+    },
+    set(){ return true; },
+    apply(){ return proxy; },
+  });
+  return proxy;
+}
+const UNIVERSAL = makeUniversal();
 const sandbox = {
   console: { log(){}, warn(){}, error(){} },
   localStorage: { getItem: k => storage.has(k) ? storage.get(k) : null,
                   setItem: (k,v) => storage.set(k,String(v)),
                   removeItem: k => storage.delete(k), key: i => [...storage.keys()][i],
                   get length(){ return storage.size; } },
-  document: { querySelector: () => null, querySelectorAll: () => [],
-              addEventListener(){}, createElement: () => makeElementStub(),
-              body: { appendChild(){} } },
+  document: { querySelector: () => UNIVERSAL, querySelectorAll: () => [],
+              addEventListener(){}, createElement: () => makeUniversal(),
+              body: UNIVERSAL },
   window: { addEventListener(){}, open(){ return null; }, location: { href: "" } },
   location: { href: "file://" },
   navigator: { userAgent: "regression" },
@@ -82,12 +148,21 @@ let LIB = null;
 check("02", "Load: all three modules initialize together in sandbox", () => {
   const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.assets + "\n" + SRC.app +
     "\nthis.__out = { TEMPLATES, CATS, ZipWriter, cmykToHex, rgbToCmyk, cmykToRgb, hexToRgb, rgbToHex," +
-    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL };";
+    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL };" +
+    "\n" + UNDO_DRIVER + ";";
   vm.runInContext(src, sandbox, { filename: "combined.js" });
   LIB = sandbox.__out;
   return `APP_VERSION ${LIB.APP_VERSION}, ${LIB.TEMPLATES.length} templates loaded`;
 });
 const { TEMPLATES, CATS, ZipWriter, cmykToHex, cmykToRgb, rgbToCmyk, CMYK_PALETTE, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt } = LIB || {};
+
+check("24", "Undo/redo logic: move, redo, add, page ops, watermark snapshot order", () => {
+  const r = sandbox.__undoResults;
+  assert(r, "undo driver did not run");
+  const bad = Object.keys(r).filter(k => !r[k]);
+  assert(bad.length === 0, "failed scenarios: " + bad.join(", "));
+  return Object.keys(r).map(k => k + "=ok").join(", ");
+});
 
 /* ---------------- template library integrity ---------------- */
 check("03", "Library: at least 50 templates", () => {
