@@ -113,7 +113,7 @@ function $(s){ return document.querySelector(s); }
 function init(){
   const appVer = localStorage.getItem(LS.appVer) || "1.4.0";
   $("#stVer").textContent = appVer;
-  $("#stBuiltin").textContent = "53 templates (10 categories)";
+  $("#stBuiltin").textContent = "55 templates (10 categories)";
   $("#stSource").textContent = localStorage.getItem(LS.updateUrl) || "local file (aura-update.json)";
   $("#updateUrl").value = localStorage.getItem(LS.updateUrl) || "";
   refresh();

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aura Studio — Creative Suite</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🎨</text></svg>">
+</head>
+<body>
+
+<!-- ================= TOP BAR ================= -->
+<header id="topbar">
+  <div class="tb-left">
+    <div class="brand" id="brandHome" title="Home / Templates">
+      <span class="brand-dot">A</span> Aura&nbsp;Studio
+    </div>
+    <div class="divider-v"></div>
+    <input id="projName" class="proj-name" value="Untitled design" spellcheck="false">
+    <span id="saveState" class="save-state">Saved</span>
+  </div>
+  <div class="tb-center" id="editorBar" style="display:none">
+    <button class="tbtn" id="btnUndo" title="Undo (Ctrl+Z)">↩</button>
+    <button class="tbtn" id="btnRedo" title="Redo (Ctrl+Y)">↪</button>
+    <div class="divider-v"></div>
+    <button class="tbtn" id="btnDup" title="Duplicate (Ctrl+D)">⧉</button>
+    <button class="tbtn" id="btnDel" title="Delete (Del)">🗑</button>
+    <div class="divider-v"></div>
+    <button class="tbtn" id="btnFront" title="Bring to front">⬆</button>
+    <button class="tbtn" id="btnBack" title="Send to back">⬇</button>
+    <div class="divider-v"></div>
+    <button class="tbtn" id="btnGuides" title="Print guides: bleed + safe area">⊞</button>
+    <div class="divider-v"></div>
+    <select id="zoomSel" class="zoom-sel">
+      <option value="fit">Fit</option><option value="0.5">50%</option>
+      <option value="0.75">75%</option><option value="1" selected>100%</option>
+      <option value="1.5">150%</option><option value="2">200%</option>
+    </select>
+  </div>
+  <div class="tb-right">
+    <button class="abtn ghost" id="btnAdmin" title="Open local admin agent">⚙ Admin</button>
+    <div class="dropdown">
+      <button class="abtn ghost" id="btnProject">Project ▾</button>
+      <div class="dropdown-menu" id="menuProject">
+        <button data-act="save-local">💾 Save to browser</button>
+        <button data-act="open-local">📂 Open saved design…</button>
+        <button data-act="export-json">⬇ Export project (.json)</button>
+        <button data-act="import-json">⬆ Import project (.json)</button>
+        <hr>
+        <button data-act="new-blank">✨ New blank design</button>
+        <button data-act="help">❓ Help &amp; shortcuts</button>
+      </div>
+    </div>
+    <div class="dropdown">
+      <button class="abtn primary" id="btnExport">⬇ Export ▾</button>
+      <div class="dropdown-menu right" id="menuExport">
+        <button data-act="png">PNG image — current page</button>
+        <button data-act="png-all">PNG — all pages (zip)</button>
+        <button data-act="svg">SVG vector — current page</button>
+        <button data-act="odt">ODF document (.odt) — LibreOffice</button>
+        <button data-act="fodt">Flat ODF (.fodt) — LibreOffice</button>
+        <button data-act="print">Print / Save as PDF</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main id="main">
+
+  <!-- Gallery view -->
+  <section id="galleryView">
+    <aside id="catRail">
+      <div class="rail-head">Create</div>
+      <div id="catList"></div>
+    </aside>
+    <div id="galleryPane">
+      <div class="gallery-hero">
+        <h1>What will you create today?</h1>
+        <p>Start from a professionally designed template — magazine spreads, book layouts, social posts, LibreOffice-ready documents, presentations, logos, posters, video storyboards, collages and more.</p>
+        <input id="searchBox" type="search" placeholder="🔍  Search templates…  (e.g. instagram, resume, poster)">
+      </div>
+      <div id="searchResults" style="display:none"></div>
+      <div id="gallerySections"></div>
+    </div>
+  </section>
+
+  <!-- Editor view -->
+  <section id="editorView" style="display:none">
+    <aside id="elemPalette">
+      <div class="pal-head">Elements</div>
+      <button class="pal-btn" data-add="text">🅣 Text</button>
+      <button class="pal-btn" data-add="heading">H Heading</button>
+      <button class="pal-btn" data-add="subheading">h Subheading</button>
+      <button class="pal-btn" data-add="body">≡ Body text</button>
+      <div class="pal-sep"></div>
+      <button class="pal-btn" data-add="rect">▭ Rectangle</button>
+      <button class="pal-btn" data-add="ellipse">● Ellipse</button>
+      <button class="pal-btn" data-add="line">╱ Line</button>
+      <div class="pal-sep"></div>
+      <button class="pal-btn" data-add="image">🖼 Image</button>
+      <button class="pal-btn" data-add="glyph">★ Emoji / Icon</button>
+      <div class="pal-sep"></div>
+      <button class="pal-btn" data-brand="1">🎨 Brand Kit</button>
+      <button class="pal-btn" data-cmykpal="1">🖨 CMYK Palette</button>
+    </aside>
+
+    <div id="canvasArea">
+      <div id="boardWrap">
+        <div id="board"></div>
+      </div>
+      <div id="pageStrip"></div>
+    </div>
+
+    <aside id="propsPane">
+      <div class="pal-head" id="propsTitle">Properties</div>
+      <div id="propsBody"></div>
+    </aside>
+  </section>
+</main>
+
+<!-- hidden file inputs -->
+<input type="file" id="fileImg" accept="image/*" style="display:none">
+<input type="file" id="fileJson" accept=".json" style="display:none">
+
+<!-- toast -->
+<div id="toast"></div>
+
+<!-- modal -->
+<div id="modal" style="display:none">
+  <div id="modalCard"></div>
+</div>
+
+<script src="templates.js"></script>
+<script src="zip.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
