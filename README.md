@@ -10,7 +10,7 @@ A Canva-style design studio that runs **entirely in your browser** — no server
 | File | Purpose |
 |---|---|
 | `index.html` | The studio — template gallery + full editor |
-| `templates.js` | Built-in template library (36 templates, 10 categories) |
+| `templates.js` | Built-in template library (55 templates, 10 categories) |
 | `app.js` | Editor engine + exporters |
 | `zip.js` | Minimal ZIP writer (powers `.zip` page export & real `.odt`) |
 | `admin.html` | **Local Admin Agent** — template manager, updates, upgrades |

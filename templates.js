@@ -712,5 +712,71 @@ tpl("logos","Pretty Rich Girl — Script Wordmark","Crowned script wordmark",100
    GL(78,120,80,60,"\u2728",{fs:34,c:"#d4af37"}), GL(852,120,80,60,"\u2728",{fs:34,c:"#d4af37"})
  ]}],"pretty rich girl wordmark script glam crown pink gold");
 
+tpl("docs","VPN Connection Card","WireGuard server + client connection string card",850,1100,[
+ {bg:"#0d1117",elements:[
+   EL(-180,-220,540,540,{f:"#7c5cff",op:.35}), EL(560,840,480,480,{f:"#00d4aa",op:.25}),
+   GL(70,60,90,80,"\uD83D\uDEE1\uFE0F",{fs:64,c:"#00d4aa"}),
+   T(180,70,600,50,"VPN CONNECTION CARD",{fs:38,ff:"'Segoe UI', Arial, sans-serif",fw:"800",c:"#fff",ls:"2"}),
+   T(180,125,600,30,"WIREGUARD \u00b7 LOCAL TUNNEL \u00b7 CONFIDENTIAL",{fs:14,ff:"Arial, sans-serif",c:"#8f7bff",al:"left",ls:"3"}),
+   LN(70,185,780,185,{s:"#7c5cff",sw:2}),
+
+   R(70,230,710,250,{f:"#161b26",r:14,s:"#2a3242",sw:1}),
+   T(100,255,650,34,"SERVER (WG0)",{fs:20,ff:"Arial, sans-serif",fw:"700",c:"#00d4aa",ls:"2"}),
+   T(100,300,200,26,"Tunnel IP",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(100,326,650,28,"10.66.66.1/24",{fs:17,ff:"Consolas, 'Courier New', monospace",fw:"700",c:"#e6edf3"}),
+   T(100,366,200,26,"Private Key",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(100,392,650,28,"<SERVER-PRIVATE-KEY - fill in locally, never commit>",{fs:15,ff:"Consolas, 'Courier New', monospace",c:"#e6edf3"}),
+   T(100,432,200,26,"Listen Port",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(300,432,200,28,"51820/udp",{fs:17,ff:"Consolas, 'Courier New', monospace",fw:"700",c:"#e6edf3"}),
+
+   R(70,510,710,250,{f:"#161b26",r:14,s:"#2a3242",sw:1}),
+   T(100,535,650,34,"CLIENT (VILLA-LAPTOP)",{fs:20,ff:"Arial, sans-serif",fw:"700",c:"#ff5c8a",ls:"2"}),
+   T(100,580,200,26,"Tunnel IP",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(100,606,650,28,"10.66.66.2/24",{fs:17,ff:"Consolas, 'Courier New', monospace",fw:"700",c:"#e6edf3"}),
+   T(100,646,200,26,"Private Key",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(100,672,650,28,"<CLIENT-PRIVATE-KEY - fill in locally, never commit>",{fs:15,ff:"Consolas, 'Courier New', monospace",c:"#e6edf3"}),
+   T(100,712,200,26,"Endpoint",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(300,712,380,28,"<SERVER-IP-OR-DDNS>:51820",{fs:17,ff:"Consolas, 'Courier New', monospace",fw:"700",c:"#e6edf3"}),
+
+   R(70,790,710,110,{f:"rgba(124,92,255,0.12)",r:14,s:"#7c5cff",sw:1}),
+   T(100,810,650,26,"PEER PUBLIC KEYS",{fs:14,ff:"Arial, sans-serif",fw:"700",c:"#8f7bff",ls:"2"}),
+   T(100,838,650,26,"Server pub: <SERVER-PUBLIC-KEY>",{fs:13,ff:"Consolas, 'Courier New', monospace",c:"#c9d1d9"}),
+   T(100,866,650,26,"Client pub: <CLIENT-PUBLIC-KEY>",{fs:13,ff:"Consolas, 'Courier New', monospace",c:"#c9d1d9"}),
+
+   LN(70,950,780,950,{s:"#2a3242",sw:1}),
+   T(70,975,710,60,"Keep this card safe \u2014 anyone with the private keys can join\nthe tunnel. Rotate keys before sharing this document.",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7",lh:1.4})
+ ]}],"vpn wireguard connection card tunnel keys network config confidential");
+
+tpl("docs","VPN Connection Card — Shareable","Public-keys-only join card — safe to share",850,1100,[
+ {bg:"#0b1220",elements:[
+   EL(-180,-220,540,540,{f:"#00d4aa",op:.3}), EL(560,840,480,480,{f:"#7c5cff",op:.3}),
+   GL(70,60,90,80,"\uD83D\uDD13",{fs:64,c:"#7c5cff"}),
+   T(180,70,600,50,"VPN JOIN INSTRUCTIONS",{fs:38,ff:"'Segoe UI', Arial, sans-serif",fw:"800",c:"#fff",ls:"2"}),
+   T(180,125,600,30,"WIREGUARD \u00b7 PUBLIC INFO ONLY \u00b7 SAFE TO SHARE",{fs:14,ff:"Arial, sans-serif",c:"#00d4aa",al:"left",ls:"3"}),
+   LN(70,185,780,185,{s:"#00d4aa",sw:2}),
+
+   R(70,230,710,200,{f:"#121a2b",r:14,s:"#233250",sw:1}),
+   T(100,255,650,34,"HOW TO CONNECT",{fs:20,ff:"Arial, sans-serif",fw:"700",c:"#00d4aa",ls:"2"}),
+   T(100,300,650,28,"1. Install WireGuard (wireguard.com/install)",{fs:16,ff:"Arial, sans-serif",c:"#dbe4f0"}),
+   T(100,334,650,28,"2. Create an empty tunnel and paste your invitation config",{fs:16,ff:"Arial, sans-serif",c:"#dbe4f0"}),
+   T(100,368,650,28,"3. Set Endpoint to the address below, then Activate",{fs:16,ff:"Arial, sans-serif",c:"#dbe4f0"}),
+   T(100,402,650,28,"4. Ping 10.66.66.1 to confirm the tunnel is up",{fs:16,ff:"Arial, sans-serif",c:"#dbe4f0"}),
+
+   R(70,460,710,180,{f:"#121a2b",r:14,s:"#233250",sw:1}),
+   T(100,485,650,34,"CONNECTION DETAILS",{fs:20,ff:"Arial, sans-serif",fw:"700",c:"#7c5cff",ls:"2"}),
+   T(100,530,200,26,"Endpoint",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(320,530,400,28,"<SERVER-IP-OR-DDNS>:51820",{fs:17,ff:"Consolas, 'Courier New', monospace",fw:"700",c:"#e6edf3"}),
+   T(100,568,200,26,"Server Public Key",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7"}),
+   T(100,594,650,28,"<SERVER-PUBLIC-KEY>",{fs:15,ff:"Consolas, 'Courier New', monospace",c:"#e6edf3"}),
+   T(100,632,350,26,"VPN Subnet: 10.66.66.0/24",{fs:15,ff:"Consolas, 'Courier New', monospace",c:"#e6edf3"}),
+
+   R(70,670,710,120,{f:"rgba(0,212,170,0.10)",r:14,s:"#00d4aa",sw:1}),
+   T(100,690,650,26,"YOUR DEVICE'S PUBLIC KEY",{fs:14,ff:"Arial, sans-serif",fw:"700",c:"#00d4aa",ls:"2"}),
+   T(100,718,650,60,"Send the server admin your WireGuard PUBLIC key so they\ncan authorize your device. Never share a PRIVATE key \u2014\nit grants full access to the tunnel.",{fs:13,ff:"Arial, sans-serif",c:"#c9d1d9",lh:1.3}),
+
+   LN(70,830,780,830,{s:"#233250",sw:1}),
+   T(70,855,710,60,"Questions? Contact your network administrator.\nThis card contains no secrets and is safe to circulate.",{fs:14,ff:"Arial, sans-serif",c:"#8b93a7",lh:1.4})
+ ]}],"vpn wireguard join instructions shareable public key safe invite");
+
 /* expose */
 if (typeof window !== "undefined") window.TEMPLATES = TEMPLATES, window.CATS = CATS;
