@@ -409,6 +409,12 @@ check("23c", "Photo\u2192Video: generator wired (canvas stream + MediaRecorder +
   assert(idx.includes("data-photovid"), "index.html missing Photo\u2192Video button");
   return "motion presets, crossfades, watermark bake-in, IndexedDB storage";
 });
+check("23d", "Image tools: interactive crop + hyperlink (props, open, clickable SVG export)", () => {
+  for (const s of ["function showCropModal", "function openCropUI", "ctx.fill(\"evenodd\")", "el.link = v", "Open link", "parts.splice(elStart)", "<a href="])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(SRC.app.includes("showCropModal(el)"), "crop not bound in properties panel");
+  return "drag-select crop + link URL/open/clickable-SVG-export";
+});
 check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", () => {
   for (const s of ["function drawWatermarkCanvas","function watermarkSvg","function showWatermarkModal","function renderWatermarkOverlay"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
