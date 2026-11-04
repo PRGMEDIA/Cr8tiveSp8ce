@@ -1,0 +1,312 @@
+#!/usr/bin/env node
+/* ============================================================
+   Aura Studio — Automated Regression Validation Suite
+   Run:  node tests/regression.js
+   Exit: 0 = all checks passed, 1 = at least one failure.
+   No external dependencies. Also runs in CI (.github/workflows).
+   ============================================================ */
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+
+const ROOT = path.resolve(__dirname, "..");
+const results = [];
+let pass = 0, fail = 0;
+
+function check(id, name, fn) {
+  try {
+    const detail = fn();
+    results.push({ id, name, ok: true, detail: detail || "" });
+    pass++;
+  } catch (e) {
+    results.push({ id, name, ok: false, detail: e.message });
+    fail++;
+  }
+}
+function assert(cond, msg) { if (!cond) throw new Error(msg); }
+function eq(a, b, msg) { if (a !== b) throw new Error(`${msg} (got ${JSON.stringify(a)}, expected ${JSON.stringify(b)})`); }
+
+/* ---------------- load source ---------------- */
+const SRC = {
+  templates: fs.readFileSync(path.join(ROOT, "templates.js"), "utf8"),
+  zip: fs.readFileSync(path.join(ROOT, "zip.js"), "utf8"),
+  app: fs.readFileSync(path.join(ROOT, "app.js"), "utf8"),
+};
+
+/* ---- 01-03: real syntax validation (catches what greps cannot) ---- */
+for (const [name, src] of Object.entries(SRC)) {
+  check(`01-${name}`, `Syntax: ${name}.js parses`, () => {
+    new vm.Script(src, { filename: name + ".js" });
+    return "parsed OK";
+  });
+}
+
+/* ---------------- sandboxed load of the real app ---------------- */
+function makeElementStub() {
+  return { style: { cssText: "" }, classList: { add(){}, remove(){}, toggle(){} },
+    dataset: {}, innerHTML: "", textContent: "",
+    addEventListener(){}, appendChild(){ return arguments[0]; }, remove(){}, removeChild(){},
+    setAttribute(){}, querySelector(){ return null; }, querySelectorAll(){ return []; } };
+}
+const storage = new Map();
+const sandbox = {
+  console: { log(){}, warn(){}, error(){} },
+  localStorage: { getItem: k => storage.has(k) ? storage.get(k) : null,
+                  setItem: (k,v) => storage.set(k,String(v)),
+                  removeItem: k => storage.delete(k), key: i => [...storage.keys()][i],
+                  get length(){ return storage.size; } },
+  document: { querySelector: () => null, querySelectorAll: () => [],
+              addEventListener(){}, createElement: () => makeElementStub(),
+              body: { appendChild(){} } },
+  window: { addEventListener(){}, open(){ return null; }, location: { href: "" } },
+  location: { href: "file://" },
+  navigator: { userAgent: "regression" },
+  URL: { createObjectURL: () => "blob:fake", revokeObjectURL(){} },
+  Blob: class { constructor(parts){ this.size = (parts||[]).reduce((s,p)=>s+(p.length||p.size||0),0); } },
+  FileReader: class {},
+  Image: class {},
+  fetch: () => Promise.reject(new Error("offline")),
+  AbortController: class { constructor(){ this.signal = {}; } abort(){} },
+  setTimeout: () => 0, clearTimeout(){}, setInterval: () => 0, clearInterval(){},
+  alert(){}, confirm(){ return false; }, prompt(){ return null; },
+  TextEncoder, TextDecoder,
+};
+sandbox.window.localStorage = sandbox.localStorage;
+sandbox.window.document = sandbox.document;
+vm.createContext(sandbox);
+
+let LIB = null;
+check("02", "Load: all three modules initialize together in sandbox", () => {
+  const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.app +
+    "\nthis.__out = { TEMPLATES, CATS, ZipWriter, cmykToHex, rgbToCmyk, cmykToRgb, hexToRgb, rgbToHex," +
+    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION };";
+  vm.runInContext(src, sandbox, { filename: "combined.js" });
+  LIB = sandbox.__out;
+  return `APP_VERSION ${LIB.APP_VERSION}, ${LIB.TEMPLATES.length} templates loaded`;
+});
+const { TEMPLATES, CATS, ZipWriter, cmykToHex, cmykToRgb, rgbToCmyk, CMYK_PALETTE, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt } = LIB || {};
+
+/* ---------------- template library integrity ---------------- */
+check("03", "Library: at least 50 templates", () => {
+  assert(TEMPLATES.length >= 50, `only ${TEMPLATES.length}`);
+  return `${TEMPLATES.length} templates`;
+});
+check("04", "Library: every category has templates", () => {
+  const ids = new Set(CATS.map(c => c.id));
+  for (const t of TEMPLATES) assert(ids.has(t.cat), `unknown category "${t.cat}" on ${t.name}`);
+  const missing = CATS.filter(c => !TEMPLATES.some(t => t.cat === c.id));
+  assert(missing.length === 0, `empty categories: ${missing.map(m=>m.id).join(", ")}`);
+  return `${CATS.length} categories covered`;
+});
+check("05", "Library: template names unique", () => {
+  const names = TEMPLATES.map(t => t.name);
+  const dupes = names.filter((n,i) => names.indexOf(n) !== i);
+  assert(dupes.length === 0, `duplicates: ${dupes.join(", ")}`);
+  return `${names.length} unique`;
+});
+const VALID_TYPES = new Set(["text","rect","ellipse","line","image","glyph"]);
+check("06", "Library: every element structurally valid", () => {
+  let count = 0;
+  for (const t of TEMPLATES) {
+    assert(Number.isFinite(t.w) && t.w > 0 && Number.isFinite(t.h) && t.h > 0, `${t.name}: bad canvas size`);
+    assert(Array.isArray(t.pages) && t.pages.length >= 1, `${t.name}: no pages`);
+    t.pages.forEach((pg, pi) => {
+      assert(typeof pg.bg === "string" && pg.bg.startsWith("#"), `${t.name} p${pi}: bad bg`);
+      assert(Array.isArray(pg.elements) && pg.elements.length >= 1, `${t.name} p${pi}: empty page`);
+      for (const el of pg.elements) {
+        count++;
+        assert(VALID_TYPES.has(el.type), `${t.name} p${pi}: bad type ${el.type}`);
+        // Negative x/y is legitimate (decorative shapes bleed off-canvas by design);
+        // check 07 guarantees the element is still reachable on the canvas.
+        for (const k of ["x","y","w","h"]) assert(Number.isFinite(el[k]), `${t.name} p${pi}: non-numeric ${k}=${el[k]}`);
+        if (el.type === "line") {
+          // axis-aligned lines legitimately have w=0 (vertical) or h=0 (horizontal)
+          assert(el.w > 0 || el.h > 0, `${t.name} p${pi}: degenerate line (w=h=0)`);
+        } else {
+          assert(el.w > 0 && el.h > 0, `${t.name} p${pi}: w/h<=0`);
+        }
+        if (el.type === "text" || el.type === "glyph") {
+          assert(typeof el.text === "string", `${t.name} p${pi}: text missing`);
+          assert(el.fontSize > 0, `${t.name} p${pi}: fontSize<=0`);
+          assert(typeof el.color === "string", `${t.name} p${pi}: color missing`);
+        }
+        if (el.type === "image") assert(typeof el.src === "string" && el.src.startsWith("data:image"), `${t.name} p${pi}: bad image src`);
+        if (el.type === "line") assert(el.strokeWidth > 0, `${t.name} p${pi}: line strokeWidth<=0`);
+        if (el.opacity != null) assert(el.opacity >= 0 && el.opacity <= 1, `${t.name} p${pi}: opacity out of range`);
+      }
+    });
+  }
+  return `${count} elements validated`;
+});
+check("07", "Library: no element entirely off-canvas", () => {
+  const out = [];
+  for (const t of TEMPLATES) for (const pg of t.pages) for (const el of pg.elements) {
+    if (el.x >= t.w || el.y >= t.h || el.x + el.w <= 0 || el.y + el.h <= 0) out.push(`${t.name}/${el.type}@${el.x},${el.y}`);
+  }
+  assert(out.length === 0, out.join("; "));
+  return "all elements reachable";
+});
+check("08", "Library: documents category is LibreOffice-rich (>=5)", () => {
+  const docs = TEMPLATES.filter(t => t.cat === "docs");
+  assert(docs.length >= 5, `only ${docs.length}`);
+  return `${docs.length} document templates`;
+});
+
+/* ---------------- CMYK engine (real functions from app.js) ---------------- */
+check("09", "CMYK: known conversions exact", () => {
+  eq(cmykToHex(100,0,0,0), "#00ffff", "cyan");
+  eq(cmykToHex(0,0,0,100), "#000000", "black");
+  eq(cmykToHex(60,40,40,90), "#0a0f0f", "rich black");
+  eq(cmykToHex(100,80,20,35), "#002185", "navy");
+  return "4 reference values exact";
+});
+check("10", "CMYK: RGB roundtrip preserves rendered color (max channel drift <= 12/255)", () => {
+  // NOTE: CMYK->RGB->CMYK is numerically lossy for very dark colors (near-black
+  // quantization collapses C/M/Y). The correct invariant is that the RENDERED
+  // color is preserved: the RGB of the round-tripped CMYK must stay close.
+  const hex = (c,m,y,k) => { const {r,g,b} = cmykToRgb(c,m,y,k);
+    const h = x => Math.max(0,Math.min(255,Math.round(x)));
+    return [h(r),h(g),h(b)]; };
+  let worst = 0, worstAt = "";
+  for (let i = 0; i < 40; i++) {
+    const v = [Math.floor(Math.random()*101), Math.floor(Math.random()*101),
+               Math.floor(Math.random()*101), Math.floor(Math.random()*101)];
+    const rgb1 = hex(...v);
+    const back = rgbToCmyk(cmykToHex(...v));
+    const rgb2 = hex(back.c, back.m, back.y, back.k);
+    const drift = Math.max(...rgb1.map((c,i)=>Math.abs(c-rgb2[i])));
+    if (drift > worst){ worst = drift; worstAt = v.join("/"); }
+  }
+  assert(worst <= 12, `rendered drift ${worst}/255 at ${worstAt}`);
+  return `worst rendered drift ${worst}/255 over 40 samples`;
+});
+check("11", "CMYK: swatch-book palette well-formed", () => {
+  assert(CMYK_PALETTE.length >= 50, `only ${CMYK_PALETTE.length} swatches`);
+  const names = new Set();
+  for (const p of CMYK_PALETTE) {
+    assert(!names.has(p.n), `duplicate swatch ${p.n}`); names.add(p.n);
+    for (const k of ["c","m","y","k"]) assert(p[k] >= 0 && p[k] <= 100, `${p.n}: ${k}=${p[k]} out of range`);
+    assert(/^#[0-9a-f]{6}$/.test(cmykToHex(p.c,p.m,p.y,p.k)), `${p.n}: bad hex`);
+  }
+  return `${CMYK_PALETTE.length} unique swatches`;
+});
+
+/* ---------------- ZIP / ODF (real functions) ---------------- */
+check("12", "ZIP: container structure valid", () => {
+  const bytes = ZipWriter.build([{ name:"a.txt", data:"hello world" }, { name:"b/c.bin", data: new Uint8Array([1,2,3]) }]);
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  assert(u8[0]===0x50 && u8[1]===0x4b && u8[2]===0x03 && u8[3]===0x04, "missing local file header");
+  const tail = u8.slice(u8.length-22);
+  assert(tail[0]===0x50 && tail[1]===0x4b && tail[2]===0x05 && tail[3]===0x06, "missing EOCD");
+  const entries = tail[10] | (tail[11] << 8);
+  eq(entries, 2, "EOCD entry count");
+  return `2 entries, ${u8.length} bytes`;
+});
+check("13", "ODT: real LibreOffice package builds", () => {
+  const sample = { name:"t", w:100, h:100, pages:[{ bg:"#ffffff", elements:[
+    { type:"text", id:"a", x:0,y:0,w:100,h:20, text:"Hello ODF", fontSize:24, fontFamily:"Arial", fontWeight:"700", color:"#111111", align:"center", lineHeight:1.25, letterSpacing:"0px" } ] }] };
+  const odt = buildOdt(sample);
+  const u8 = odt instanceof Uint8Array ? odt : new Uint8Array(odt);
+  assert(u8[0]===0x50 && u8[1]===0x4b, "not a zip");
+  const head = Buffer.from(u8.slice(0, 60)).toString("latin1");
+  assert(head.includes("mimetype"), "mimetype entry missing (must be first)");
+  const str = Buffer.from(u8).toString("latin1");
+  assert(str.includes("office:document-content"), "content.xml missing");
+  assert(str.includes("opendocument.text"), "wrong mimetype");
+  const fodt = buildFodt(sample);
+  assert(fodt.includes("office:document") && fodt.includes("office:text"), "flat ODF malformed");
+  return "ODT zip + FODT XML generated";
+});
+
+/* ---------------- AI video composer config ---------------- */
+check("14", "AI Video: 5 styles fully specified", () => {
+  const keys = Object.keys(VIDEO_STYLES);
+  assert(keys.length === 5, `got ${keys.length}`);
+  for (const [k,s] of Object.entries(VIDEO_STYLES)) {
+    assert(s.label, `${k}: no label`);
+    for (const p of ["bg","fg","accent","sub"]) assert(/^#[0-9a-fA-F]{6}$/.test(s.pal[p]), `${k}: pal.${p} not hex`);
+    for (const arr of ["hooks","benefits","ctas"]) assert(Array.isArray(s[arr]) && s[arr].length >= 2, `${k}: ${arr} too small`);
+  }
+  return keys.join(", ");
+});
+check("15", "AI Video: 3 formats with valid geometry", () => {
+  const keys = Object.keys(VIDEO_FORMATS);
+  assert(keys.length === 3, `got ${keys.length}`);
+  for (const [k,f] of Object.entries(VIDEO_FORMATS)) {
+    assert(f.w > 0 && f.h > 0, `${k}: bad size`);
+    assert(f.img.length === 4 && f.notes.length === 4, `${k}: geometry tuples`);
+    for (const n of [...f.img, ...f.notes]) assert(Number.isFinite(n) && n >= 0, `${k}: negative coordinate`);
+  }
+  return keys.join(", ");
+});
+check("16", "AI Video: template substitution leaves no placeholders", () => {
+  const out = fillTpl("{p} beats {c} — {p}!", { p:"Widget", c:"gadgets" });
+  assert(out === "Widget beats gadgets — Widget!", `got "${out}"`);
+  return "substitution exact";
+});
+
+/* ---------------- artifacts & wiring ---------------- */
+const distPath = path.join(ROOT, "dist", "aura-studio-single.html");
+check("17", "Artifacts: single-file bundle present & self-contained", () => {
+  assert(fs.existsSync(distPath), "dist/aura-studio-single.html missing");
+  const html = fs.readFileSync(distPath, "utf8");
+  assert(html.includes("Aura Studio"), "branding missing");
+  assert(!/<script src=/.test(html), "unresolved external script");
+  assert(!/href="styles\.css"/.test(html), "unresolved stylesheet");
+  assert(html.includes("ADMIN_HTML"), "admin not embedded");
+  assert(html.length > 100000, `bundle suspiciously small (${html.length})`);
+  return `${(html.length/1024).toFixed(0)} KB, self-contained`;
+});
+check("18", "Wiring: index.html element contracts", () => {
+  const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  for (const id of ["board","menuProject","menuExport","btnGuides","btnAdmin","pageStrip","propsPane","elemPalette"])
+    assert(html.includes(`id="${id}"`), `missing #${id}`);
+  for (const f of ["templates.js","zip.js","app.js"]) assert(html.includes(f), `missing script ref ${f}`);
+  for (const feat of ["AI Video","CMYK Palette","Brand Kit"]) assert(html.includes(feat), `missing feature button ${feat}`);
+  return "all IDs + feature buttons present";
+});
+check("19", "Wiring: admin agent contracts", () => {
+  const html = fs.readFileSync(path.join(ROOT, "admin.html"), "utf8");
+  for (const s of ["function init","function refresh","aura-update.json","aura.templates.custom","Import template pack"])
+    assert(html.includes(s), `missing: ${s}`);
+  return "admin contracts intact";
+});
+check("20", "CI: workflow gates exist", () => {
+  const yml = fs.readFileSync(path.join(ROOT, ".github", "workflows", "build.yml"), "utf8");
+  assert(yml.includes("node --check"), "no syntax gate");
+  assert(yml.includes("tests/regression.js"), "regression suite not wired");
+  return "syntax gate + regression wired";
+});
+
+/* ---------------- security ---------------- */
+check("21", "Security: no credential-shaped strings in source", () => {
+  const bad = [];
+  for (const f of ["templates.js","app.js","zip.js","index.html","admin.html","README.md"]) {
+    const src = fs.readFileSync(path.join(ROOT, f), "utf8");
+    const hits = src.match(/[A-Za-z0-9+/]{43}=/g);
+    if (hits) bad.push(`${f}: ${hits.length}`);
+  }
+  assert(bad.length === 0, bad.join(", "));
+  return "clean";
+});
+check("22", "Security: placeholder guidance intact in VPN templates", () => {
+  const src = SRC.templates;
+  const n = (src.match(/never commit/g) || []).length;
+  assert(n >= 2, `expected >=2 placeholder warnings, got ${n}`);
+  return `${n} warnings present`;
+});
+
+/* ---------------- report ---------------- */
+const line = "─".repeat(78);
+console.log("\n" + line);
+console.log("AURA STUDIO — AUTOMATED REGRESSION VALIDATION SUITE");
+console.log(line);
+for (const r of results) {
+  console.log(`${r.ok ? "  PASS" : "✗ FAIL"}  ${r.id.padEnd(10)} ${r.name}${r.detail ? "  — " + r.detail : ""}`);
+}
+console.log(line);
+console.log(`RESULT: ${pass} passed, ${fail} failed, ${results.length} total`);
+console.log(line + "\n");
+process.exit(fail ? 1 : 0);
