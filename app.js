@@ -792,6 +792,8 @@ function pickImage(existing, forBrand){
       if (existing){ pushHistory(); existing.src = rd.result; refreshEl(existing); }
       else {
         pushHistory();
+        // archive a copy in the persistent media library (IndexedDB)
+        try { mediaPut({ id: uid(), name: f.name, type: f.type, data: rd.result, added: Date.now() }); } catch(e){}
         const el = {id:uid(), type:"image", x:project.w*0.2, y:project.h*0.2, w:project.w*0.6, h:project.h*0.4, src:rd.result, fit:"cover", radius:0, opacity:1};
         curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave();
       }
@@ -1128,6 +1130,7 @@ function bindPalette(){
     if (b.dataset.brand){ b.onclick = showBrandKit; return; }
     if (b.dataset.cmykpal){ b.onclick = ()=> openCmykPalette(null); return; }
     if (b.dataset.aivideo){ b.onclick = showAiVideoWizard; return; }
+    if (b.dataset.medialib){ b.onclick = showMediaLibrary; return; }
     b.onclick = ()=> addElement(b.dataset.add);
   });
 }
@@ -1727,6 +1730,105 @@ function watermarkSvg(){
   const logo = src ? `<image href="${src}" x="${cx-lw/2}" y="${cy-lh/2-h*0.02}" width="${lw}" height="${lh}" preserveAspectRatio="xMidYMid meet"/>` : "";
   const txt = wm.text ? `<text x="${cx}" y="${cy + Math.min(w,h)*0.2}" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="800" font-size="${fs}" fill="${wm.color||"#7a7a7a"}">${esc(wm.text)}</text>` : "";
   return `<g opacity="${wm.opacity!=null?wm.opacity:0.12}"${rot}>${logo}${txt}</g>`;
+}
+
+/* ============================================================
+   MEDIA LIBRARY — persistent images & videos via IndexedDB.
+   Local tier now; Oracle object storage becomes the cloud tier
+   of this same library in Phase II.
+   ============================================================ */
+const MEDIA_DB = "auraMedia";
+let _mediaDb = null;
+function openMediaDb(){
+  return new Promise((res, rej) => {
+    if (_mediaDb) return res(_mediaDb);
+    const rq = indexedDB.open(MEDIA_DB, 1);
+    rq.onupgradeneeded = () => { rq.result.createObjectStore("media", { keyPath: "id" }); };
+    rq.onsuccess = () => { _mediaDb = rq.result; res(_mediaDb); };
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function mediaPut(rec){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("media", "readwrite");
+    tx.objectStore("media").put(rec);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function mediaAll(){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const rq = db.transaction("media").objectStore("media").getAll();
+    rq.onsuccess = () => res(rq.result || []); rq.onerror = () => rej(rq.error);
+  });
+}
+async function mediaDelete(id){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("media", "readwrite");
+    tx.objectStore("media").delete(id);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+function mediaSrcOf(rec){ return rec.data || rec.src || ""; }
+
+async function showMediaLibrary(){
+  let items = [];
+  try { items = (await mediaAll()).sort((a,b) => (b.added||0) - (a.added||0)); }
+  catch(e){ toast("Media library unavailable: " + e.message); return; }
+  const cells = items.length ? items.map(m => {
+    const isVid = (m.type || "").startsWith("video");
+    const thumb = isVid ? `<div class="ml-thumb ml-video">\uD83D\uDCFD\uFE0F</div>`
+                        : `<div class="ml-thumb"><img src="${mediaSrcOf(m)}" alt=""></div>`;
+    return `<div class="ml-cell" data-id="${esc(m.id)}">
+      ${thumb}<div class="ml-nm">${esc((m.name || "asset").slice(0,26))}</div>
+      <div class="ml-ops"><button data-ins="1" title="${isVid ? "Videos become insertable in Phase II" : "Insert into page"}">${isVid ? "\u2b07" : "\u2795"}</button>
+      <button data-dl="1" title="Download">\u2b07</button><button data-del="1" title="Delete">\u2715</button></div></div>`;
+  }).join("") : `<p style="color:var(--ink-dim);font-size:12.5px">Library is empty \u2014 upload images or videos below. Files persist in this browser (IndexedDB), well beyond the 5 MB localStorage limit.</p>`;
+  showModal(`<h3>\uD83D\uDDBC\uFE0F Media Library</h3>
+    <p>Persistent local storage for images and videos. Images can be re-inserted into any design; videos are stored and downloadable (insertable video elements arrive in Phase II).</p>
+    <div class="ml-grid" id="mlGrid">${cells}</div>
+    <div class="m-actions" style="justify-content:space-between">
+      <button class="abtn ghost" id="mlAdd">\u2b06 Upload images / videos</button>
+      <button class="abtn primary" data-close>Done</button></div>`);
+  const rerun = () => { closeModal(); showMediaLibrary(); };
+  $("#mlAdd").onclick = () => {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*,video/*"; inp.multiple = true;
+    inp.onchange = async () => {
+      let n = 0;
+      for (const f of inp.files){
+        try {
+          const src = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); });
+          await mediaPut({ id: uid(), name: f.name, type: f.type, data: src, added: Date.now() });
+          n++;
+        } catch(e){ toast("Failed to store " + f.name); }
+      }
+      toast(n + " asset(s) stored locally"); rerun();
+    };
+    inp.click();
+  };
+  $$("#mlGrid .ml-cell").forEach(cell => {
+    const id = cell.dataset.id;
+    const rec = items.find(m => m.id === id);
+    const ins = cell.querySelector("[data-ins]"), dl = cell.querySelector("[data-dl]"), del = cell.querySelector("[data-del]");
+    if (ins) ins.onclick = () => {
+      const isVid = (rec.type || "").startsWith("video");
+      if (isVid){ toast("Video elements arrive in Phase II \u2014 use the download button for now"); return; }
+      closeModal();
+      pushHistory();
+      const el = { id: uid(), type: "image", x: Math.round(project.w*0.2), y: Math.round(project.h*0.2),
+        w: Math.round(project.w*0.6), h: Math.round(project.h*0.4), src: mediaSrcOf(rec), fit: "cover", radius: 0, opacity: 1, filter: "none" };
+      curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("Inserted from library");
+    };
+    if (dl) dl.onclick = () => {
+      const a = document.createElement("a");
+      a.href = mediaSrcOf(rec); a.download = rec.name || "asset"; a.click();
+    };
+    if (del) del.onclick = async () => { await mediaDelete(id); rerun(); };
+  });
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
 
 /* expose for admin page debugging */

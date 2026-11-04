@@ -156,6 +156,16 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
   white-space:nowrap;background:rgba(255,255,255,.85);padding:1px 6px;border-radius:4px}
 .guide-bleed span{color:#c41e7a}
 .guide-safe span{color:#007bb8;top:auto;bottom:-20px}
+.ml-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0;max-height:44vh;overflow-y:auto}
+.ml-cell{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px;text-align:center}
+.ml-thumb{height:64px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:6px;background:#0b0d1a}
+.ml-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+.ml-video{font-size:26px}
+.ml-nm{font-size:10px;color:var(--ink-dim);margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ml-ops{display:flex;gap:4px;justify-content:center}
+.ml-ops button{background:var(--bg3);border:1px solid var(--line);color:var(--ink);border-radius:6px;
+  width:26px;height:22px;cursor:pointer;font-size:11px;line-height:1;padding:0}
+.ml-ops button:hover{border-color:var(--accent)}
 .bk-swatch{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);position:relative;display:inline-block}
 .bk-swatch button{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;
   background:#e33;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:none}
