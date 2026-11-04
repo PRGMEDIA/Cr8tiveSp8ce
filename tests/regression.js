@@ -403,7 +403,7 @@ check("23a", "Members: hashed credentials, no plaintext passwords, scoped storag
 });
 check("23c", "Photo\u2192Video: generator wired (canvas stream + MediaRecorder + library storage)", () => {
   for (const s of ["function showPhotoToVideo", "function pvDrawPhoto", "function pvPaintWatermark",
-                   "canvas.captureStream", "new MediaRecorder", "mediaPut({ id: uid(), name, type: blob.type, blob", "function pvRenderClip")
+                   "canvas.captureStream", "new MediaRecorder", "mediaPut({ id: uid(), name, type: blob.type, blob", "function pvRenderClip"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
   const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   assert(idx.includes("data-photovid"), "index.html missing Photo\u2192Video button");
