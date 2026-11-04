@@ -12,7 +12,7 @@ import json
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FILES = ["index.html", "styles.css", "templates.js", "zip.js", "app.js", "admin.html"]
+FILES = ["index.html", "styles.css", "assets-s3-logo.js", "templates.js", "zip.js", "app.js", "admin.html"]
 
 content = {}
 for name in FILES:
@@ -28,7 +28,7 @@ idx = idx.replace(
 )
 
 # inline the scripts, in order
-for name in ["templates.js", "zip.js", "app.js"]:
+for name in ["assets-s3-logo.js", "templates.js", "zip.js", "app.js"]:
     idx = idx.replace(
         f'<script src="{name}"></script>',
         "<script>\n" + content[name] + "\n</script>",
