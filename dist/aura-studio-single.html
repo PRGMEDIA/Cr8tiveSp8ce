@@ -1241,7 +1241,7 @@ if (typeof window !== "undefined") window.ZipWriter = ZipWriter;
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.1.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -3218,8 +3218,8 @@ function pvPaintWatermark(ctx, w, h, wm, logoImg){
 
 async function pvRenderClip(opts){
   // Shared render core: canvas frames -> MediaRecorder -> Blob.
-  // opts: { canvas, frames:[{img,motion}], per(ms), mime, wm, logoImg, onProgress }
-  const { canvas, frames, per, mime, wm, logoImg, onProgress } = opts;
+  // opts: { canvas, frames:[{img,motion}], per(ms), mime, wm, logoImg, onProgress, cancelToken }
+  const { canvas, frames, per, mime, wm, logoImg, onProgress, cancelToken } = opts;
   const w = canvas.width, h = canvas.height;
   const ctx = canvas.getContext("2d");
   const stream = canvas.captureStream(30);
@@ -3234,6 +3234,7 @@ async function pvRenderClip(opts){
   await new Promise(res => {
     const frame = () => {
       const t = performance.now() - t0;
+      if (cancelToken && cancelToken.cancelled){ rec.stop(); res(); return; }   // Cancel button
       if (t >= total + 120){ rec.stop(); res(); return; }
       const idx = Math.min(frames.length - 1, Math.floor(t / per));
       const localT = t - idx*per;
@@ -3288,7 +3289,9 @@ async function showPhotoToVideo(){
     <div id="pvResult"></div>
     <div class="m-actions" style="justify-content:space-between">
       <button class="abtn ghost" id="pvAdd">\u2b06 Upload photos</button>
-      <button class="abtn primary" id="pvGo">\u25B6 Generate video</button></div>`);
+      <span style="display:flex;gap:8px">
+        <button class="abtn ghost" id="pvCancel" style="display:none">\u2715 Cancel</button>
+        <button class="abtn primary" id="pvGo">\u25B6 Generate video</button></span></div>`);
   let selected = items.length ? [items[0].id] : [];
   $$("#pvGrid .pv-pick").forEach(cell => cell.onclick = () => {
     const id = cell.dataset.id;
@@ -3322,6 +3325,10 @@ async function showPhotoToVideo(){
     const motionMode = $("#pvMotion").value;
     const useWm = $("#pvWm").checked;
     $("#pvProg").style.display = "block"; $("#pvGo").disabled = true;
+    const cancelToken = { cancelled: false };
+    const cancelBtn = $("#pvCancel");
+    cancelBtn.style.display = "";
+    cancelBtn.onclick = () => { cancelToken.cancelled = true; toast("Cancelling\u2026"); };
     const canvas = document.createElement("canvas");
     canvas.width = w; canvas.height = h;
     const wm = useWm ? ((project && project.watermark && project.watermark.enabled) ? project.watermark
@@ -3332,12 +3339,15 @@ async function showPhotoToVideo(){
       ? imgs.map((_,i) => i % 2 ? "walkback" : "walkfwd")
       : imgs.map(() => motionMode);
     const blob = await pvRenderClip({ canvas, frames: imgs.map((im,i)=>({ img:im, motion:motions[i] })),
-      per, mime, wm, logoImg,
+      per, mime, wm, logoImg, cancelToken,
       onProgress: p => {
         const bar = $("#pvBar"), pctEl = $("#pvPct");   // modal may be closed mid-render
         if (bar) bar.style.width = Math.round(p*100) + "%";
         if (pctEl) pctEl.textContent = Math.round(p*100) + "% \u2014 rendering in real time\u2026";
     } });
+    cancelBtn.style.display = "none";
+    $("#pvProg").style.display = "none";
+    if (cancelToken.cancelled){ $("#pvGo").disabled = false; toast("Rendering cancelled \u2014 nothing was saved"); return; }
     const ext = blob.type.includes("mp4") ? "mp4" : "webm";
     const name = `photo-video-${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.${ext}`;
     await mediaPut({ id: uid(), name, type: blob.type, blob, added: Date.now() });
