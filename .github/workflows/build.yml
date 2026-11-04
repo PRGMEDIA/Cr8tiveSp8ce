@@ -19,6 +19,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Syntax-check JavaScript
+        run: |
+          node --check templates.js
+          node --check app.js
+          node --check zip.js
+
       - name: Rebuild single-file bundle
         run: python tools/build_single.py
 
