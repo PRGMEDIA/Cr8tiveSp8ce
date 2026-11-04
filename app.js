@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "2.0.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -915,6 +915,44 @@ function bindTopbar(){
     $$(".dropdown").forEach(d=>d.classList.remove("open"));
     try {
       if (act==="png"){ const blob = await renderPagePng(curPageData(), 2); downloadBlob(blob, pageFile("png"), "image/png"); toast("PNG exported"); }
+      if (act==="jpeg"){ const c = await renderPageCanvas(curPageData(), 2);
+        c.toBlob(b => { downloadBlob(b, pageFile("jpg"), "image/jpeg"); toast("JPEG exported"); }, "image/jpeg", 0.92); }
+      if (act==="pdf"){
+        const pages = [];
+        for (const pg of project.pages){
+          const c = await renderPageCanvas(pg, 2);
+          const b64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
+          const bin = atob(b64); const u8 = new Uint8Array(bin.length);
+          for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
+          pages.push({ jpeg: u8, w: c.width, h: c.height });
+        }
+        downloadBlob(new Blob([buildPdf(pages)], { type: "application/pdf" }), baseName() + ".pdf");
+        toast("PDF exported");
+      }
+      if (act==="mp4"){
+        const mime = pvRecorderMime();
+        if (!mime){ toast("No supported video codec in this browser"); return; }
+        showModal(`<h3>\u23F8 Rendering MP4 slideshow\u2026</h3><div style="height:8px;background:var(--bg2);border-radius:4px;overflow:hidden"><div id="slBar" style="height:100%;width:0%;background:var(--accent)"></div></div><p style="font-size:12px;color:var(--ink-dim);margin-top:6px">One page at a time \u2014 rendering happens in real time.</p>`);
+        const scale = Math.min(1, 1280/project.w, 720/project.h);
+        const w = Math.round(project.w*scale/2)*2, h = Math.round(project.h*scale/2)*2;
+        const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+        const frames = [];
+        for (const pg of project.pages){
+          const c = document.createElement("canvas"); c.width = w; c.height = h;
+          c.getContext("2d").drawImage(await renderPageCanvas(pg, w/project.w), 0, 0);
+          frames.push({ img: c, motion: "walkfwd" });
+        }
+        const wm = (project.watermark && project.watermark.enabled) ? project.watermark : null;
+        let logoImg = null;
+        if (wm){ const src = resolveWatermarkLogo(wm); if (src) logoImg = await loadImage(src); }
+        const blob = await pvRenderClip({ canvas, frames, per: 4000, mime, wm, logoImg,
+          onProgress: p => { const bar = $("#slBar"); if (bar) bar.style.width = Math.round(p*100) + "%"; } });
+        const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+        await mediaPut({ id: uid(), name: baseName() + "-slideshow." + ext, type: blob.type, blob, added: Date.now() });
+        closeModal();
+        downloadBlob(new Blob([blob], { type: blob.type }), baseName() + "-slideshow." + ext);
+        toast("MP4 slideshow exported and stored in the Media Library");
+      }
       if (act==="png-all"){ const files = []; for (let i=0;i<project.pages.length;i++){ const b = await renderPagePng(project.pages[i], 2); files.push({name:`page-${i+1}.png`, data:new Uint8Array(await b.arrayBuffer())}); }
         const zip = ZipWriter.build(files); downloadBlob(new Blob([zip]), baseName()+".png-pages.zip", "application/zip"); toast("All pages exported"); }
       if (act==="svg"){ downloadBlob(renderPageSvg(curPageData()), pageFile("svg"), "image/svg+xml"); toast("SVG exported"); }
@@ -1194,7 +1232,7 @@ function loadImage(src){
   });
 }
 
-async function renderPagePng(page, scale){
+async function renderPageCanvas(page, scale){
   const c = document.createElement("canvas");
   c.width = project.w * scale; c.height = project.h * scale;
   const ctx = c.getContext("2d");
@@ -1205,6 +1243,10 @@ async function renderPagePng(page, scale){
   const wmSrc = resolveWatermarkLogo(project.watermark);
   if (wmSrc) imgs["__wm"] = await loadImage(wmSrc);
   drawPage(ctx, page, imgs);
+  return c;
+}
+async function renderPagePng(page, scale){
+  const c = await renderPageCanvas(page, scale);
   return new Promise(res => c.toBlob(res, "image/png"));
 }
 
@@ -1795,8 +1837,10 @@ async function showMediaLibrary(){
   catch(e){ toast("Media library unavailable: " + e.message); return; }
   const cells = items.length ? items.map(m => {
     const isVid = (m.type || "").startsWith("video") || !!m.blob;
-    const thumb = isVid ? `<div class="ml-thumb ml-video">\uD83D\uDCFD\uFE0F</div>`
-                        : `<div class="ml-thumb"><img src="${mediaSrcOf(m)}" alt=""></div>`;
+    const isAud = (m.type || "").startsWith("audio");
+    const thumb = isAud ? `<div class="ml-thumb ml-video">\uD83D\uDD0A</div>`
+      : isVid ? `<div class="ml-thumb ml-video">\uD83D\uDCFD\uFE0F</div>`
+      : `<div class="ml-thumb"><img src="${mediaSrcOf(m)}" alt=""></div>`;
     return `<div class="ml-cell" data-id="${esc(m.id)}">
       ${thumb}<div class="ml-nm">${esc((m.name || "asset").slice(0,26))}</div>
       <div class="ml-ops"><button data-ins="1" title="${isVid ? "Videos become insertable in Phase II" : "Insert into page"}">${isVid ? "\u2b07" : "\u2795"}</button>
@@ -1813,7 +1857,7 @@ async function showMediaLibrary(){
   $("#mlPv").onclick = () => { closeModal(); showPhotoToVideo(); };
   $("#mlAdd").onclick = () => {
     const inp = document.createElement("input");
-    inp.type = "file"; inp.accept = "image/*,video/*"; inp.multiple = true;
+    inp.type = "file"; inp.accept = "image/*,video/*,audio/*"; inp.multiple = true;
     inp.onchange = async () => {
       let n = 0;
       for (const f of inp.files){
@@ -1833,7 +1877,7 @@ async function showMediaLibrary(){
     const ins = cell.querySelector("[data-ins]"), dl = cell.querySelector("[data-dl]"), del = cell.querySelector("[data-del]");
     if (ins) ins.onclick = () => {
       const isVid = (rec.type || "").startsWith("video");
-      if (isVid){ toast("Video elements arrive in Phase II \u2014 use the download button for now"); return; }
+      if (isVid || isAud){ toast((isAud ? "Audio elements arrive with the music editor" : "Video elements arrive in Phase II") + " \u2014 use the download button for now"); return; }
       closeModal();
       pushHistory();
       const el = { id: uid(), type: "image", x: Math.round(project.w*0.2), y: Math.round(project.h*0.2),
@@ -1872,6 +1916,14 @@ function pvDrawPhoto(ctx, img, motion, local, w, h){
   else if (motion === "panright"){ s = 1.15; dx = (local - 0.5) * (iw*base*s - w) * 0.5; }
   else if (motion === "panleft"){ s = 1.15; dx = (0.5 - local) * (iw*base*s - w) * 0.5; }
   else if (motion === "panup"){ s = 1.15; dy = (0.5 - local) * (ih*base*s - h) * 0.5; }
+  else if (motion === "walkfwd"){
+    // Villa Walking — forward: dolly toward the subject with a subtle walking bob
+    s = 1.04 + 0.14*local; dy = -Math.abs(Math.sin(local * Math.PI * 4)) * h * 0.008;
+  }
+  else if (motion === "walkback"){
+    // Villa Walking — backward: dolly away from the subject
+    s = 1.18 - 0.14*local; dy = -Math.abs(Math.sin(local * Math.PI * 4)) * h * 0.008;
+  }
   else { s = 1.02 + 0.14*local; dx = (local - 0.5) * (iw*base*s - w) * 0.25; }  // kenburns
   const sc = base * s, dw = iw*sc, dh = ih*sc;
   ctx.drawImage(img, (w-dw)/2 + dx, (h-dh)/2 + dy, dw, dh);
@@ -1898,6 +1950,46 @@ function pvPaintWatermark(ctx, w, h, wm, logoImg){
   ctx.restore();
 }
 
+async function pvRenderClip(opts){
+  // Shared render core: canvas frames -> MediaRecorder -> Blob.
+  // opts: { canvas, frames:[{img,motion}], per(ms), mime, wm, logoImg, onProgress }
+  const { canvas, frames, per, mime, wm, logoImg, onProgress } = opts;
+  const w = canvas.width, h = canvas.height;
+  const ctx = canvas.getContext("2d");
+  const stream = canvas.captureStream(30);
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(res => rec.onstop = () => res(new Blob(chunks, { type: mime })));
+  rec.start(250);
+  const fade = Math.min(700, per * 0.22);
+  const total = per * frames.length;
+  const t0 = performance.now();
+  await new Promise(res => {
+    const frame = () => {
+      const t = performance.now() - t0;
+      if (t >= total + 120){ rec.stop(); res(); return; }
+      const idx = Math.min(frames.length - 1, Math.floor(t / per));
+      const localT = t - idx*per;
+      const local = Math.min(1, localT / per);
+      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
+      if (idx > 0 && localT < fade){
+        pvDrawPhoto(ctx, frames[idx-1].img, frames[idx-1].motion, 1, w, h);
+        ctx.save(); ctx.globalAlpha = localT / fade;
+        pvDrawPhoto(ctx, frames[idx].img, frames[idx].motion, local, w, h);
+        ctx.restore();
+      } else {
+        pvDrawPhoto(ctx, frames[idx].img, frames[idx].motion, local, w, h);
+      }
+      if (wm) pvPaintWatermark(ctx, w, h, wm, logoImg);
+      if (onProgress) onProgress(Math.min(1, t / total));
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
+  return await stopped;
+}
+
 async function showPhotoToVideo(){
   let items = [];
   try { items = (await mediaAll()).filter(m => !(m.type || "").startsWith("video")); }
@@ -1913,7 +2005,7 @@ async function showPhotoToVideo(){
     <div class="ml-grid" id="pvGrid">${cells}</div>
     <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Motion</span>
       <select id="pvMotion" class="prop-select">
-        <option value="auto">Ken Burns auto (varies per photo)</option>
+        <option value="walk" selected>Villa Walking (forward / backward)</option>
         <option value="zoomin">Zoom in</option><option value="zoomout">Zoom out</option>
         <option value="panright">Pan right</option><option value="panleft">Pan left</option><option value="panup">Pan up</option>
       </select></div>
@@ -1953,10 +2045,12 @@ async function showPhotoToVideo(){
   };
   $("#pvGo").onclick = async () => {
     if (!selected.length){ toast("Select at least one photo"); return; }
-    if (typeof MediaRecorder === "undefined"){ toast("This browser cannot record video"); return; }
     const mime = pvRecorderMime();
     if (!mime){ toast("No supported video codec in this browser"); return; }
     const photos = selected.map(id => items.find(m => m.id === id));
+    const imgs = [];
+    for (const p of photos){ const im = await loadImage(mediaSrcOf(p)); if (im) imgs.push(im); }
+    if (!imgs.length){ toast("Could not load photos"); return; }
     const [w,h] = $("#pvSize").value.split("x").map(Number);
     const per = +$("#pvPer").value;
     const motionMode = $("#pvMotion").value;
@@ -1964,56 +2058,23 @@ async function showPhotoToVideo(){
     $("#pvProg").style.display = "block"; $("#pvGo").disabled = true;
     const canvas = document.createElement("canvas");
     canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    const imgs = [];
-    for (const p of photos){ const im = await loadImage(mediaSrcOf(p)); if (im) imgs.push(im); }
-    if (!imgs.length){ toast("Could not load photos"); return; }
+    const wm = useWm ? ((project && project.watermark && project.watermark.enabled) ? project.watermark
+      : { text:"CONFIDENTIAL", logo:"s3", opacity:0.12, angle:"diagonal", fontScale:0.12, logoScale:0.45, color:"#7a7a7a" }) : null;
     let logoImg = null;
-    if (useWm){ const src = resolveWatermarkLogo({ logo: wmBase.logo }); if (src) logoImg = await loadImage(src); }
-    const motions = motionMode === "auto"
-      ? imgs.map((_,i) => ["zoomin","panright","zoomout","panleft","kenburns","panup"][i % 6])
+    if (wm){ const src = resolveWatermarkLogo(wm); if (src) logoImg = await loadImage(src); }
+    const motions = motionMode === "walk"
+      ? imgs.map((_,i) => i % 2 ? "walkback" : "walkfwd")
       : imgs.map(() => motionMode);
-    const stream = canvas.captureStream(30);
-    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
-    const chunks = [];
-    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-    const stopped = new Promise(res => rec.onstop = () => res(new Blob(chunks, { type: mime })));
-    rec.start(250);
-    const fade = Math.min(700, per * 0.22);
-    const total = per * imgs.length;
-    const t0 = performance.now();
-    await new Promise(res => {
-      const frame = () => {
-        const t = performance.now() - t0;
-        if (t >= total + 120){
-          rec.stop(); res(); return;
-        }
-        const idx = Math.min(imgs.length - 1, Math.floor(t / per));
-        const local = Math.min(1, (t - idx*per) / per);
-        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
-        const localT = t - idx*per;
-        if (idx > 0 && localT < fade){
-          pvDrawPhoto(ctx, imgs[idx-1], motions[idx-1], 1, w, h);
-          ctx.save(); ctx.globalAlpha = localT / fade;
-          pvDrawPhoto(ctx, imgs[idx], motions[idx], local, w, h);
-          ctx.restore();
-        } else {
-          pvDrawPhoto(ctx, imgs[idx], motions[idx], local, w, h);
-        }
-        if (useWm) pvPaintWatermark(ctx, w, h, wmBase, logoImg);
-        const pct = Math.min(100, Math.round(t / total * 100));
-        // modal may have been closed mid-render — never crash the rAF loop
-        const bar = $("#pvBar"), pctEl = $("#pvPct");
-        if (bar) bar.style.width = pct + "%";
-        if (pctEl) pctEl.textContent = pct + "% \u2014 rendering in real time\u2026";
-        requestAnimationFrame(frame);
-      };
-      requestAnimationFrame(frame);
-    });
-    const blob = await stopped;
-    const ext = mime.includes("mp4") ? "mp4" : "webm";
+    const blob = await pvRenderClip({ canvas, frames: imgs.map((im,i)=>({ img:im, motion:motions[i] })),
+      per, mime, wm, logoImg,
+      onProgress: p => {
+        const bar = $("#pvBar"), pctEl = $("#pvPct");   // modal may be closed mid-render
+        if (bar) bar.style.width = Math.round(p*100) + "%";
+        if (pctEl) pctEl.textContent = Math.round(p*100) + "% \u2014 rendering in real time\u2026";
+    } });
+    const ext = blob.type.includes("mp4") ? "mp4" : "webm";
     const name = `photo-video-${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.${ext}`;
-    await mediaPut({ id: uid(), name, type: mime, blob, added: Date.now() });
+    await mediaPut({ id: uid(), name, type: blob.type, blob, added: Date.now() });
     const res = $("#pvResult"), go = $("#pvGo");   // may be gone if modal was closed
     if (res){
       const url = URL.createObjectURL(blob);
@@ -2096,6 +2157,44 @@ function openCropUI(el, img){
   $("#cropReset").onclick = () => { rect = { x:0, y:0, w:dw, h:dh }; dragStart = null; paint(); };
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
   paint();
+}
+
+/* ============================================================
+   PDF WRITER — minimal PDF 1.4: each page embedded as a full-bleed
+   JPEG (DCTDecode) on a page sized 0.75pt/px (96dpi → 72dpi).
+   Binary-safe, correct xref offsets, no dependencies.
+   ============================================================ */
+function buildPdf(pages){
+  const enc = new TextEncoder();
+  const chunks = []; let offset = 0; const offs = [];
+  const push = (data) => { const u8 = (typeof data === "string") ? enc.encode(data) : data; chunks.push(u8); offset += u8.length; };
+  const W = (pages[0].w * 0.75).toFixed(2), H = (pages[0].h * 0.75).toFixed(2);
+  const n = pages.length;
+  const objBegin = (id) => { offs[id] = offset; push(id + " 0 obj\n"); };
+  const objEnd = () => push("endobj\n");
+  push("%PDF-1.4\n%\u00E2\u00E3\u00CF\u00D3\n");
+  objBegin(1); push("<< /Type /Catalog /Pages 2 0 R >>\n"); objEnd();
+  const kids = pages.map((_, i) => (3 + i*3) + " 0 R").join(" ");
+  objBegin(2); push(`<< /Type /Pages /Kids [${kids}] /Count ${n} >>\n`); objEnd();
+  pages.forEach((pg, i) => {
+    const pid = 3 + i*3, cid = 4 + i*3, iid = 5 + i*3;
+    const ops = `q ${W} 0 0 ${H} 0 0 cm /Im${i} Do Q`;
+    objBegin(cid); push(`<< /Length ${ops.length} >>\nstream\n${ops}\nendstream\n`); objEnd();
+    objBegin(iid);
+    push(`<< /Type /XObject /Subtype /Image /Width ${pg.w} /Height ${pg.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${pg.jpeg.length} >>\nstream\n`);
+    push(pg.jpeg);
+    push("\nendstream\n"); objEnd();
+    objBegin(pid); push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im${i} ${iid} 0 R >> >> /Contents ${cid} 0 R >>\n`); objEnd();
+  });
+  const xrefPos = offset;
+  let xref = `xref\n0 ${3*n + 3}\n0000000000 65535 f \n`;
+  for (let id = 1; id <= 3*n + 2; id++) xref += String(offs[id]).padStart(10, "0") + " 00000 n \n";
+  push(xref);
+  push(`trailer\n<< /Size ${3*n + 3} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF\n`);
+  let totalLen = 0; chunks.forEach(c => totalLen += c.length);
+  const outBuf = new Uint8Array(totalLen); let p = 0;
+  chunks.forEach(c => { outBuf.set(c, p); p += c.length; });
+  return outBuf;
 }
 
 /* expose for admin page debugging */

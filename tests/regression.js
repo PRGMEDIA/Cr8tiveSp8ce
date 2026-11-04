@@ -148,7 +148,7 @@ let LIB = null;
 check("02", "Load: all three modules initialize together in sandbox", () => {
   const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.assets + "\n" + SRC.app +
     "\nthis.__out = { TEMPLATES, CATS, ZipWriter, cmykToHex, rgbToCmyk, cmykToRgb, hexToRgb, rgbToHex," +
-    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL };" +
+    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL, buildPdf };" +
     "\n" + UNDO_DRIVER + ";";
   vm.runInContext(src, sandbox, { filename: "combined.js" });
   LIB = sandbox.__out;
@@ -403,7 +403,7 @@ check("23a", "Members: hashed credentials, no plaintext passwords, scoped storag
 });
 check("23c", "Photo\u2192Video: generator wired (canvas stream + MediaRecorder + library storage)", () => {
   for (const s of ["function showPhotoToVideo", "function pvDrawPhoto", "function pvPaintWatermark",
-                   "canvas.captureStream", "new MediaRecorder", "mediaPut({ id: uid(), name, type: mime, blob"])
+                   "canvas.captureStream", "new MediaRecorder", "mediaPut({ id: uid(), name, type: blob.type, blob", "function pvRenderClip")
     assert(SRC.app.includes(s), "app.js missing: " + s);
   const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   assert(idx.includes("data-photovid"), "index.html missing Photo\u2192Video button");
@@ -414,6 +414,21 @@ check("23d", "Image tools: interactive crop + hyperlink (props, open, clickable 
     assert(SRC.app.includes(s), "app.js missing: " + s);
   assert(SRC.app.includes("showCropModal(el)"), "crop not bound in properties panel");
   return "drag-select crop + link URL/open/clickable-SVG-export";
+});
+check("23e", "Export matrix: PDF writer, JPEG, MP4 slideshow + Villa Walking motion + audio import", () => {
+  for (const s of ["function buildPdf", "DCTDecode", "function renderPageCanvas", "function pvRenderClip",
+                   "walkfwd", "walkback", "Villa Walking", "image/*,video/*,audio/*"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  for (const a of ["data-act=\"jpeg\"", "data-act=\"pdf\"", "data-act=\"mp4\""])
+    assert(idx.includes(a), "index.html missing export action " + a);
+  const pdf = LIB.buildPdf([{ jpeg: new Uint8Array([0xFF,0xD8,0xFF,0xD9]), w: 100, h: 100 }]);
+  const str = Buffer.from(pdf).toString("latin1");
+  assert(str.startsWith("%PDF-1.4"), "bad PDF header");
+  assert(str.includes("DCTDecode"), "missing image XObject");
+  assert(str.includes("/Count 1"), "page tree wrong");
+  assert(str.includes("%%EOF"), "missing EOF");
+  return "PDF structure valid; JPEG/MP4 actions present; Villa Walking + audio import wired";
 });
 check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", () => {
   for (const s of ["function drawWatermarkCanvas","function watermarkSvg","function showWatermarkModal","function renderWatermarkOverlay"])
