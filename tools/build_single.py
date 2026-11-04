@@ -53,6 +53,12 @@ inject = """
 })();
 </script>
 """ % json.dumps(admin).replace("</", "<\\/")
+# sanity checks BEFORE admin injection: the embedded Admin HTML legitimately
+# contains <script src="assets-s3-logo.js"> (resolves against the opener when
+# the popup opens), so external-ref validation must run on the pre-injection page.
+assert '<script src=' not in idx, "unresolved external script reference"
+assert 'href="styles.css"' not in idx, "unresolved external stylesheet"
+
 idx = idx.replace("</body>", inject + "</body>")
 
 out_dir = os.path.join(ROOT, "dist")
@@ -63,8 +69,6 @@ with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
 
 print(f"Built {out_path} ({len(idx):,} chars)")
 
-# sanity checks
+# post-injection sanity checks
 assert "ADMIN_HTML" in idx, "admin not embedded"
-assert '<script src=' not in idx, "unresolved external script reference"
-assert 'href="styles.css"' not in idx, "unresolved external stylesheet"
 print("Sanity checks passed.")

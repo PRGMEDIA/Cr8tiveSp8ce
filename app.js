@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.6.0";
+const APP_VERSION = "1.6.1";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -140,6 +140,7 @@ function toast(msg, ms=2200){
 
 /* ---------------- boot ---------------- */
 window.addEventListener("DOMContentLoaded", () => {
+  applyAppBranding();
   buildCategoryRail();
   renderGallery();
   bindTopbar();
@@ -1483,6 +1484,15 @@ function showAiCloudSettings(){
     } catch(e){ toast("\u274c Not reachable \u2014 connect the Oracle server first"); }
   };
   $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
+}
+
+/* App identity: S³ logo in the header + favicon (falls back gracefully) */
+function applyAppBranding(){
+  if (typeof S3_LOGO_DATAURL === "undefined") return;
+  const dot = document.querySelector(".brand-dot");
+  if (dot) dot.innerHTML = `<img src="${S3_LOGO_DATAURL}" alt="S3 Production Publishing" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">`;
+  const fav = document.querySelector('link[rel="icon"]');
+  if (fav) fav.href = S3_LOGO_DATAURL;
 }
 
 /* Admin Agent embedded in-page (avoids popup blockers entirely) */
