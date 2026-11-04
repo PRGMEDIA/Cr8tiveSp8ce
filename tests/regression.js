@@ -254,8 +254,15 @@ check("17", "Artifacts: single-file bundle present & self-contained", () => {
   assert(fs.existsSync(distPath), "dist/aura-studio-single.html missing");
   const html = fs.readFileSync(distPath, "utf8");
   assert(html.includes("Aura Studio"), "branding missing");
-  assert(!/<script src=/.test(html), "unresolved external script");
-  assert(!/href="styles\.css"/.test(html), "unresolved stylesheet");
+  // The page itself must be fully self-contained. The embedded Admin HTML string
+  // may reference exactly one shared asset (the brand logo), which resolves
+  // against the opener when the admin popup opens.
+  const preAdmin = html.split("const ADMIN_HTML =")[0];
+  assert(!/<script src=/.test(preAdmin), "unresolved external script in page");
+  assert(!/href="styles\.css"/.test(preAdmin), "unresolved stylesheet in page");
+  const adminPart = html.slice(html.indexOf("const ADMIN_HTML ="));
+  const refs = adminPart.match(/<script src="([^"]+)"/g) || [];
+  assert(refs.every(r => r.includes("assets-s3-logo.js")), `unexpected external script in embedded admin: ${refs.join(", ")}`);
   assert(html.includes("ADMIN_HTML"), "admin not embedded");
   assert(html.length > 100000, `bundle suspiciously small (${html.length})`);
   return `${(html.length/1024).toFixed(0)} KB, self-contained`;
