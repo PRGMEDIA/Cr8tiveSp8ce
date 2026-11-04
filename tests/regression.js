@@ -309,6 +309,13 @@ check("22", "Security: placeholder guidance intact in VPN templates", () => {
   assert(n >= 2, `expected >=2 placeholder warnings, got ${n}`);
   return `${n} warnings present`;
 });
+check("23b", "Media library: IndexedDB persistence wired (local tier; Oracle cloud tier in Phase II)", () => {
+  for (const s of ["const MEDIA_DB", "function openMediaDb", "function mediaPut", "function mediaAll", "function showMediaLibrary", "indexedDB.open"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idx.includes("data-medialib"), "index.html missing media library button");
+  return "IndexedDB store + library UI + auto-archive on upload";
+});
 check("23a", "Members: hashed credentials, no plaintext passwords, scoped storage", () => {
   for (const s of ["function hashPassword", "crypto.subtle.digest", "const MEMBERS_LS", "function mkey", "function showMemberGate", "aura.currentMember"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
