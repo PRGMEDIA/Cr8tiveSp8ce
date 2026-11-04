@@ -32,6 +32,7 @@ function eq(a, b, msg) { if (a !== b) throw new Error(`${msg} (got ${JSON.string
 const SRC = {
   templates: fs.readFileSync(path.join(ROOT, "templates.js"), "utf8"),
   zip: fs.readFileSync(path.join(ROOT, "zip.js"), "utf8"),
+  assets: fs.readFileSync(path.join(ROOT, "assets-s3-logo.js"), "utf8"),
   app: fs.readFileSync(path.join(ROOT, "app.js"), "utf8"),
 };
 
@@ -79,9 +80,9 @@ vm.createContext(sandbox);
 
 let LIB = null;
 check("02", "Load: all three modules initialize together in sandbox", () => {
-  const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.app +
+  const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.assets + "\n" + SRC.app +
     "\nthis.__out = { TEMPLATES, CATS, ZipWriter, cmykToHex, rgbToCmyk, cmykToRgb, hexToRgb, rgbToHex," +
-    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION };";
+    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL };";
   vm.runInContext(src, sandbox, { filename: "combined.js" });
   LIB = sandbox.__out;
   return `APP_VERSION ${LIB.APP_VERSION}, ${LIB.TEMPLATES.length} templates loaded`;
@@ -296,6 +297,16 @@ check("22", "Security: placeholder guidance intact in VPN templates", () => {
   const n = (src.match(/never commit/g) || []).length;
   assert(n >= 2, `expected >=2 placeholder warnings, got ${n}`);
   return `${n} warnings present`;
+});
+check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", () => {
+  for (const s of ["function drawWatermarkCanvas","function watermarkSvg","function showWatermarkModal","function renderWatermarkOverlay"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idx.includes("btnWatermark"), "index.html missing watermark button");
+  assert(idx.includes("assets-s3-logo.js"), "index.html missing brand asset include");
+  assert(typeof LIB.S3_LOGO_DATAURL === "string" && LIB.S3_LOGO_DATAURL.startsWith("data:image/jpeg;base64,"), "S3 logo asset malformed");
+  assert(LIB.S3_LOGO_DATAURL.length > 10000, "S3 logo asset truncated");
+  return "all three renderers wired; logo embedded (" + (LIB.S3_LOGO_DATAURL.length/1024).toFixed(1) + " KB)";
 });
 
 /* ---------------- report ---------------- */

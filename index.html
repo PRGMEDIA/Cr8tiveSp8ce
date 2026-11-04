@@ -30,6 +30,7 @@
     <button class="tbtn" id="btnBack" title="Send to back">⬇</button>
     <div class="divider-v"></div>
     <button class="tbtn" id="btnGuides" title="Print guides: bleed + safe area">⊞</button>
+    <button class="tbtn" id="btnWatermark" title="Watermark all pages">💧</button>
     <div class="divider-v"></div>
     <select id="zoomSel" class="zoom-sel">
       <option value="fit">Fit</option><option value="0.5">50%</option>
@@ -48,6 +49,7 @@
         <button data-act="import-json">⬆ Import project (.json)</button>
         <hr>
         <button data-act="new-blank">✨ New blank design</button>
+        <button data-act="watermark">💧 Watermark all pages…</button>
         <button data-act="help">❓ Help &amp; shortcuts</button>
       </div>
     </div>
@@ -132,6 +134,7 @@
   <div id="modalCard"></div>
 </div>
 
+<script src="assets-s3-logo.js"></script>
 <script src="templates.js"></script>
 <script src="zip.js"></script>
 <script src="app.js"></script>

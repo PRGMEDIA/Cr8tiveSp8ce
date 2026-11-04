@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.6.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -302,6 +302,7 @@ function renderBoard(){
   board.style.background = curPageData().bg || "#fff";
   curPageData().elements.forEach(el => board.appendChild(buildElNode(el, true)));
   drawGuides();
+  renderWatermarkOverlay();
   applyZoom();
 }
 
@@ -769,6 +770,7 @@ function bindTopbar(){
     drawGuides();
     toast(guidesOn ? "Print guides on \u2014 backgrounds to the edge, text inside cyan" : "Print guides off");
   };
+  $("#btnWatermark").onclick = showWatermarkModal;
   $("#btnAdmin").onclick = openAdminOverlay;
   $("#searchBox").addEventListener("input", doSearch);
 
@@ -793,6 +795,7 @@ function bindTopbar(){
       $("#npGo").onclick = ()=>{ const [w,h] = $("#npPreset").value.split("x").map(Number); closeModal();
         project = hydrate({name:"Untitled design",cat:"custom",w,h,pages:[{bg:"#ffffff",elements:[]}]}); curPage=0; undoStack=[]; openEditor(); saveAutosave(); };
     }
+    if (act==="watermark"){ showWatermarkModal(); }
     if (act==="help") showHelp();
   });
 
@@ -1086,6 +1089,8 @@ async function renderPagePng(page, scale){
   // preload images
   const imgs = {};
   await Promise.all(page.elements.filter(e=>e.type==="image").map(async e=>{ imgs[e.id] = await loadImage(e.src); }));
+  const wmSrc = resolveWatermarkLogo(project.watermark);
+  if (wmSrc) imgs["__wm"] = await loadImage(wmSrc);
   drawPage(ctx, page, imgs);
   return new Promise(res => c.toBlob(res, "image/png"));
 }
@@ -1146,6 +1151,7 @@ function drawPage(ctx, page, imgs){
     }
     ctx.restore();
   }
+  drawWatermarkCanvas(ctx, imgs);
 }
 
 function renderPageSvg(page){
@@ -1180,6 +1186,7 @@ function renderPageSvg(page){
       });
     }
   }
+  parts.push(watermarkSvg());
   parts.push("</svg>");
   return new Blob(parts, {type:"image/svg+xml"});
 }
@@ -1490,6 +1497,125 @@ function openAdminOverlay(){
   </div>`;
   document.body.appendChild(d);
   $("#adminClose").onclick = ()=> d.remove();
+}
+
+/* ============================================================
+   WATERMARK — stamp text and/or logo on ALL pages.
+   Stored at project level; rendered in editor preview (DOM),
+   PNG/print (canvas) and SVG. Never in ODT (text-only export).
+   ============================================================ */
+function resolveWatermarkLogo(wm){
+  if (!wm || !wm.logo || wm.logo === "none") return null;
+  if (wm.logo === "s3") return (typeof S3_LOGO_DATAURL !== "undefined") ? S3_LOGO_DATAURL : null;
+  if (wm.logo === "brand") return getBrand().logo || null;
+  return null;
+}
+
+function showWatermarkModal(){
+  if (!project){ toast("Open a design first"); return; }
+  const wm = project.watermark || { enabled:true, text:"CONFIDENTIAL", logo:"s3", opacity:0.12, angle:"diagonal", fontScale:0.12, logoScale:0.45, color:"#7a7a7a" };
+  const b = getBrand();
+  showModal(`<h3>\u{1F4A7} Watermark \u2014 all pages</h3>
+    <p>Stamp applied to every page \u2014 visible in the editor and baked into PNG, SVG and print exports.</p>
+    <div class="m-row"><label style="font-size:13px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="wmOn" ${wm.enabled?"checked":""}> <b>Enable watermark on ALL pages</b></label></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Text</span>
+      <input id="wmText" value="${esc(wm.text || "")}" placeholder="CONFIDENTIAL"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Logo</span>
+      <select id="wmLogo" class="prop-select">
+        <option value="s3" ${wm.logo==="s3"?"selected":""}>S\u00b3 Production Publishing logo (built-in)</option>
+        ${b.logo?`<option value="brand" ${wm.logo==="brand"?"selected":""}>Brand Kit logo</option>`:""}
+        <option value="none" ${(!wm.logo || wm.logo==="none")?"selected":""}>Text only</option>
+      </select></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Angle</span>
+      <select id="wmAngle" class="prop-select">
+        <option value="diagonal" ${wm.angle!=="horizontal"?"selected":""}>Diagonal</option>
+        <option value="horizontal" ${wm.angle==="horizontal"?"selected":""}>Horizontal</option>
+      </select></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Opacity</span>
+      <input type="range" id="wmOp" min="0.04" max="0.5" step="0.01" value="${wm.opacity!=null?wm.opacity:0.12}" class="prop-input"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Text size</span>
+      <input type="range" id="wmFs" min="0.06" max="0.25" step="0.01" value="${wm.fontScale||0.12}" class="prop-input"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Logo size</span>
+      <input type="range" id="wmLs" min="0.2" max="0.9" step="0.05" value="${wm.logoScale||0.45}" class="prop-input"></div>
+    ${!b.logo?`<p style="font-size:11.5px">Tip: upload your own logo in the Brand Kit to use it as the watermark.</p>`:""}
+    <div class="m-actions">
+      <button class="abtn ghost" id="wmRemove" style="margin-right:auto">Remove watermark</button>
+      <button class="abtn primary" id="wmApply">Apply to ALL pages</button></div>`);
+  $("#wmApply").onclick = ()=>{
+    project.watermark = { enabled: $("#wmOn").checked,
+      text: $("#wmText").value.trim() || "CONFIDENTIAL",
+      logo: $("#wmLogo").value, angle: $("#wmAngle").value,
+      opacity: +$("#wmOp").value, fontScale: +$("#wmFs").value,
+      logoScale: +$("#wmLs").value, color: "#7a7a7a" };
+    pushHistory(); renderBoard(); renderPages(); saveAutosave(); closeModal();
+    toast(project.watermark.enabled ? "Watermark applied to ALL pages" : "Watermark disabled");
+  };
+  $("#wmRemove").onclick = ()=>{
+    project.watermark = { enabled:false };
+    pushHistory(); renderBoard(); renderPages(); saveAutosave(); closeModal();
+    toast("Watermark removed from all pages");
+  };
+  $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
+}
+
+function renderWatermarkOverlay(){
+  $$("#board .wm-layer").forEach(x=>x.remove());
+  const wm = project && project.watermark;
+  if (!wm || !wm.enabled) return;
+  const src = resolveWatermarkLogo(wm);
+  if (!src && !wm.text) return;
+  const d = document.createElement("div");
+  d.className = "wm-layer";
+  const fs = Math.round(Math.min(project.w, project.h) * (wm.fontScale || 0.12));
+  d.style.cssText = `position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;`+
+    `gap:4%;pointer-events:none;z-index:15;transform:${wm.angle==="diagonal"?"rotate(-30deg)":"none"};`+
+    `opacity:${wm.opacity!=null?wm.opacity:0.12};`;
+  d.innerHTML = `${src?`<img src="${src}" style="width:${Math.round((wm.logoScale||0.45)*100)}%;max-width:92%;object-fit:contain">`:""}`+
+    `${wm.text?`<div style="font:800 ${fs}px Arial, sans-serif;color:${wm.color||"#7a7a7a"};white-space:nowrap">${esc(wm.text)}</div>`:""}`;
+  $("#board").appendChild(d);
+}
+
+function drawWatermarkCanvas(ctx, imgs){
+  const wm = project && project.watermark;
+  if (!wm || !wm.enabled) return;
+  const w = project.w, h = project.h;
+  const src = resolveWatermarkLogo(wm);
+  if (!src && !wm.text) return;
+  ctx.save();
+  ctx.globalAlpha = wm.opacity != null ? wm.opacity : 0.12;
+  ctx.translate(w/2, h/2);
+  if (wm.angle !== "horizontal") ctx.rotate(-Math.PI/6);
+  if (src && imgs["__wm"]){
+    const img = imgs["__wm"];
+    const diag = Math.sqrt(w*w + h*h);
+    const lw = diag * (wm.logoScale || 0.45);
+    const lh = img.height ? lw * (img.height / img.width) : lw * 0.6;
+    try { ctx.drawImage(imgs["__wm"], -lw/2, -lh/2 - h*0.02, lw, lh); } catch(e){}
+  }
+  if (wm.text){
+    const fs = Math.round(Math.min(w,h) * (wm.fontScale || 0.12));
+    ctx.font = `800 ${fs}px Arial, sans-serif`;
+    ctx.fillStyle = wm.color || "#7a7a7a";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(wm.text, 0, Math.min(w,h) * 0.2);
+  }
+  ctx.restore();
+}
+
+function watermarkSvg(){
+  const wm = project && project.watermark;
+  if (!wm || !wm.enabled) return "";
+  const w = project.w, h = project.h, cx = w/2, cy = h/2;
+  const src = resolveWatermarkLogo(wm);
+  if (!src && !wm.text) return "";
+  const rot = wm.angle !== "horizontal" ? ` transform="rotate(-30 ${cx} ${cy})"` : "";
+  const fs = Math.round(Math.min(w,h) * (wm.fontScale || 0.12));
+  const diag = Math.sqrt(w*w + h*h);
+  const lw = diag * (wm.logoScale || 0.45);
+  const lh = lw * 0.6;
+  const logo = src ? `<image href="${src}" x="${cx-lw/2}" y="${cy-lh/2-h*0.02}" width="${lw}" height="${lh}" preserveAspectRatio="xMidYMid meet"/>` : "";
+  const txt = wm.text ? `<text x="${cx}" y="${cy + Math.min(w,h)*0.2}" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="800" font-size="${fs}" fill="${wm.color||"#7a7a7a"}">${esc(wm.text)}</text>` : "";
+  return `<g opacity="${wm.opacity!=null?wm.opacity:0.12}"${rot}>${logo}${txt}</g>`;
 }
 
 /* expose for admin page debugging */
