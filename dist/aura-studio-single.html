@@ -366,7 +366,7 @@ const LN = (x,y,x2,y2,o={}) => ({type:"line",x,y,w:Math.abs(x2-x),h:Math.abs(y2-
   stroke:o.s||"#111",strokeWidth:o.sw||2,opacity:(o.op!=null?o.op:1)});
 const IM = (x,y,w,h,label,c1,c2,o={}) => ({type:"image",x,y,w,h,
   src:ph(w,h,label||"Image",c1||"#aab6ff",c2||"#7c5cff"),fit:"cover",radius:o.r||0,opacity:(o.op!=null?o.op:1)});
-const GL = (x,y,w,h,ch,o={}) => ({type:"glyph",x,y,w,h,ch,fontSize:o.fs||64,color:o.c||"#111",opacity:(o.op!=null?o.op:1)});
+const GL = (x,y,w,h,ch,o={}) => ({type:"glyph",x,y,w,h,ch,text:ch,fontSize:o.fs||64,color:o.c||"#111",opacity:(o.op!=null?o.op:1)});
 
 function ph(w,h,label,c1,c2){
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
@@ -1373,7 +1373,11 @@ function restoreAutosave(){
 }
 
 function hydrate(p){
-  p.pages.forEach(pg => pg.elements.forEach(el => { if(!el.id) el.id = uid(); }));
+  p.pages.forEach(pg => pg.elements.forEach(el => {
+    if(!el.id) el.id = uid();
+    // legacy normalization: glyph elements once stored their character only in .ch
+    if (el.type === "glyph" && el.text == null && el.ch != null) el.text = el.ch;
+  }));
   return p;
 }
 
@@ -1663,7 +1667,7 @@ function startTextEdit(el, node){
   const board = $("#board");
   const ta = document.createElement("textarea");
   ta.id = "el-textarea";
-  ta.value = el.text || "";
+  ta.value = el.text != null ? el.text : (el.ch || "");
   ta.style.left = el.x+"px"; ta.style.top = el.y+"px";
   ta.style.width = el.w+"px"; ta.style.height = Math.max(el.h, el.fontSize*1.6)+"px";
   ta.style.cssText += `font-family:${el.fontFamily};font-size:${el.fontSize}px;font-weight:${el.fontWeight};
