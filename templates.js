@@ -276,7 +276,7 @@ tpl("docs","Project Memo","Internal memo — exports to .odt",850,1100,[
    T(60,465,730,120,"• May 4 — Staging cutover (services A–C)\n• June 1 — Production wave 1 (read traffic)\n• July 6 — Production wave 2 (write traffic)\n• July 27 — Legacy decommission freeze",{fs:13,ff:"Arial",c:"#444",lh:1.9}),
    T(60,600,730,40,"3. Action required",{fs:15,ff:"Arial",fw:"700",c:"#1d2438"}),
    T(60,635,730,80,"Team leads should confirm migration windows with their on-call rotations by April 25. Questions to #platform-migration.",{fs:13,ff:"Arial",c:"#444",lh:1.7})
- ]}],"memo document odt libreoffice internal";
+ ]}],"memo document odt libreoffice internal");
 
 /* ============================================================
    PRESENTATIONS (16:9)
