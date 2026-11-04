@@ -166,6 +166,8 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
 .ml-ops button{background:var(--bg3);border:1px solid var(--line);color:var(--ink);border-radius:6px;
   width:26px;height:22px;cursor:pointer;font-size:11px;line-height:1;padding:0}
 .ml-ops button:hover{border-color:var(--accent)}
+.pv-pick{cursor:pointer}
+.pv-pick.sel{outline:2px solid var(--accent)}
 .bk-swatch{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);position:relative;display:inline-block}
 .bk-swatch button{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;
   background:#e33;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:none}
