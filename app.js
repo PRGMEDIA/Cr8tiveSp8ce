@@ -765,7 +765,7 @@ function bindTopbar(){
     drawGuides();
     toast(guidesOn ? "Print guides on \u2014 backgrounds to the edge, text inside cyan" : "Print guides off");
   };
-  $("#btnAdmin").onclick = ()=> window.open("admin.html", "_blank");
+  $("#btnAdmin").onclick = openAdminOverlay;
   $("#searchBox").addEventListener("input", doSearch);
 
   // dropdowns
@@ -1472,6 +1472,20 @@ function showAiCloudSettings(){
     } catch(e){ toast("\u274c Not reachable \u2014 connect the Oracle server first"); }
   };
   $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
+}
+
+/* Admin Agent embedded in-page (avoids popup blockers entirely) */
+function openAdminOverlay(){
+  const old = $("#adminOverlay"); if (old) old.remove();
+  const d = document.createElement("div");
+  d.id = "adminOverlay";
+  d.innerHTML = `<div class="admin-frame">
+    <div class="admin-bar"><span>\u2699 Admin Agent</span>
+      <button id="adminClose" title="Close">\u2715 Close</button></div>
+    <iframe id="adminFrame" src="admin.html" title="Aura Studio Admin Agent"></iframe>
+  </div>`;
+  document.body.appendChild(d);
+  $("#adminClose").onclick = ()=> d.remove();
 }
 
 /* expose for admin page debugging */

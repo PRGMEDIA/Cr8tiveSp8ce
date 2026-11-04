@@ -178,6 +178,13 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
 #modalCard .m-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
 #modalCard .m-actions .abtn{padding:8px 18px}
 #modalCard p,#modalCard li{color:var(--ink-dim);font-size:13px;line-height:1.6;margin-bottom:8px}
+#adminOverlay{position:fixed;inset:0;background:rgba(5,6,15,.82);z-index:300;display:flex;align-items:center;justify-content:center}
+.admin-frame{width:min(1040px,94vw);height:min(780px,92vh);background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.admin-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px}
+#adminClose{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}
+#adminClose:hover{background:var(--bg3)}
+#adminFrame{flex:1;border:none;background:#0f1222}
 #modalCard b{color:var(--ink)}
 
 /* scrollbars */
