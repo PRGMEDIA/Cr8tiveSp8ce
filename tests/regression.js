@@ -34,6 +34,7 @@ const SRC = {
   zip: fs.readFileSync(path.join(ROOT, "zip.js"), "utf8"),
   assets: fs.readFileSync(path.join(ROOT, "assets-s3-logo.js"), "utf8"),
   app: fs.readFileSync(path.join(ROOT, "app.js"), "utf8"),
+  data: fs.readFileSync(path.join(ROOT, "dataLayer.js"), "utf8"),
 };
 
 /* ---- 01-03: real syntax validation (catches what greps cannot) ---- */
@@ -146,9 +147,9 @@ vm.createContext(sandbox);
 
 let LIB = null;
 check("02", "Load: all three modules initialize together in sandbox", () => {
-  const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.assets + "\n" + SRC.app +
+  const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.assets + "\n" + SRC.app + "\n" + SRC.data +
     "\nthis.__out = { TEMPLATES, CATS, ZipWriter, cmykToHex, rgbToCmyk, cmykToRgb, hexToRgb, rgbToHex," +
-    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL, buildPdf };" +
+    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL, buildPdf, AuraDB };" +
     "\n" + UNDO_DRIVER + ";";
   vm.runInContext(src, sandbox, { filename: "combined.js" });
   LIB = sandbox.__out;
@@ -156,6 +157,14 @@ check("02", "Load: all three modules initialize together in sandbox", () => {
 });
 const { TEMPLATES, CATS, ZipWriter, cmykToHex, cmykToRgb, rgbToCmyk, CMYK_PALETTE, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt } = LIB || {};
 
+check("26", "Data layer: AuraDB dual-backend adapter present and wired", () => {
+  assert(LIB.AuraDB && typeof LIB.AuraDB.status === "function", "AuraDB missing or incomplete");
+  const st = LIB.AuraDB.status();
+  assert(typeof st === "object", "status() did not return state");
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idx.includes("dataLayer.js"), "index.html missing dataLayer include");
+  return "AuraDB adapter loaded (local backend, cloud-ready)";
+});
 check("24", "Undo/redo logic: move, redo, add, page ops, watermark snapshot order", () => {
   const r = sandbox.__undoResults;
   assert(r, "undo driver did not run");
@@ -416,6 +425,14 @@ check("23d", "Image tools: interactive crop + hyperlink (props, open, clickable 
     assert(SRC.app.includes(s), "app.js missing: " + s);
   assert(SRC.app.includes("showCropModal(el)"), "crop not bound in properties panel");
   return "drag-select crop + link URL/open/clickable-SVG-export";
+});
+check("23g", "I-017 fix: high-quality image rendering (smoothing, blurred-bg fit mode) + special-char member IDs", () => {
+  for (const s of ['ctx.imageSmoothingQuality = "high"', "function makeBlurredBg", "function pvMotionScale",
+                   'value="blur"', "Blurred background"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(SRC.app.includes("/^\\S{2,24}$/"), "member ID regex does not allow special characters");
+  assert(SRC.app.includes("special characters allowed"), "special-char member IDs not wired");
+  return "hi-Q smoothing + blurred-bg contain mode + per-photo blur pre-render + special-char IDs";
 });
 check("23f", "AI Create: prompt-seeded offline generator + cloud hook + animation hand-off", () => {
   for (const s of ["function aiOfflineArtwork", "function mulberry32", "const AI_PALETTES", "function aiPickPalette",
