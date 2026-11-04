@@ -417,6 +417,15 @@ check("23d", "Image tools: interactive crop + hyperlink (props, open, clickable 
   assert(SRC.app.includes("showCropModal(el)"), "crop not bound in properties panel");
   return "drag-select crop + link URL/open/clickable-SVG-export";
 });
+check("23f", "AI Create: prompt-seeded offline generator + cloud hook + animation hand-off", () => {
+  for (const s of ["function aiOfflineArtwork", "function mulberry32", "const AI_PALETTES", "function aiPickPalette",
+                   "function aiCloudImage", "function showAiCreate", "/api/image", "showPhotoToVideo"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(SRC.app.includes("aiHash(prompt"), "prompt seeding missing");
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idx.includes("data-aicreate"), "index.html missing AI Create button");
+  return "8 keyword palettes, deterministic seeding, cloud tier, library/design/animation flows";
+});
 check("23e", "Export matrix: PDF writer, JPEG, MP4 slideshow + Villa Walking motion + audio import", () => {
   for (const s of ["function buildPdf", "DCTDecode", "function renderPageCanvas", "function pvRenderClip",
                    "walkfwd", "walkback", "Villa Walking", "image/*,video/*,audio/*"])
