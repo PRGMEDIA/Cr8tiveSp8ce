@@ -217,7 +217,7 @@ function showMemberGate(after){
   };
   $("#mNew").onclick = async () => {
     const u = ($("#mUser").value || "").trim(), pw = $("#mPass").value || "";
-    if (!/^[A-Za-z0-9_.\-]{2,24}$/.test(u)){ toast("Member ID: 2\u201324 letters/numbers/_/-"); return; }
+    if (!/^\S{2,24}$/.test(u)){ toast("Member ID: 2\u201324 characters, no spaces \u2014 special characters allowed"); return; }
     if (pw.length < 4){ toast("Password: at least 4 characters"); return; }
     const st = getMembers();
     if (st.members[u]){ toast("That member ID already exists"); return; }
@@ -945,7 +945,7 @@ function bindTopbar(){
         const wm = (project.watermark && project.watermark.enabled) ? project.watermark : null;
         let logoImg = null;
         if (wm){ const src = resolveWatermarkLogo(wm); if (src) logoImg = await loadImage(src); }
-        const blob = await pvRenderClip({ canvas, frames, per: 4000, mime, wm, logoImg,
+        const blob = await pvRenderClip({ canvas, frames, per: 4000, mime, wm, logoImg, fit: "cover",
           onProgress: p => { const bar = $("#slBar"); if (bar) bar.style.width = Math.round(p*100) + "%"; } });
         const ext = blob.type.includes("mp4") ? "mp4" : "webm";
         await mediaPut({ id: uid(), name: baseName() + "-slideshow." + ext, type: blob.type, blob, added: Date.now() });
@@ -1237,6 +1237,8 @@ async function renderPageCanvas(page, scale){
   const c = document.createElement("canvas");
   c.width = project.w * scale; c.height = project.h * scale;
   const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.scale(scale, scale);
   // preload images
   const imgs = {};
@@ -1907,9 +1909,35 @@ function pvRecorderMime(){
   if (typeof MediaRecorder === "undefined") return "";
   return PV_MIMES.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch(e){ return false; } }) || "";
 }
-function pvDrawPhoto(ctx, img, motion, local, w, h){
-  // local: 0..1 progress through this photo's scene
+function pvMotionScale(motion, local){
+  if (motion === "zoomin") return 1.02 + 0.16*local;
+  if (motion === "zoomout") return 1.18 - 0.16*local;
+  if (motion === "walkfwd") return 1.04 + 0.14*local;   // Villa Walking forward
+  if (motion === "walkback") return 1.18 - 0.14*local;  // Villa Walking backward
+  return 1.15;
+}
+function pvDrawPhoto(ctx, img, motion, local, w, h, fit, bg, idx){
+  // I-017 fix: high-quality resampling - no more blurry/jagged distortion
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   const iw = img.width, ih = img.height;
+  if (fit === "blur" && bg){
+    // Contained mode: pre-rendered blurred backdrop (no crop, no stretch) + full image on top
+    ctx.drawImage(bg, 0, 0, w, h);
+    let s = 1.0, dx = 0, dy = 0;
+    if (motion === "zoomin" || motion === "walkfwd") s = 1.0 + 0.06*local;
+    else if (motion === "zoomout" || motion === "walkback") s = 1.06 - 0.06*local;
+    else if (motion === "panright") dx = (0.5 - local) * (w - iw*Math.min(w/iw, h/ih)) * 0.4;
+    else if (motion === "panleft") dx = (local - 0.5) * (w - iw*Math.min(w/iw, h/ih)) * 0.4;
+    else s = 1.0 + 0.05*local;
+    let bob = 0;
+    if (motion === "walkfwd" || motion === "walkback") bob = -Math.abs(Math.sin(local * Math.PI * 4)) * h * 0.006;
+    const base = Math.min(w/iw, h/ih) * s;
+    const dw = iw*base, dh = ih*base;
+    ctx.drawImage(img, (w-dw)/2 + dx, (h-dh)/2 + dy + bob, dw, dh);
+    return;
+  }
+  // Cover mode (fill frame)
   const base = Math.max(w/iw, h/ih);
   let s = 1.08, dx = 0, dy = 0;
   if (motion === "zoomin"){ s = 1.02 + 0.16*local; }
@@ -1918,17 +1946,29 @@ function pvDrawPhoto(ctx, img, motion, local, w, h){
   else if (motion === "panleft"){ s = 1.15; dx = (0.5 - local) * (iw*base*s - w) * 0.5; }
   else if (motion === "panup"){ s = 1.15; dy = (0.5 - local) * (ih*base*s - h) * 0.5; }
   else if (motion === "walkfwd"){
-    // Villa Walking — forward: dolly toward the subject with a subtle walking bob
     s = 1.04 + 0.14*local; dy = -Math.abs(Math.sin(local * Math.PI * 4)) * h * 0.008;
   }
   else if (motion === "walkback"){
-    // Villa Walking — backward: dolly away from the subject
     s = 1.18 - 0.14*local; dy = -Math.abs(Math.sin(local * Math.PI * 4)) * h * 0.008;
   }
-  else { s = 1.02 + 0.14*local; dx = (local - 0.5) * (iw*base*s - w) * 0.25; }  // kenburns
+  else { s = 1.02 + 0.14*local; dx = (local - 0.5) * (iw*base*s - w) * 0.25; }
   const sc = base * s, dw = iw*sc, dh = ih*sc;
   ctx.drawImage(img, (w-dw)/2 + dx, (h-dh)/2 + dy, dw, dh);
 }
+function makeBlurredBg(img, w, h){
+  // Pre-render the blurred backdrop once per photo (fast per-frame compositing)
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const x = c.getContext("2d");
+  x.imageSmoothingQuality = "high";
+  const iw = img.width, ih = img.height;
+  const base = Math.max(w/iw, h/ih) * 1.18;   // oversize so blur never shows edges
+  const dw = iw*base, dh = ih*base;
+  x.filter = "blur(" + Math.max(8, Math.round(Math.min(w,h) * 0.035)) + "px)";
+  x.drawImage(img, (w-dw)/2, (h-dh)/2, dw, dh);
+  return c;
+}
+
 function pvPaintWatermark(ctx, w, h, wm, logoImg){
   if (!wm) return;
   ctx.save();
@@ -1954,7 +1994,7 @@ function pvPaintWatermark(ctx, w, h, wm, logoImg){
 async function pvRenderClip(opts){
   // Shared render core: canvas frames -> MediaRecorder -> Blob.
   // opts: { canvas, frames:[{img,motion}], per(ms), mime, wm, logoImg, onProgress, cancelToken }
-  const { canvas, frames, per, mime, wm, logoImg, onProgress, cancelToken } = opts;
+  const { canvas, frames, per, mime, wm, logoImg, onProgress, cancelToken, fit, bgCache } = opts;
   const w = canvas.width, h = canvas.height;
   const ctx = canvas.getContext("2d");
   const stream = canvas.captureStream(30);
@@ -1976,12 +2016,12 @@ async function pvRenderClip(opts){
       const local = Math.min(1, localT / per);
       ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
       if (idx > 0 && localT < fade){
-        pvDrawPhoto(ctx, frames[idx-1].img, frames[idx-1].motion, 1, w, h);
+        pvDrawPhoto(ctx, frames[idx-1].img, frames[idx-1].motion, 1, w, h, fit, bgCache && bgCache[idx-1], idx-1);
         ctx.save(); ctx.globalAlpha = localT / fade;
-        pvDrawPhoto(ctx, frames[idx].img, frames[idx].motion, local, w, h);
+        pvDrawPhoto(ctx, frames[idx].img, frames[idx].motion, local, w, h, fit, bgCache && bgCache[idx], idx);
         ctx.restore();
       } else {
-        pvDrawPhoto(ctx, frames[idx].img, frames[idx].motion, local, w, h);
+        pvDrawPhoto(ctx, frames[idx].img, frames[idx].motion, local, w, h, fit, bgCache && bgCache[idx], idx);
       }
       if (wm) pvPaintWatermark(ctx, w, h, wm, logoImg);
       if (onProgress) onProgress(Math.min(1, t / total));
@@ -2018,6 +2058,11 @@ async function showPhotoToVideo(){
         <option value="1280x720">1280\u00d7720 landscape</option>
         <option value="720x1280">720\u00d71280 vertical</option>
         <option value="1080x1080">1080\u00d71080 square</option>
+      </select></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Fit</span>
+      <select id="pvFit" class="prop-select">
+        <option value="blur" selected>Blurred background \u2014 no crop, no distortion</option>
+        <option value="cover">Fill frame \u2014 crops edges</option>
       </select></div>
     <div class="m-row"><label style="font-size:12.5px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="pvWm" checked> Bake watermark into the video</label></div>
     <div id="pvProg" style="display:none;margin:8px 0"><div style="height:8px;background:var(--bg2);border-radius:4px;overflow:hidden"><div id="pvBar" style="height:100%;width:0%;background:var(--accent)"></div></div><div id="pvPct" style="font-size:11px;color:var(--ink-dim);margin-top:4px">0%</div></div>
@@ -2058,6 +2103,7 @@ async function showPhotoToVideo(){
     const [w,h] = $("#pvSize").value.split("x").map(Number);
     const per = +$("#pvPer").value;
     const motionMode = $("#pvMotion").value;
+    const fit = $("#pvFit").value;
     const useWm = $("#pvWm").checked;
     $("#pvProg").style.display = "block"; $("#pvGo").disabled = true;
     const cancelToken = { cancelled: false };
@@ -2073,8 +2119,10 @@ async function showPhotoToVideo(){
     const motions = motionMode === "walk"
       ? imgs.map((_,i) => i % 2 ? "walkback" : "walkfwd")
       : imgs.map(() => motionMode);
+    const bgCache = {};
+    if (fit === "blur") imgs.forEach((im, i) => { bgCache[i] = makeBlurredBg(im, w, h); });
     const blob = await pvRenderClip({ canvas, frames: imgs.map((im,i)=>({ img:im, motion:motions[i] })),
-      per, mime, wm, logoImg, cancelToken,
+      per, mime, wm, logoImg, cancelToken, fit, bgCache,
       onProgress: p => {
         const bar = $("#pvBar"), pctEl = $("#pvPct");   // modal may be closed mid-render
         if (bar) bar.style.width = Math.round(p*100) + "%";

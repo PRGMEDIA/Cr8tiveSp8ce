@@ -1,0 +1,67 @@
+# Aura Studio — optional auto-deploy to VPS
+#
+# What it does: on every push to main (or manual trigger), connects to your
+# Linux VPS over SSH and runs: git pull + docker compose up -d.
+# Your server always runs exactly what's committed — no manual steps.
+#
+# Setup (one-time, when you have a VPS):
+#   1. Generate a deploy key pair on your machine:
+#        ssh-keygen -t ed25519 -f aura_deploy_key -N ""
+#   2. Add the PUBLIC key (aura_deploy_key.pub) to the VPS:
+#        ~deployer/.ssh/authorized_keys
+#   3. In this repo: Settings → Secrets and variables → Actions, add:
+#        VPS_HOST   = your.server.ip.or.domain
+#        VPS_USER   = deployer            (a limited, non-root user)
+#        VPS_KEY    = contents of aura_deploy_key (the PRIVATE key)
+#   4. Ensure the repo is cloned on the VPS at $APP_DIR (default ~/apps/aura).
+#
+# Until those secrets exist this workflow does nothing harmful — the SSH
+# step simply fails if run manually, and push triggers skip via the guard.
+
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "app.js"
+      - "dataLayer.js"
+      - "styles.css"
+      - "templates.js"
+      - "docker-compose*.yml"
+      - "docs/migrations/**"
+  workflow_dispatch: {}   # manual "Run workflow" button in the Actions tab
+
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard — skip unless VPS secrets are configured
+        id: guard
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ] || [ -z "${{ secrets.VPS_KEY }}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "VPS secrets not set — skipping deploy (this is expected until setup)."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy over SSH
+        if: steps.guard.outputs.enabled == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            set -e
+            cd ~/apps/aura
+            git pull --ff-only
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
