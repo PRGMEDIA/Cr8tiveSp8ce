@@ -263,6 +263,10 @@ check("17", "Artifacts: single-file bundle present & self-contained", () => {
   const adminPart = html.slice(html.indexOf("const ADMIN_HTML ="));
   const refs = adminPart.match(/<script src="([^"]+)"/g) || [];
   assert(refs.every(r => r.includes("assets-s3-logo.js")), `unexpected external script in embedded admin: ${refs.join(", ")}`);
+  // Phase II change (v1.6.2): single-file build must be popup-free —
+  // srcdoc overlay, never window.open, so users never enable popups.
+  assert(!adminPart.includes("window.open"), "embedded admin still uses popups");
+  assert(adminPart.includes("srcdoc"), "single-file admin overlay missing srcdoc iframe");
   assert(html.includes("ADMIN_HTML"), "admin not embedded");
   assert(html.length > 100000, `bundle suspiciously small (${html.length})`);
   return `${(html.length/1024).toFixed(0)} KB, self-contained`;
@@ -304,6 +308,16 @@ check("22", "Security: placeholder guidance intact in VPN templates", () => {
   const n = (src.match(/never commit/g) || []).length;
   assert(n >= 2, `expected >=2 placeholder warnings, got ${n}`);
   return `${n} warnings present`;
+});
+check("23a", "Members: hashed credentials, no plaintext passwords, scoped storage", () => {
+  for (const s of ["function hashPassword", "crypto.subtle.digest", "const MEMBERS_LS", "function mkey", "function showMemberGate", "aura.currentMember"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(!/"password"\s*:\s*"/.test(SRC.app), "possible plaintext password storage in app.js");
+  const adm = fs.readFileSync(path.join(ROOT, "admin.html"), "utf8");
+  assert(adm.includes("aura.currentMember"), "admin not member-aware");
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idx.includes("memberChip"), "index.html missing member chip");
+  return "WebCrypto SHA-256 + member-scoped keys + member-aware admin";
 });
 check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", () => {
   for (const s of ["function drawWatermarkCanvas","function watermarkSvg","function showWatermarkModal","function renderWatermarkOverlay"])

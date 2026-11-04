@@ -102,8 +102,16 @@ const LS = {
   updateUrl: "aura.updateUrl",
   appVer: "aura.appVersion",
 };
-function getCustom(){ try { return JSON.parse(localStorage.getItem(LS.customTpl) || "[]"); } catch(e){ return []; } }
-function setCustom(arr){ localStorage.setItem(LS.customTpl, JSON.stringify(arr)); }
+// member-aware custom-template storage (mirrors the main app's mkey scoping)
+function currentMember(){ try { return JSON.parse(localStorage.getItem("aura.currentMember") || "null"); } catch(e){ return null; } }
+function mkeyAdmin(base){ const u = currentMember(); return u ? "aura.m." + u + "." + base : base; }
+function getCustom(){
+  const k = mkeyAdmin(LS.customTpl);
+  let raw = localStorage.getItem(k);
+  if (raw == null) raw = localStorage.getItem(LS.customTpl);   // legacy fallback
+  try { const v = JSON.parse(raw || "[]"); return Array.isArray(v) ? v : []; } catch(e){ return []; }
+}
+function setCustom(arr){ localStorage.setItem(mkeyAdmin(LS.customTpl), JSON.stringify(arr)); }
 function log(msg, cls){
   const l = document.getElementById("log");
   const t = new Date().toLocaleTimeString();
