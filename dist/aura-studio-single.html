@@ -293,6 +293,7 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
       <div class="pal-sep"></div>
       <button class="pal-btn" data-brand="1">🎨 Brand Kit</button>
       <button class="pal-btn" data-cmykpal="1">🖨 CMYK Palette</button>
+      <button class="pal-btn" data-aivideo="1">🎬 AI Video</button>
     </aside>
 
     <div id="canvasArea">
@@ -1206,7 +1207,7 @@ if (typeof window !== "undefined") window.ZipWriter = ZipWriter;
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.5.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -2220,6 +2221,7 @@ function bindPalette(){
   $$("#elemPalette .pal-btn").forEach(b=>{
     if (b.dataset.brand){ b.onclick = showBrandKit; return; }
     if (b.dataset.cmykpal){ b.onclick = ()=> openCmykPalette(null); return; }
+    if (b.dataset.aivideo){ b.onclick = showAiVideoWizard; return; }
     b.onclick = ()=> addElement(b.dataset.add);
   });
 }
@@ -2511,6 +2513,181 @@ async function printProject(){
 }
 function blobToDataUrl(blob){
   return new Promise(res=>{ const r = new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
+}
+
+/* ============================================================
+   AI VIDEO COMPOSER — storyboard generator + cloud-AI hook
+   ============================================================ */
+const AI_CLOUD_LS = "aura.aiCloud";
+function getAiCloud(){ try { return JSON.parse(localStorage.getItem(AI_CLOUD_LS) || "") || { endpoint:"", key:"" }; } catch(e){ return { endpoint:"", key:"" }; } }
+function setAiCloud(v){ localStorage.setItem(AI_CLOUD_LS, JSON.stringify(v)); }
+
+const VIDEO_STYLES = {
+  energetic: {
+    label:"Energetic / hype", pal:{ bg:"#0f0c29", fg:"#ffffff", accent:"#ff5c8a", sub:"#c9c3ec" },
+    hooks:["Stop scrolling \u2014 {p} just changed everything.","POV: you finally upgraded to {p}.","Nobody expected {p} to do THIS."],
+    benefits:["Fast. Ridiculously fast.","Built to keep up with you.","Zero waiting. Zero excuses.","Your old one just became a backup.","Once you try it, there's no going back."],
+    ctas:["Get yours today","Tap the link \u2014 before it sells out"], vo:{ pace:"quick cuts every 2\u20133s" }
+  },
+  luxury: {
+    label:"Luxury / elegant", pal:{ bg:"#101828", fg:"#f5efe4", accent:"#d4af37", sub:"#9aa7b8" },
+    hooks:["Some things aren't bought. They're chosen.","Introducing {p}.","Quietly extraordinary."],
+    benefits:["Crafted without compromise.","Details you can feel.","Made in small batches, never rushed.","Designed to outlast trends.","For those who notice."],
+    ctas:["Experience {p}","By appointment only"], vo:{ pace:"slow, deliberate pushes; 40% speed ramp" }
+  },
+  friendly: {
+    label:"Friendly / warm", pal:{ bg:"#fdf6ec", fg:"#3d2b1f", accent:"#e8833a", sub:"#8a6f5c" },
+    hooks:["Meet the easiest way to {c}.","You asked. We built {p}.","This is your sign to try {p}."],
+    benefits:["Set up in minutes, not weekends.","Made for real, messy, everyday life.","Loved by thousands of people like you.","No manuals. No jargon. Just works.","We're with you all the way."],
+    ctas:["Start your free trial","Say hi \u2014 we answer fast"], vo:{ pace:"natural handheld, warm morning light" }
+  },
+  bold: {
+    label:"Bold / high-contrast", pal:{ bg:"#111111", fg:"#ffffff", accent:"#ffd400", sub:"#bbbbbb" },
+    hooks:["Everything you know about {c} is wrong.","This is not another {c}.","We removed everything. Then we improved it."],
+    benefits:["Obsessively engineered.","Tested to destruction.","No gimmicks. No filler.","The spec sheet speaks for itself.","Built by people who use it daily."],
+    ctas:["See the proof","Order now \u2014 ships worldwide"], vo:{ pace:"hard cuts on beat; macro inserts" }
+  },
+  minimal: {
+    label:"Minimal / clean", pal:{ bg:"#f7f7f5", fg:"#1a1a1a", accent:"#5b8def", sub:"#8a8a86" },
+    hooks:["{p}. Simply.","Less, but better.","The essentials of {c}."],
+    benefits:["One purpose, perfected.","Nothing you don't need.","Thoughtful down to the last screw.","Quietly efficient.","It just fits."],
+    ctas:["Learn more","Available now"], vo:{ pace:"locked-off frames, soft daylight, slow dissolves" }
+  },
+};
+
+const VIDEO_FORMATS = {
+  youtube: { label:"YouTube / landscape 16:9", w:1280, h:720, img:[80,80,1120,470], notes:[80,590,760,60], txtY:200 },
+  reels:   { label:"Reels / TikTok 9:16",      w:720,  h:1280, img:[60,70,600,900], notes:[60,1010,600,80], txtY:1010 },
+  square:  { label:"Square feed 1:1",          w:800,  h:800,  img:[70,70,660,500], notes:[70,640,660,70], txtY:590 },
+};
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function fillTpl(s, map){ return s.replace(/\{(\w+)\}/g, (m,k)=> map[k] != null ? map[k] : m); }
+
+function showAiVideoWizard(){
+  const b = getBrand();
+  showModal(`<h3>\u{1F3AC} AI Video Composer</h3>
+    <p>Describe your product or topic \u2014 the composer auto-writes a full storyboard: hook, benefit scenes, CTA, camera notes, voice-over lines, and captions you can export.</p>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Topic</span>
+      <input id="avTopic" placeholder="e.g. stainless water bottle, my bakery, tax software\u2026"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Style</span>
+      <select id="avStyle" class="prop-select">${Object.entries(VIDEO_STYLES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join("")}</select></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Format</span>
+      <select id="avFormat" class="prop-select">${Object.entries(VIDEO_FORMATS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join("")}</select></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Length</span>
+      <select id="avLen" class="prop-select"><option value="15">15s \u2014 3 scenes</option><option value="30" selected>30s \u2014 5 scenes</option><option value="60">60s \u2014 8 scenes</option></select></div>
+    <div class="m-row"><label style="font-size:12.5px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="avBrand" ${b.colors.length?"checked":"disabled"}> Use Brand Kit colors${b.colors.length?"":" (add colors in Brand Kit first)"}</label></div>
+    <div class="m-actions">
+      <button class="abtn ghost" id="avCloud" style="margin-right:auto">\u2601 Cloud AI (beta)</button>
+      <button class="abtn primary" id="avGo">\u2728 Generate storyboard</button></div>`);
+  $("#avGo").onclick = ()=>{
+    const topic = ($("#avTopic").value||"").trim() || "your product";
+    closeModal();
+    generateAiStoryboard({ topic, style:$("#avStyle").value, format:$("#avFormat").value,
+      seconds:+$("#avLen").value, useBrand:$("#avBrand").checked });
+  };
+  $("#avCloud").onclick = showAiCloudSettings;
+}
+
+function generateAiStoryboard(opts){
+  if (!project || true){ /* always create a fresh project */ }
+  const style = VIDEO_STYLES[opts.style] || VIDEO_STYLES.energetic;
+  const fmt = VIDEO_FORMATS[opts.format] || VIDEO_FORMATS.youtube;
+  const pal = opts.useBrand ? { bg:getBrand().colors[0] || style.pal.bg, fg:"#ffffff", accent:getBrand().colors[1] || style.pal.accent, sub:style.pal.sub } : style.pal;
+  const words = opts.topic.split(/\s+/);
+  const cat = words.length > 2 ? words.slice(-2).join(" ") : opts.topic;
+  const map = { p:opts.topic, c:cat };
+  const sceneCount = opts.seconds === 15 ? 3 : opts.seconds === 30 ? 5 : 8;
+  const per = opts.seconds / sceneCount;
+
+  const hook = fillTpl(pick(style.hooks), map);
+  const ctas = pick(style.ctas);
+  const cta = fillTpl(ctas, map);
+  const benefits = [];
+  const pool = [...style.benefits];
+  for (let i=0;i<sceneCount-2 && pool.length;i++) benefits.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+
+  const voLines = [];
+  const shots = ["Slow push-in on product","Hands using it, natural light","Detail macro insert","Lifestyle shot \u2014 real environment","Overhead flat-lay","Reaction shot \u2014 genuine smile","Split-screen before/after","Logo resolve with tagline"];
+  const pages = [];
+  for (let i=0;i<sceneCount;i++){
+    const isHook = i===0, isCta = i===sceneCount-1;
+    const headline = isHook ? hook : isCta ? cta : benefits[i-1] || pick(style.benefits);
+    const shot = isHook ? shots[0] : isCta ? shots[shots.length-1] : pick(shots.slice(1,-1));
+    const vo = isHook ? hook : isCta ? `${cta} \u2014 link in bio.` : headline;
+    voLines.push({ start:(i*per).toFixed(1), end:((i+1)*per).toFixed(1), text:vo });
+    const [ix,iy,iw,ih] = fmt.img, [nx,ny,nw,nh] = fmt.notes;
+    const bigY = isHook || isCta ? Math.round(fmt.img[3]*0.25) : Math.round(fmt.img[3]*0.3);
+    pages.push({ bg:pal.bg, elements:[
+      IM(ix,iy,iw,ih,`Scene ${i+1} \u2014 ${shot}`,pal.accent,pal.bg,{r:12}),
+      T(ix+20,iy+bigY,iw-40,120,headline,{fs:fmt.h===720?54:fmt.h===800?46:64,ff:"'Segoe UI', Arial, sans-serif",fw:"800",c:pal.fg,lh:1.15}),
+      R(nx,ny,nw,nh,{f:"#16161d",op:.85,r:10}),
+      T(nx+16,ny+8,nw-32,nh-16,`SCENE ${i+1}/${sceneCount} (${(i*per).toFixed(0)}\u2013${((i+1)*per).toFixed(0)}s) \u00b7 ${shot} \u00b7 VO: \u201c${vo}\u201d`,{fs:fmt.h===1280?15:16,ff:"'Courier New', monospace",c:pal.accent,lh:1.4}),
+      T(fmt.w-160,12,150,30,`SC ${i+1}/${sceneCount}`,{fs:16,ff:"Arial",c:pal.sub,al:"right"})
+    ]});
+  }
+  // end-card logo from brand kit
+  const b = getBrand();
+  if (b.logo){ const [ix,iy,iw,ih] = fmt.img; const last = pages[pages.length-1];
+    last.elements.push({ type:"image", id:"logo", x:ix+Math.round(iw/2-60), y:iy+Math.round(ih*0.72), w:120, h:120, src:b.logo, fit:"contain", radius:0, opacity:1, filter:"none" });
+  }
+  project = hydrate({ name:`${opts.topic} \u2014 AI storyboard (${opts.seconds}s)`, cat:"video", w:fmt.w, h:fmt.h, pages,
+    meta:{ vo:voLines, style:opts.style, topic:opts.topic } });
+  curPage = 0; selId = null; undoStack = []; redoStack = [];
+  openEditor(); saveAutosave();
+  toast(`Storyboard generated \u2014 ${sceneCount} scenes, ${opts.seconds}s`);
+  setTimeout(showAiScriptModal, 400);
+}
+
+function showAiScriptModal(){
+  if (!project || !project.meta || !project.meta.vo) return;
+  const vo = project.meta.vo;
+  showModal(`<h3>\u{1F4C4} \u201c${esc(project.meta.topic)}\u201d \u2014 script & captions</h3>
+    <p>Style: <b>${esc((VIDEO_STYLES[project.meta.style]||{}).label || project.meta.style)}</b> \u00b7 ${vo.length} scenes. Frames export via <b>Export \u2192 PNG all pages (zip)</b>.</p>
+    <div style="max-height:32vh;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;line-height:1.7;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px">${
+      vo.map(l=>`<div><span style="color:var(--accent)">[${l.start}s\u2013${l.end}s]</span> ${esc(l.text)}</div>`).join("")}</div>
+    <div class="m-actions">
+      <button class="abtn ghost" id="srtBtn" style="margin-right:auto">\u2b07 Captions (.srt)</button>
+      <button class="abtn ghost" id="txtBtn">\u2b07 Script (.txt)</button>
+      <button class="abtn primary" data-close>Done</button></div>`);
+  const srt = vo.map((l,i)=>`${i+1}\n${srtTime(l.start)} --> ${srtTime(l.end)}\n${l.text}\n`).join("\n");
+  const txt = `${project.name}\nStyle: ${project.meta.style}\n\n` + vo.map((l,i)=>`SCENE ${i+1} (${l.start}\u2013${l.end}s)\n  VO: ${l.text}\n`).join("\n");
+  $("#srtBtn").onclick = ()=> downloadBlob(new Blob([srt],{type:"text/plain"}), baseName()+".srt");
+  $("#txtBtn").onclick = ()=> downloadBlob(new Blob([txt],{type:"text/plain"}), baseName()+"-script.txt");
+  $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
+}
+function srtTime(sec){
+  const s = parseFloat(sec) || 0;
+  const h = String(Math.floor(s/3600)).padStart(2,"0");
+  const m = String(Math.floor((s%3600)/60)).padStart(2,"0");
+  const ss = String(Math.floor(s%60)).padStart(2,"0");
+  const ms = String(Math.round((s%1)*1000)).padStart(3,"0");
+  return `${h}:${m}:${ss},${ms}`;
+}
+
+function showAiCloudSettings(){
+  const c = getAiCloud();
+  showModal(`<h3>\u2601 Cloud AI settings</h3>
+    <p>Connect a generation backend. Since browsers block direct calls to most AI APIs (CORS), the recommended setup is a tiny proxy on your own server \u2014 we'll deploy one on your Oracle box when we connect it. Anything you paste here stays in this browser.</p>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Endpoint</span>
+      <input id="cldUrl" placeholder="https://your-server/api" value="${esc(c.endpoint)}"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">API key</span>
+      <input id="cldKey" type="password" placeholder="sk-\u2026 (stored locally only)" value="${esc(c.key)}"></div>
+    <div class="m-actions">
+      <button class="abtn ghost" id="cldTest" style="margin-right:auto">\u{1F517} Test connection</button>
+      <button class="abtn primary" id="cldSave">Save</button></div>`);
+  $("#cldSave").onclick = ()=>{ setAiCloud({ endpoint:$("#cldUrl").value.trim(), key:$("#cldKey").value.trim() }); toast("Cloud AI settings saved locally"); };
+  $("#cldTest").onclick = async ()=>{
+    const url = $("#cldUrl").value.trim();
+    if (!url){ toast("Enter an endpoint first"); return; }
+    toast("Testing " + url + "\u2026");
+    try {
+      const ctl = new AbortController(); setTimeout(()=>ctl.abort(), 6000);
+      const r = await fetch(url.replace(/\/$/,"") + "/health", { signal:ctl.signal });
+      toast(r.ok ? "\u2705 Server reachable \u2014 ready for cloud generation" : "\u26a0\uFE0F Server replied HTTP " + r.status);
+    } catch(e){ toast("\u274c Not reachable \u2014 connect the Oracle server first"); }
+  };
+  $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
 }
 
 /* expose for admin page debugging */
