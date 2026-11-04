@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -1177,6 +1177,7 @@ function bindPalette(){
     if (b.dataset.aivideo){ b.onclick = showAiVideoWizard; return; }
     if (b.dataset.medialib){ b.onclick = showMediaLibrary; return; }
     if (b.dataset.photovid){ b.onclick = showPhotoToVideo; return; }
+    if (b.dataset.aicreate){ b.onclick = showAiCreate; return; }
     b.onclick = ()=> addElement(b.dataset.add);
   });
 }
@@ -2205,6 +2206,189 @@ function buildPdf(pages){
   const outBuf = new Uint8Array(totalLen); let p = 0;
   chunks.forEach(c => { outBuf.set(c, p); p += c.length; });
   return outBuf;
+}
+
+/* ============================================================
+   AI CREATE — text-to-image + animation hand-off.
+   Offline tier: prompt-seeded procedural artwork (deterministic,
+   keyword-driven palettes/scenes). Cloud tier: POST {endpoint}/api/image
+   through the Oracle proxy (provider keys stay server-side).
+   Generated art flows to: design canvas, Media Library, Photo→Video.
+   ============================================================ */
+function aiHash(str){
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const AI_PALETTES = [
+  { k:["sunset","dusk","evening","golden"],        sky:["#2b1f5c","#ff5e62","#ff9a56"], sun:"#ffd166", sil:"#241b3a" },
+  { k:["ocean","sea","beach","water","wave"],      sky:["#1d3557","#457b9d","#a8dadc"], sun:"#f1faee", sil:"#16324f", waves:true },
+  { k:["night","star","space","galaxy","moon"],    sky:["#0b1026","#1b2a4a","#101736"], sun:"#e8e8ff", sil:"#05070f", stars:130 },
+  { k:["forest","tree","jungle","green","nature"], sky:["#1b4332","#95d5b2","#d8f3dc"], sun:"#ffe066", sil:"#081c15" },
+  { k:["desert","sand","canyon","dune"],           sky:["#bc6c25","#fb8500","#ffb703"], sun:"#fff3b0", sil:"#3d2b1f" },
+  { k:["neon","cyber","city","tech","future","synth"], sky:["#12002b","#2b0f54","#c300ff"], sun:"#00fff5", sil:"#0d0022", city:true, stars:70 },
+  { k:["snow","winter","ice","arctic","frozen"],   sky:["#293241","#98c1d9","#e0fbfc"], sun:"#ffffff", sil:"#1b3a4b" },
+  { k:["flower","garden","spring","pastel","rose"], sky:["#6d2336","#fb6f92","#ffe5ec"], sun:"#fff0f6", sil:"#40182a" },
+];
+const AI_DEFAULT_PALETTE = { sky:["#1b1035","#7c5cff","#ff5c8a"], sun:"#ffd479", sil:"#160f2e", stars:90 };
+
+function aiPickPalette(prompt){
+  const p = prompt.toLowerCase();
+  return AI_PALETTES.find(pl => pl.k.some(k => p.includes(k))) || AI_DEFAULT_PALETTE;
+}
+function aiOfflineArtwork(prompt, w, h, variation){
+  const seed = (aiHash(prompt.toLowerCase()) + variation * 7919) >>> 0;
+  const rnd = mulberry32(seed);
+  const pl = aiPickPalette(prompt);
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext("2d");
+  // sky gradient (lightest at horizon)
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, pl.sky[0]); sky.addColorStop(0.55, pl.sky[1]); sky.addColorStop(1, pl.sky[2]);
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+  // stars
+  if (pl.stars){
+    for (let i = 0; i < pl.stars; i++){
+      ctx.globalAlpha = 0.25 + rnd() * 0.75;
+      ctx.fillStyle = "#ffffff";
+      const r = rnd() * w * 0.0022 + 0.6;
+      ctx.beginPath(); ctx.arc(rnd() * w, rnd() * h * 0.6, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  // sun / moon with glow
+  const sx = w * (0.2 + rnd() * 0.6), sy = h * (0.22 + rnd() * 0.2), sr = Math.min(w,h) * (0.05 + rnd() * 0.05);
+  const glow = ctx.createRadialGradient(sx, sy, sr * 0.4, sx, sy, sr * 3.2);
+  glow.addColorStop(0, pl.sun); glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = pl.sun; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+  // layered ridges / city / waves
+  const layers = 3;
+  for (let L = 0; L < layers; L++){
+    ctx.globalAlpha = 0.45 + L * 0.28;
+    ctx.fillStyle = pl.sil;
+    const baseY = h * (0.52 + L * 0.14);
+    if (pl.city){
+      let x = -w * 0.02;
+      while (x < w * 1.02){
+        const bw = w * (0.03 + rnd() * 0.06), bh = h * (0.06 + rnd() * (0.24 - L * 0.06));
+        ctx.fillRect(x, baseY - bh, bw, h - baseY + bh);
+        x += bw + w * 0.004;
+      }
+    } else {
+      ctx.beginPath(); ctx.moveTo(0, h);
+      let x = 0;
+      const amp = h * (0.16 - L * 0.04);
+      ctx.lineTo(0, baseY);
+      while (x < w){
+        x += w / 14;
+        ctx.lineTo(x, baseY - rnd() * amp);
+      }
+      ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  if (pl.waves){
+    for (let L = 0; L < 3; L++){
+      ctx.globalAlpha = 0.35 + L * 0.2;
+      ctx.fillStyle = pl.sky[1];
+      ctx.beginPath();
+      const y0 = h * (0.72 + L * 0.09);
+      ctx.moveTo(0, y0);
+      for (let x = 0; x <= w; x += w / 40) ctx.lineTo(x, y0 + Math.sin((x / w) * Math.PI * (2 + L) + rnd() * 6) * h * 0.012);
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  // floating particles
+  for (let i = 0; i < 14; i++){
+    ctx.globalAlpha = 0.15 + rnd() * 0.5;
+    ctx.fillStyle = pl.sun;
+    ctx.beginPath(); ctx.arc(rnd() * w, h * (0.3 + rnd() * 0.6), Math.min(w,h) * (0.002 + rnd() * 0.006), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // vignette
+  const vg = ctx.createRadialGradient(w/2, h/2, Math.min(w,h) * 0.35, w/2, h/2, Math.max(w,h) * 0.75);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.45)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, w, h);
+  return cv.toDataURL("image/png");
+}
+async function aiCloudImage(prompt, size){
+  const c = getAiCloud();
+  if (!c.endpoint) throw new Error("Connect a cloud AI endpoint first (\u2601 Cloud AI settings)");
+  const r = await fetch(c.endpoint.replace(/\/$/, "") + "/api/image", {
+    method: "POST",
+    headers: Object.assign({ "Content-Type": "application/json" }, c.key ? { "Authorization": "Bearer " + c.key } : {}),
+    body: JSON.stringify({ prompt, size })
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  if (j.image) return j.image;                    // dataURL from the proxy
+  if (j.b64) return "data:image/png;base64," + j.b64;
+  throw new Error("Unexpected response shape");
+}
+
+async function showAiCreate(){
+  const cloud = getAiCloud();
+  let lastArt = null, variation = 0, lastPrompt = "", lastSize = "1024x1024";
+  showModal(`<h3>\u2728 AI Create — picture & animation</h3>
+    <p>Describe the image you want. The <b>offline studio</b> renders prompt-seeded generative art instantly; the <b>cloud tier</b> produces photorealistic images once your Oracle proxy is connected.</p>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Prompt</span>
+      <input id="aiPrompt" placeholder="e.g. neon city at night \u00b7 ocean sunset \u00b7 snowy mountains\u2026"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Size</span>
+      <select id="aiSize" class="prop-select"><option value="1024x1024">1024\u00d71024</option><option value="1280x720">1280\u00d7720</option><option value="720x1280">720\u00d71280</option></select></div>
+    <div class="m-actions" style="justify-content:flex-start;flex-wrap:wrap">
+      <button class="abtn primary" id="aiGo">\u2728 Generate (offline studio)</button>
+      ${cloud.endpoint ? `<button class="abtn ghost" id="aiCloudGo">\u2601 Generate with cloud AI</button>` : `<button class="abtn ghost" id="aiCloudCfg">\u2601 Connect cloud AI\u2026</button>`}</div>
+    <div id="aiPrevWrap" style="text-align:center;margin:10px 0"><img id="aiPrev" style="max-width:100%;max-height:300px;border-radius:10px;display:none"></div>
+    <div class="m-actions" style="justify-content:flex-start;flex-wrap:wrap;display:none" id="aiActs">
+      <button class="abtn ghost" id="aiIns" style="margin-right:auto">\u2795 Insert into design</button>
+      <button class="abtn ghost" id="aiSave">\uD83D\uDCBE Save to Media Library</button>
+      <button class="abtn primary" id="aiAnim">\uD83D\uDFAC Animate (Photo \u2192 Video)</button></div>
+    <div class="m-actions"><button class="abtn ghost" data-close style="margin-left:auto">Close</button></div>`);
+  const render = async (cloudMode) => {
+    const prompt = ($("#aiPrompt").value || "").trim();
+    if (!prompt){ toast("Describe what to create first"); return; }
+    lastPrompt = prompt; lastSize = $("#aiSize").value;
+    const [w, h] = lastSize.split("x").map(Number);
+    const btn = cloudMode ? $("#aiCloudGo") : $("#aiGo");
+    btn.disabled = true; const old = btn.textContent; btn.textContent = "\u23F3 Generating\u2026";
+    try {
+      lastArt = cloudMode ? await aiCloudImage(prompt, lastSize) : aiOfflineArtwork(prompt, w, h, variation++);
+      const prev = $("#aiPrev"); prev.src = lastArt; prev.style.display = "";
+      $("#aiActs").style.display = "flex";
+    } catch(e){ toast("\u274C " + e.message); }
+    btn.disabled = false; btn.textContent = old;
+  };
+  $("#aiGo").onclick = () => render(false);
+  if ($("#aiCloudGo")) $("#aiCloudGo").onclick = () => render(true);
+  if ($("#aiCloudCfg")) $("#aiCloudCfg").onclick = () => { closeModal(); showAiCloudSettings(); };
+  const arm = (fn) => { if (lastArt) fn(); else toast("Generate an image first"); };
+  $("#aiIns").onclick = () => arm(() => {
+    closeModal(); pushHistory();
+    const [w, h] = lastSize.split("x").map(Number);
+    const el = { id: uid(), type: "image", x: Math.round(project.w*0.1), y: Math.round(project.h*0.1),
+      w: Math.round(project.w*0.6), h: Math.round(project.w*0.6*(h/w)), src: lastArt, fit: "cover", radius: 0, opacity: 1, filter: "none" };
+    curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("AI artwork inserted");
+  });
+  $("#aiSave").onclick = () => arm(async () => {
+    await mediaPut({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
+    toast("Saved to Media Library");
+  });
+  $("#aiAnim").onclick = () => arm(async () => {
+    await mediaPut({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
+    closeModal(); showPhotoToVideo();      // newest library item auto-selected
+  });
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
 
 /* expose for admin page debugging */
