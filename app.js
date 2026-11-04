@@ -236,7 +236,7 @@ function showMemberMenu(){
     <p>Signed in as <b>${esc(u)}</b>. Designs, brand kit and templates in use belong to this member profile.</p>
     <div class="m-actions" style="flex-wrap:wrap">
       <button class="abtn ghost" id="mmAdd" style="margin-right:auto">\u2795 Add member</button>
-      <button class="abtn ghost" id="mmDel">\uD83D\uDD1 Delete this member</button>
+      <button class="abtn ghost" id="mmDel">\uD83D\uDD1B Delete this member</button>
       <button class="abtn primary" id="mmOut">Sign out</button></div>`);
   $("#mmOut").onclick = ()=>{ localStorage.removeItem(SESSION_LS); location.reload(); };
   $("#mmAdd").onclick = ()=>{ closeModal(); showMemberGate(() => { renderGallery(); restoreAutosave(); }); };
