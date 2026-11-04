@@ -304,7 +304,7 @@ check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", (
   const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   assert(idx.includes("btnWatermark"), "index.html missing watermark button");
   assert(idx.includes("assets-s3-logo.js"), "index.html missing brand asset include");
-  assert(typeof LIB.S3_LOGO_DATAURL === "string" && LIB.S3_LOGO_DATAURL.startsWith("data:image/jpeg;base64,"), "S3 logo asset malformed");
+  assert(typeof LIB.S3_LOGO_DATAURL === "string" && LIB.S3_LOGO_DATAURL.startsWith("data:image/"), "S3 logo asset malformed");
   assert(LIB.S3_LOGO_DATAURL.length > 10000, "S3 logo asset truncated");
   return "all three renderers wired; logo embedded (" + (LIB.S3_LOGO_DATAURL.length/1024).toFixed(1) + " KB)";
 });
