@@ -2754,7 +2754,6 @@ function showAiVideoWizard(){
 }
 
 function generateAiStoryboard(opts){
-  if (!project || true){ /* always create a fresh project */ }
   const style = VIDEO_STYLES[opts.style] || VIDEO_STYLES.energetic;
   const fmt = VIDEO_FORMATS[opts.format] || VIDEO_FORMATS.youtube;
   const pal = opts.useBrand ? { bg:getBrand().colors[0] || style.pal.bg, fg:"#ffffff", accent:getBrand().colors[1] || style.pal.accent, sub:style.pal.sub } : style.pal;
@@ -2920,17 +2919,20 @@ function showWatermarkModal(){
       <button class="abtn ghost" id="wmRemove" style="margin-right:auto">Remove watermark</button>
       <button class="abtn primary" id="wmApply">Apply to ALL pages</button></div>`);
   $("#wmApply").onclick = ()=>{
+    // snapshot BEFORE mutating so undo can revert the watermark (defect fix)
+    pushHistory();
     project.watermark = { enabled: $("#wmOn").checked,
       text: $("#wmText").value.trim() || "CONFIDENTIAL",
       logo: $("#wmLogo").value, angle: $("#wmAngle").value,
       opacity: +$("#wmOp").value, fontScale: +$("#wmFs").value,
       logoScale: +$("#wmLs").value, color: "#7a7a7a" };
-    pushHistory(); renderBoard(); renderPages(); saveAutosave(); closeModal();
+    renderBoard(); renderPages(); saveAutosave(); closeModal();
     toast(project.watermark.enabled ? "Watermark applied to ALL pages" : "Watermark disabled");
   };
   $("#wmRemove").onclick = ()=>{
+    pushHistory();   // snapshot before mutation (undoable)
     project.watermark = { enabled:false };
-    pushHistory(); renderBoard(); renderPages(); saveAutosave(); closeModal();
+    renderBoard(); renderPages(); saveAutosave(); closeModal();
     toast("Watermark removed from all pages");
   };
   $$("#modalCard [data-close]").forEach(x=> x.onclick = closeModal);
@@ -3250,7 +3252,10 @@ async function showPhotoToVideo(){
         }
         if (useWm) pvPaintWatermark(ctx, w, h, wmBase, logoImg);
         const pct = Math.min(100, Math.round(t / total * 100));
-        $("#pvBar").style.width = pct + "%"; $("#pvPct").textContent = pct + "% \u2014 rendering in real time\u2026";
+        // modal may have been closed mid-render — never crash the rAF loop
+        const bar = $("#pvBar"), pctEl = $("#pvPct");
+        if (bar) bar.style.width = pct + "%";
+        if (pctEl) pctEl.textContent = pct + "% \u2014 rendering in real time\u2026";
         requestAnimationFrame(frame);
       };
       requestAnimationFrame(frame);
@@ -3259,10 +3264,13 @@ async function showPhotoToVideo(){
     const ext = mime.includes("mp4") ? "mp4" : "webm";
     const name = `photo-video-${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.${ext}`;
     await mediaPut({ id: uid(), name, type: mime, blob, added: Date.now() });
-    const url = URL.createObjectURL(blob);
-    $("#pvResult").innerHTML = `<p style="font-size:12.5px;color:#4ad48a">\u2705 Saved to Media Library as <b>${esc(name)}</b> (${(blob.size/1048576).toFixed(1)} MB)</p>
-      <video controls src="${url}" style="width:100%;max-height:280px;border-radius:8px;background:#000"></video>`;
-    $("#pvGo").disabled = false; $("#pvGo").textContent = "\u25B6 Generate again";
+    const res = $("#pvResult"), go = $("#pvGo");   // may be gone if modal was closed
+    if (res){
+      const url = URL.createObjectURL(blob);
+      res.innerHTML = `<p style="font-size:12.5px;color:#4ad48a">\u2705 Saved to Media Library as <b>${esc(name)}</b> (${(blob.size/1048576).toFixed(1)} MB)</p>
+        <video controls src="${url}" style="width:100%;max-height:280px;border-radius:8px;background:#000"></video>`;
+    }
+    if (go){ go.disabled = false; go.textContent = "\u25B6 Generate again"; }
     toast("Video generated and stored locally");
   };
 }
