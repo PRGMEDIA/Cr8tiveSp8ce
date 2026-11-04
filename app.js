@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "1.6.1";
+const APP_VERSION = "1.7.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -26,10 +26,10 @@ const IMG_FILTERS = [
 
 /* ---------------- brand kit ---------------- */
 function getBrand(){
-  try { return JSON.parse(localStorage.getItem(LS.brand) || "") || { colors:[], font:"", logo:"" }; }
+  try { return JSON.parse(localStorage.getItem(mkey(LS.brand)) || "") || { colors:[], font:"", logo:"" }; }
   catch(e){ return { colors:[], font:"", logo:"" }; }
 }
-function setBrand(b){ localStorage.setItem(LS.brand, JSON.stringify(b)); }
+function setBrand(b){ localStorage.setItem(mkey(LS.brand), JSON.stringify(b)); }
 const FONT_LIST = [
   "Georgia, 'Times New Roman', serif",
   "'Times New Roman', serif",
@@ -146,13 +146,112 @@ window.addEventListener("DOMContentLoaded", () => {
   bindTopbar();
   bindPalette();
   bindKeyboard();
-  restoreAutosave();
+  updateMemberChip();
+  const store = getMembers();
+  const session = currentUser();
+  if (Object.keys(store.members).length && !session){
+    showMemberGate(() => { renderGallery(); restoreAutosave(); });
+  } else {
+    restoreAutosave();
+  }
   window.addEventListener("resize", applyZoom);
 });
 
+/* ============================================================
+   MEMBERS — device-local member profiles (user ID + password).
+   Passwords are salted and SHA-256 hashed via WebCrypto; plaintext
+   is never stored. Storage is namespaced per member so designs,
+   brand kits and custom templates stay separate. Server-backed
+   cloud accounts are a Phase II deliverable (Oracle backend).
+   ============================================================ */
+const MEMBERS_LS = "aura.members";
+const SESSION_LS = "aura.currentMember";
+function getMembers(){
+  try { return JSON.parse(localStorage.getItem(MEMBERS_LS) || "") || { members:{} }; }
+  catch(e){ return { members:{} }; }
+}
+function setMembers(m){ localStorage.setItem(MEMBERS_LS, JSON.stringify(m)); }
+function currentUser(){
+  try { return JSON.parse(localStorage.getItem(SESSION_LS) || "null"); } catch(e){ return null; }
+}
+function mkey(base){
+  const u = currentUser();
+  return u ? `aura.m.${u}.${base}` : base;
+}
+async function hashPassword(salt, pw){
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + ":" + pw));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  } catch(e){
+    let h = 0x811c9dc5; const s = salt + ":" + pw;   // FNV-1a fallback
+    for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return "fnv:" + h.toString(16);
+  }
+}
+function updateMemberChip(){
+  const chip = $("#memberChip");
+  if (chip) chip.textContent = currentUser() ? "\uD83D\uDC64 " + currentUser() : "\uD83D\uDC64 Guest";
+}
+function showMemberGate(after){
+  const store = getMembers();
+  const names = Object.keys(store.members);
+  showModal(`<h3>\uD83D\uDC65 Member sign-in</h3>
+    <p>Member profiles keep designs, brand kits and templates separate on this device \u2014 like a phone lock screen. (Cloud-synced member accounts arrive with the Phase II server.)</p>
+    ${names.map(n => `<button class="prop-btn" data-member="${esc(n)}">\uD83D\uDC64 ${esc(n)}</button>`).join("")}
+    <div class="m-row"><input id="mUser" placeholder="member ID" autocomplete="off" spellcheck="false"></div>
+    <div class="m-row"><input id="mPass" type="password" placeholder="password"></div>
+    <div class="m-actions" style="flex-wrap:wrap">
+      <button class="abtn ghost" id="mNew" style="margin-right:auto">\u2795 Create member</button>
+      <button class="abtn ghost" id="mGuest">Continue as guest</button>
+      <button class="abtn primary" id="mIn">Sign in</button></div>`);
+  $$("#modalCard [data-member]").forEach(b => b.onclick = () => { $("#mUser").value = b.dataset.member; $("#mPass").focus(); });
+  const done = (u) => { localStorage.setItem(SESSION_LS, JSON.stringify(u)); closeModal(); updateMemberChip(); if (after) after(); };
+  $("#mGuest").onclick = () => { localStorage.removeItem(SESSION_LS); closeModal(); updateMemberChip(); if (after) after(); };
+  $("#mIn").onclick = async () => {
+    const u = ($("#mUser").value || "").trim(), pw = $("#mPass").value || "";
+    const rec = store.members[u];
+    if (!rec){ toast("Unknown member ID \u2014 create one first"); return; }
+    const h = await hashPassword(rec.salt, pw);
+    if (h !== rec.hash){ toast("Wrong password"); return; }
+    done(u);
+  };
+  $("#mNew").onclick = async () => {
+    const u = ($("#mUser").value || "").trim(), pw = $("#mPass").value || "";
+    if (!/^[A-Za-z0-9_.\-]{2,24}$/.test(u)){ toast("Member ID: 2\u201324 letters/numbers/_/-"); return; }
+    if (pw.length < 4){ toast("Password: at least 4 characters"); return; }
+    const st = getMembers();
+    if (st.members[u]){ toast("That member ID already exists"); return; }
+    const salt = uid() + uid();
+    st.members[u] = { salt, hash: await hashPassword(salt, pw), created: Date.now() };
+    setMembers(st);
+    toast(`Member \u201c${u}\u201d created \u2014 signed in`);
+    done(u);
+  };
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+}
+function showMemberMenu(){
+  const u = currentUser();
+  if (!u){ showMemberGate(() => { renderGallery(); restoreAutosave(); }); return; }
+  showModal(`<h3>\uD83D\uDC65 Members</h3>
+    <p>Signed in as <b>${esc(u)}</b>. Designs, brand kit and templates in use belong to this member profile.</p>
+    <div class="m-actions" style="flex-wrap:wrap">
+      <button class="abtn ghost" id="mmAdd" style="margin-right:auto">\u2795 Add member</button>
+      <button class="abtn ghost" id="mmDel">\uD83D\uDD1 Delete this member</button>
+      <button class="abtn primary" id="mmOut">Sign out</button></div>`);
+  $("#mmOut").onclick = ()=>{ localStorage.removeItem(SESSION_LS); location.reload(); };
+  $("#mmAdd").onclick = ()=>{ closeModal(); showMemberGate(() => { renderGallery(); restoreAutosave(); }); };
+  $("#mmDel").onclick = ()=>{
+    if (!confirm(`Delete member \u201c${u}\u201d and their local data? This cannot be undone.`)) return;
+    const st = getMembers(); delete st.members[u]; setMembers(st);
+    Object.keys(localStorage).filter(k => k.startsWith(`aura.m.${u}.`)).forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem(SESSION_LS); location.reload();
+  };
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+}
+
 function restoreAutosave(){
   try {
-    const raw = localStorage.getItem(LS.autosave);
+    const raw = localStorage.getItem(mkey(LS.autosave));
     if (!raw) return;
     const p = JSON.parse(raw);
     if (p && p.pages && p.pages.length){
@@ -175,7 +274,7 @@ function hydrate(p){
 /* ---------------- all templates (builtin + custom) ---------------- */
 function allTemplates(){
   let custom = [];
-  try { custom = JSON.parse(localStorage.getItem(LS.customTpl) || "[]"); } catch(e){}
+  try { custom = JSON.parse(localStorage.getItem(mkey(LS.customTpl)) || "[]"); } catch(e){}
   return [...custom, ...TEMPLATES];
 }
 
@@ -752,7 +851,7 @@ function doRedo(){
 /* ---------- persistence ---------- */
 function saveAutosave(){
   if (!project) return;
-  try { localStorage.setItem(LS.autosave, JSON.stringify(project)); $("#saveState").textContent = "Saved"; }
+  try { localStorage.setItem(mkey(LS.autosave), JSON.stringify(project)); $("#saveState").textContent = "Saved"; }
   catch(e){ $("#saveState").textContent = "Storage full"; }
 }
 
@@ -772,6 +871,7 @@ function bindTopbar(){
     toast(guidesOn ? "Print guides on \u2014 backgrounds to the edge, text inside cyan" : "Print guides off");
   };
   $("#btnWatermark").onclick = showWatermarkModal;
+  $("#memberChip").onclick = showMemberMenu;
   $("#btnAdmin").onclick = openAdminOverlay;
   $("#searchBox").addEventListener("input", doSearch);
 
@@ -797,6 +897,7 @@ function bindTopbar(){
         project = hydrate({name:"Untitled design",cat:"custom",w,h,pages:[{bg:"#ffffff",elements:[]}]}); curPage=0; undoStack=[]; openEditor(); saveAutosave(); };
     }
     if (act==="watermark"){ showWatermarkModal(); }
+    if (act==="members"){ showMemberMenu(); }
     if (act==="help") showHelp();
   });
 

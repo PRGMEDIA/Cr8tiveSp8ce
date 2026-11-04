@@ -46,9 +46,25 @@ inject = """
   const ADMIN_HTML = %s;
   const btn = document.getElementById("btnAdmin");
   btn.onclick = function(){
-    const w = window.open("", "_blank");
-    if (!w) { alert("Allow popups to open the Admin Agent."); return; }
-    w.document.open(); w.document.write(ADMIN_HTML); w.document.close();
+    // Phase II change (v1.6.2): popup-free. Renders the Admin Agent inside an
+    // isolated srcdoc iframe overlay — styles are sandboxed, localStorage is
+    // shared with the app, and no popup permission is ever required.
+    let ov = document.getElementById("adminOverlaySF");
+    if (ov) ov.remove();
+    ov = document.createElement("div");
+    ov.id = "adminOverlaySF";
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(5,6,15,.82);z-index:300;display:flex;align-items:center;justify-content:center";
+    const card = document.createElement("div");
+    card.style.cssText = "width:min(1040px,94vw);height:min(780px,92vh);background:#141831;border:1px solid #2a2f55;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)";
+    card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #2a2f55;font:600 14px Segoe UI,sans-serif;color:#eef0ff"><span>\u2699 Admin Agent</span><button id="admCls" style="background:#171b31;border:1px solid #2a2f55;color:#eef0ff;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px">\u2715 Close</button></div>';
+    const ifr = document.createElement("iframe");
+    ifr.style.cssText = "flex:1;border:none;background:#0f1222";
+    ifr.setAttribute("title", "Aura Studio Admin Agent");
+    ifr.srcdoc = ADMIN_HTML;
+    card.appendChild(ifr);
+    ov.appendChild(card);
+    document.body.appendChild(ov);
+    document.getElementById("admCls").onclick = () => ov.remove();
   };
 })();
 </script>
