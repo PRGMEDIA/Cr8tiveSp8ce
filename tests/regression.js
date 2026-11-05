@@ -451,6 +451,12 @@ check("23d", "Image tools: interactive crop + hyperlink (props, open, clickable 
   assert(SRC.app.includes("showCropModal(el)"), "crop not bound in properties panel");
   return "drag-select crop + link URL/open/clickable-SVG-export";
 });
+check("29", "I-019 hardening: per-element draw isolation, blank-export detection, scale/bg guards", () => {
+  for (const s of ["function canvasLooksBlank", "function exportDiagnostics", "__auraFailedElements",
+                   "let failed = 0", "element failed to render", "/^(#|rgb|hsl)/.test(page.bg)", "sc > 8"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  return "draw isolation + blank detection + diagnostics + guards";
+});
 check("23g", "I-017 fix: high-quality image rendering (smoothing, blurred-bg fit mode) + special-char member IDs", () => {
   for (const s of ['ctx.imageSmoothingQuality = "high"', "function makeBlurredBg", "function pvMotionScale",
                    'value="blur"', "Blurred background"])

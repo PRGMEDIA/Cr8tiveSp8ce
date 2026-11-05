@@ -2198,13 +2198,18 @@ function bindTopbar(){
     const act = e.target.dataset.act; if(!act || !project) return;
     $$(".dropdown").forEach(d=>d.classList.remove("open"));
     try {
-      if (act==="png"){ const blob = await renderPagePng(curPageData(), 2); downloadBlob(blob, pageFile("png"), "image/png"); toast("PNG exported"); }
+      if (act==="png"){ const c = await renderPageCanvas(curPageData(), 2);
+        exportDiagnostics(c, "PNG");
+        const blob = await new Promise(res => c.toBlob(res, "image/png"));
+        downloadBlob(blob, pageFile("png"), "image/png"); toast("PNG exported"); }
       if (act==="jpeg"){ const c = await renderPageCanvas(curPageData(), 2);
+        exportDiagnostics(c, "JPEG");
         c.toBlob(b => { downloadBlob(b, pageFile("jpg"), "image/jpeg"); toast("JPEG exported"); }, "image/jpeg", 0.92); }
       if (act==="pdf"){
         const pages = [];
         for (const pg of project.pages){
           const c = await renderPageCanvas(pg, 2);
+          exportDiagnostics(c, "PDF page");
           const b64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
           const bin = atob(b64); const u8 = new Uint8Array(bin.length);
           for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
@@ -2519,12 +2524,14 @@ function loadImage(src){
 }
 
 async function renderPageCanvas(page, scale){
+  // I-019 hardening: sane scale + validated background + per-element isolation
+  let sc = Number(scale); if (!isFinite(sc) || sc <= 0 || sc > 8) sc = 1;
   const c = document.createElement("canvas");
-  c.width = project.w * scale; c.height = project.h * scale;
+  c.width = Math.max(1, Math.round(project.w * sc)); c.height = Math.max(1, Math.round(project.h * sc));
   const ctx = c.getContext("2d");
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.scale(scale, scale);
+  ctx.scale(sc, sc);
   // preload images
   const imgs = {};
   await Promise.all(page.elements.filter(e=>e.type==="image").map(async e=>{ imgs[e.id] = await loadImage(e.src); }));
@@ -2537,14 +2544,50 @@ async function renderPagePng(page, scale){
   const c = await renderPageCanvas(page, scale);
   return new Promise(res => c.toBlob(res, "image/png"));
 }
+function canvasLooksBlank(canvas){
+  // I-019 diagnostics: downsample and test whether the render is one flat color
+  try {
+    const n = 64;
+    const s = document.createElement("canvas");
+    s.width = n; s.height = n;
+    const x = s.getContext("2d");
+    x.drawImage(canvas, 0, 0, n, n);
+    const d = x.getImageData(0, 0, n, n).data;
+    const first = [d[0], d[1], d[2], d[3]];
+    let same = 0;
+    for (let i = 0; i < d.length; i += 4){
+      if (Math.abs(d[i]-first[0]) <= 2 && Math.abs(d[i+1]-first[1]) <= 2 &&
+          Math.abs(d[i+2]-first[2]) <= 2 && Math.abs(d[i+3]-first[3]) <= 2) same++;
+    }
+    return same / (n*n) > 0.995;
+  } catch(e){ return false; }   // tainted canvas: cannot inspect; assume fine
+}
+function exportDiagnostics(c, label){
+  const failed = c.__auraFailedElements || 0;
+  const blank = canvasLooksBlank(c);
+  if (blank || failed){
+    const msg = `Export check (${label}): ${blank ? "output looks BLANK/solid" : "ok"}` +
+      `${failed ? " \u2014 " + failed + " element(s) failed to render" : ""}` +
+      ` \u2014 page ${curPage+1}/${project.pages.length}, ${curPageData().elements.length} element(s). Details in console (F12).`;
+    console.error("[Aura Studio]", msg);
+    try { console.error("[Aura Studio] page data:", JSON.stringify(curPageData()).slice(0, 2000)); } catch(e){}
+    toast("\u26A0 " + msg, 6000);
+  }
+  return !blank && !failed;
+}
 
 function drawPage(ctx, page, imgs){
-  ctx.fillStyle = page.bg || "#fff";
+  // I-019: normalize the background — an invalid color silently keeps the
+  // previous fillStyle (black), which produced solid-color exports.
+  const bg = (page.bg && /^(#|rgb|hsl)/.test(page.bg)) ? page.bg : "#ffffff";
+  ctx.fillStyle = bg;
   ctx.fillRect(0,0,project.w,project.h);
+  let failed = 0;
   for (const el of page.elements){
     ctx.save();
     ctx.globalAlpha = el.opacity != null ? el.opacity : 1;
     if (el.rot){ ctx.translate(el.x + el.w/2, el.y + el.h/2); ctx.rotate(el.rot * Math.PI/180); ctx.translate(-(el.x + el.w/2), -(el.y + el.h/2)); }
+    try {
     if (el.type==="rect"){
       const r = el.radius||0;
       ctx.beginPath();
@@ -2593,9 +2636,14 @@ function drawPage(ctx, page, imgs){
         ctx.fillText(line, tx, el.y + i*lh + (lh-(el.fontSize||24))/2.6);
       });
     }
+    } catch(err){
+      failed++;
+      if (window.console && console.warn) console.warn("Aura export: element failed to render:", el.type, el.id, err && err.message);
+    }
     ctx.restore();
   }
   drawWatermarkCanvas(ctx, imgs);
+  try { ctx.canvas.__auraFailedElements = failed; } catch(e){}
 }
 
 function renderPageSvg(page){
