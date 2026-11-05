@@ -87,6 +87,13 @@ this.__undoResults = (function(){
   out.watermarkRedo = !!(project.watermark && project.watermark.enabled);
   doUndo();
   out.watermarkUndo = !(project.watermark && project.watermark.enabled);
+  // 5) rotation (v2.4)
+  pushHistory();
+  project.pages[0].elements[0].rot = 45;
+  doUndo();
+  out.rotate = !project.pages[0].elements[0].rot;
+  doRedo();
+  out.rotateRedo = project.pages[0].elements[0].rot === 45;
   return out;
 })();
 `;
@@ -174,6 +181,24 @@ check("24", "Undo/redo logic: move, redo, add, page ops, watermark snapshot orde
 });
 
 /* ---------------- template library integrity ---------------- */
+check("27", "Rotation: lines/shapes/images rotate (handle, props, canvas + SVG exports)", () => {
+  for (const s of ["function svgRot", "addRotate", "ctx.rotate(el.rot * Math.PI/180)", "node.style.transform = \"rotate(\" + el.rot + \"deg)\"", "handle rot"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  const r = sandbox.__undoResults;
+  assert(r && r.rotate && r.rotateRedo, "rotation undo/redo failed");
+  return "rotate handle + Shift-snap + exports + undoable";
+});
+check("28", "Superuser role + community repository (created-by attribution)", () => {
+  for (const s of ["function isSuperuser", "function showCommunityRepo", "function publishToCommunity",
+                   "const COMM_LS", "created by", "super: Object.keys(st.members).length === 0"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  const adm = fs.readFileSync(path.join(ROOT, "admin.html"), "utf8");
+  for (const s of ["function renderSuper", "Open workspace", "data-promo", "superuser"])
+    assert(adm.includes(s), "admin.html missing: " + s);
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idx.includes("data-community"), "index.html missing Community button");
+  return "superuser member admin + publish/browse/moderate repository";
+});
 check("03", "Library: at least 50 templates", () => {
   assert(TEMPLATES.length >= 50, `only ${TEMPLATES.length}`);
   return `${TEMPLATES.length} templates`;

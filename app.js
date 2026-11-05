@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.4.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -132,6 +132,9 @@ const CMYK_PALETTE = [
 function cmykAttr(el){
   return el.cmyk ? ` data-cmyk="${el.cmyk.c} ${el.cmyk.m} ${el.cmyk.y} ${el.cmyk.k}"` : "";
 }
+function svgRot(el){
+  return el.rot ? ` transform="rotate(${el.rot} ${el.x + el.w/2} ${el.y + el.h/2})"` : "";
+}
 
 function toast(msg, ms=2200){
   const t = $("#toast"); t.textContent = msg; t.classList.add("show");
@@ -222,22 +225,31 @@ function showMemberGate(after){
     const st = getMembers();
     if (st.members[u]){ toast("That member ID already exists"); return; }
     const salt = uid() + uid();
-    st.members[u] = { salt, hash: await hashPassword(salt, pw), created: Date.now() };
+    // the first member created on a device becomes the superuser (admin role)
+    st.members[u] = { salt, hash: await hashPassword(salt, pw), created: Date.now(), super: Object.keys(st.members).length === 0 };
     setMembers(st);
     toast(`Member \u201c${u}\u201d created \u2014 signed in`);
     done(u);
   };
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
+function isSuperuser(){
+  const u = currentUser();
+  const st = getMembers();
+  return !!(u && st.members[u] && st.members[u].super);
+}
 function showMemberMenu(){
   const u = currentUser();
   if (!u){ showMemberGate(() => { renderGallery(); restoreAutosave(); }); return; }
+  const su = isSuperuser();
   showModal(`<h3>\uD83D\uDC65 Members</h3>
-    <p>Signed in as <b>${esc(u)}</b>. Designs, brand kit and templates in use belong to this member profile.</p>
+    <p>Signed in as <b>${esc(u)}</b>${su ? " <span class=\"tag-ok\">\uD83D\uDEE1 superuser</span>" : ""}. Designs, brand kit and templates in use belong to this member profile.</p>
     <div class="m-actions" style="flex-wrap:wrap">
       <button class="abtn ghost" id="mmAdd" style="margin-right:auto">\u2795 Add member</button>
+      ${su ? `<button class="abtn ghost" id="mmAdmin">\uD83D\uDEE1 Superuser admin</button>` : ""}
       <button class="abtn ghost" id="mmDel">\uD83D\uDD1B Delete this member</button>
       <button class="abtn primary" id="mmOut">Sign out</button></div>`);
+  if (su) $("#mmAdmin").onclick = ()=>{ closeModal(); openAdminOverlay(); };
   $("#mmOut").onclick = ()=>{ localStorage.removeItem(SESSION_LS); location.reload(); };
   $("#mmAdd").onclick = ()=>{ closeModal(); showMemberGate(() => { renderGallery(); restoreAutosave(); }); };
   $("#mmDel").onclick = ()=>{
@@ -412,6 +424,7 @@ function buildElNode(el, interactive){
   d.style.left = el.x+"px"; d.style.top = el.y+"px";
   d.style.width = el.w+"px"; d.style.height = el.h+"px";
   d.style.opacity = el.opacity != null ? el.opacity : 1;
+  d.style.transform = "rotate(" + (el.rot || 0) + "deg)";
   if (interactive){
     d.dataset.id = el.id;
     if (el.id === selId) d.classList.add("sel");
@@ -526,7 +539,32 @@ function applySnap(el, nx, ny, th){
 
 function attachHandles(node, el, scale){
   $$(".handle").forEach(h=>h.remove());
-  if (el.type === "line") return;
+  const addRotate = () => {
+    const rh = document.createElement("div");
+    rh.className = "handle rot";
+    rh.title = "Rotate (hold Shift to snap 15\u00b0)";
+    node.appendChild(rh);
+    rh.addEventListener("mousedown", (e) => {
+      e.stopPropagation(); e.preventDefault();
+      const sc2 = boardScale();
+      const br = $("#board").getBoundingClientRect();
+      const cx = el.x + el.w/2, cy = el.y + el.h/2;
+      const ang0 = Math.atan2((e.clientY - br.top)/sc2 - cy, (e.clientX - br.left)/sc2 - cx) * 180/Math.PI;
+      const rot0 = el.rot || 0;
+      pushHistory();
+      const mv = (ev) => {
+        const a = Math.atan2((ev.clientY - br.top)/sc2 - cy, (ev.clientX - br.left)/sc2 - cx) * 180/Math.PI;
+        let rot = rot0 + (a - ang0);
+        if (ev.shiftKey) rot = Math.round(rot/15)*15;
+        el.rot = Math.round(((rot % 360) + 360) % 360);
+        node.style.transform = "rotate(" + el.rot + "deg)";
+      };
+      const up = () => { document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); renderProps(); saveAutosave(); };
+      document.addEventListener("mousemove", mv);
+      document.addEventListener("mouseup", up);
+    });
+  };
+  if (el.type === "line"){ addRotate(); return; }
   ["nw","ne","sw","se"].forEach(pos=>{
     const h = document.createElement("div");
     h.className = "handle " + pos;
@@ -550,6 +588,7 @@ function attachHandles(node, el, scale){
       document.addEventListener("mouseup", up);
     });
   });
+  addRotate();
 }
 
 /* ---------- text editing ---------- */
@@ -634,6 +673,8 @@ function renderProps(){
     const r = row(g1, lab, num(el[key]));
     bind(r, "input", "change", (e)=>{ pushHistory(); el[key] = Math.round(+e.target.value||0); refreshEl(el); });
   });
+  const rr = row(g1, "Rotate", `<input type="number" min="0" max="360" step="1" class="prop-input" value="${el.rot||0}" title="0\u2013360 degrees">`);
+  bind(rr, "input", "change", (e)=>{ pushHistory(); el.rot = ((+e.target.value||0) % 360 + 360) % 360; refreshEl(el); });
   const ga = row(g1, "Align", ["left","hcenter","right","top","vcenter","bottom"]
     .map(m=>`<button class="align-btn" data-al="${m}" title="Align ${m}">${{left:"\u2b05",hcenter:"\u2194",right:"\u27a1",top:"\u2b06",vcenter:"\u2195",bottom:"\u2b07"}[m]}</button>`).join(""));
   ga.querySelectorAll(".align-btn").forEach(btn=> btn.onclick = ()=> alignSel(el, btn.dataset.al));
@@ -723,7 +764,7 @@ function renderProps(){
 
 function refreshEl(el){
   const node = $(`#board [data-id="${el.id}"]`);
-  if (node){ node.style.left=el.x+"px"; node.style.top=el.y+"px"; node.style.width=el.w+"px"; node.style.height=el.h+"px"; fillNode(node, el); }
+  if (node){ node.style.left=el.x+"px"; node.style.top=el.y+"px"; node.style.width=el.w+"px"; node.style.height=el.h+"px"; node.style.transform="rotate(" + (el.rot||0) + "deg)"; fillNode(node, el); }
   renderProps(); saveAutosave();
 }
 
@@ -1178,6 +1219,7 @@ function bindPalette(){
     if (b.dataset.medialib){ b.onclick = showMediaLibrary; return; }
     if (b.dataset.photovid){ b.onclick = showPhotoToVideo; return; }
     if (b.dataset.aicreate){ b.onclick = showAiCreate; return; }
+    if (b.dataset.community){ b.onclick = showCommunityRepo; return; }
     b.onclick = ()=> addElement(b.dataset.add);
   });
 }
@@ -1259,6 +1301,7 @@ function drawPage(ctx, page, imgs){
   for (const el of page.elements){
     ctx.save();
     ctx.globalAlpha = el.opacity != null ? el.opacity : 1;
+    if (el.rot){ ctx.translate(el.x + el.w/2, el.y + el.h/2); ctx.rotate(el.rot * Math.PI/180); ctx.translate(-(el.x + el.w/2), -(el.y + el.h/2)); }
     if (el.type==="rect"){
       const r = el.radius||0;
       ctx.beginPath();
@@ -1321,16 +1364,16 @@ function renderPageSvg(page){
     const elStart = parts.length;
     const op = el.opacity != null ? el.opacity : 1;
     if (el.type==="rect"){
-      parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"${cmykAttr(el)}/>`);
+      parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"${cmykAttr(el)}${svgRot(el)}/>`);
     } else if (el.type==="ellipse"){
-      parts.push(`<ellipse cx="${el.x+el.w/2}" cy="${el.y+el.h/2}" rx="${el.w/2}" ry="${el.h/2}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"${cmykAttr(el)}/>`);
+      parts.push(`<ellipse cx="${el.x+el.w/2}" cy="${el.y+el.h/2}" rx="${el.w/2}" ry="${el.h/2}" fill="${el.fill&&el.fill!=="none"?el.fill:"none"}" stroke="${el.stroke&&el.stroke!=="none"?el.stroke:"none"}" stroke-width="${el.strokeWidth||0}" opacity="${op}"${cmykAttr(el)}${svgRot(el)}/>`);
     } else if (el.type==="line"){
       const horiz = (el.y2a-el.y1)<2;
-      if (horiz) parts.push(`<rect x="${el.x}" y="${el.y+(el.h-el.strokeWidth)/2}" width="${el.w}" height="${el.strokeWidth}" fill="${el.stroke}" opacity="${op}"/>`);
-      else parts.push(`<rect x="${el.x+(el.w-el.strokeWidth)/2}" y="${el.y}" width="${el.strokeWidth}" height="${el.h}" fill="${el.stroke}" opacity="${op}"/>`);
+      if (horiz) parts.push(`<rect x="${el.x}" y="${el.y+(el.h-el.strokeWidth)/2}" width="${el.w}" height="${el.strokeWidth}" fill="${el.stroke}" opacity="${op}"${svgRot(el)}/>`);
+      else parts.push(`<rect x="${el.x+(el.w-el.strokeWidth)/2}" y="${el.y}" width="${el.strokeWidth}" height="${el.h}" fill="${el.stroke}" opacity="${op}"${svgRot(el)}/>`);
     } else if (el.type==="image"){
       parts.push(`<clipPath id="c${el.id}"><rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius||0}"/></clipPath>`+
-        `<image href="${el.src}" x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" preserveAspectRatio="${el.fit==="contain"?"xMidYMid meet":"xMidYMid slice"}" clip-path="url(#c${el.id})" opacity="${op}" style="filter:${el.filter||'none'}"/>`);
+        `<image href="${el.src}" x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" preserveAspectRatio="${el.fit==="contain"?"xMidYMid meet":"xMidYMid slice"}" clip-path="url(#c${el.id})" opacity="${op}" style="filter:${el.filter||'none'}"${svgRot(el)}/>`);
     } else if (el.type==="text" || el.type==="glyph"){
       const txt = el.uppercase ? String(el.text||"").toUpperCase() : String(el.text||"");
       const style = `font-family="${(el.fontFamily||"Arial").replace(/"/g,"'")}" font-size="${el.fontSize||24}" font-weight="${el.fontWeight||400}" ${el.italic?'font-style="italic"':""} fill="${el.color||"#111"}" letter-spacing="${el.letterSpacing||0}" opacity="${op}"`;
@@ -1341,7 +1384,7 @@ function renderPageSvg(page){
       const lines = wrapText(meas, txt, el.w);
       const lh = (el.fontSize||24)*(el.lineHeight||1.25);
       lines.forEach((line,i)=>{
-        parts.push(`<text x="${ax}" y="${el.y + i*lh + (el.fontSize||24)}" text-anchor="${anchor}" ${style}${cmykAttr(el)}>${esc(line)}</text>`);
+        parts.push(`<text x="${ax}" y="${el.y + i*lh + (el.fontSize||24)}" text-anchor="${anchor}" ${style}${cmykAttr(el)}${svgRot(el)}>${esc(line)}</text>`);
       });
     }
     // hyperlink: wrap the element's SVG markup in an anchor so exports stay clickable
@@ -1847,7 +1890,7 @@ async function showMediaLibrary(){
     return `<div class="ml-cell" data-id="${esc(m.id)}">
       ${thumb}<div class="ml-nm">${esc((m.name || "asset").slice(0,26))}</div>
       <div class="ml-ops"><button data-ins="1" title="${isVid ? "Videos become insertable in Phase II" : "Insert into page"}">${isVid ? "\u2b07" : "\u2795"}</button>
-      <button data-dl="1" title="Download">\u2b07</button><button data-del="1" title="Delete">\u2715</button></div></div>`;
+      <button data-dl="1" title="Download">\u2b07</button><button data-del="1" title="Delete">\u2715</button><button data-pub="1" title="Publish to community repository">\uD83D\uDF10</button></div></div>`;
   }).join("") : `<p style="color:var(--ink-dim);font-size:12.5px">Library is empty \u2014 upload images or videos below. Files persist in this browser (IndexedDB), well beyond the 5 MB localStorage limit.</p>`;
   showModal(`<h3>\uD83D\uDDBC\uFE0F Media Library</h3>
     <p>Persistent local storage for images and videos. Images can be re-inserted into any design; videos are stored and downloadable (insertable video elements arrive in Phase II).</p>
@@ -1877,9 +1920,10 @@ async function showMediaLibrary(){
   $$("#mlGrid .ml-cell").forEach(cell => {
     const id = cell.dataset.id;
     const rec = items.find(m => m.id === id);
-    const ins = cell.querySelector("[data-ins]"), dl = cell.querySelector("[data-dl]"), del = cell.querySelector("[data-del]");
+    const ins = cell.querySelector("[data-ins]"), dl = cell.querySelector("[data-dl]"), del = cell.querySelector("[data-del]"), pub = cell.querySelector("[data-pub]");
     if (ins) ins.onclick = () => {
       const isVid = (rec.type || "").startsWith("video");
+      const isAud = (rec.type || "").startsWith("audio");   // I-018 fix: was scoped to the builder only
       if (isVid || isAud){ toast((isAud ? "Audio elements arrive with the music editor" : "Video elements arrive in Phase II") + " \u2014 use the download button for now"); return; }
       closeModal();
       pushHistory();
@@ -1892,6 +1936,7 @@ async function showMediaLibrary(){
       a.href = rec.blob ? URL.createObjectURL(rec.blob) : mediaSrcOf(rec);
       a.download = rec.name || "asset"; a.click();
     };
+    if (pub) pub.onclick = async () => { await publishToCommunity(rec); rerun(); };
     if (del) del.onclick = async () => { await mediaDelete(id); rerun(); };
   });
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
@@ -2435,6 +2480,69 @@ async function showAiCreate(){
   $("#aiAnim").onclick = () => arm(async () => {
     await mediaPut({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
     closeModal(); showPhotoToVideo();      // newest library item auto-selected
+  });
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+}
+
+/* ============================================================
+   COMMUNITY REPOSITORY \u2014 \u201ccreated by u\u201d shared asset gallery.
+   All members on this device can publish and browse; the superuser
+   can moderate. Stored in localStorage (aura.community); the AuraDB
+   cloud tier syncs it across devices in Phase II.
+   ============================================================ */
+const COMM_LS = "aura.community";
+function commAll(){ try { return JSON.parse(localStorage.getItem(COMM_LS) || "[]"); } catch(e){ return []; } }
+function commSave(a){ localStorage.setItem(COMM_LS, JSON.stringify(a.slice(0, 500))); }
+async function publishToCommunity(rec){
+  const a = commAll();
+  a.unshift({ id: uid(), name: rec.name || "asset", type: rec.type || "image/png",
+    data: rec.data || rec.src || "", blob: rec.blob || null,
+    by: currentUser() || "Guest", added: Date.now() });
+  commSave(a);
+  toast("Published to the community repository \u2014 created by " + (currentUser() || "Guest"));
+}
+function showCommunityRepo(){
+  const items = commAll().sort((a,b) => (b.added||0) - (a.added||0));
+  const su = isSuperuser();
+  const me = currentUser() || "Guest";
+  const cells = items.length ? items.map(m => {
+    const isVid = (m.type || "").startsWith("video") || !!m.blob;
+    const isAud = (m.type || "").startsWith("audio");
+    const icon = isAud ? "\uD83D\uDD0A" : isVid ? "\uD83D\uDCFD\uFE0F" : "";
+    const canDelete = su || m.by === me;
+    return `<div class="ml-cell" data-id="${esc(m.id)}">
+      <div class="ml-thumb">${icon ? `<span style="font-size:26px">${icon}</span>` : `<img src="${m.data || ""}" alt="">`}</div>
+      <div class="ml-nm">${esc((m.name || "asset").slice(0,22))}</div>
+      <div class="ml-by">created by <b>${esc(m.by || "unknown")}</b></div>
+      <div class="ml-ops">
+        ${isVid || isAud ? "" : `<button data-ins="1" title="Insert into page">\u2795</button>`}
+        <button data-dl="1" title="Download">\u2b07</button>
+        ${canDelete ? `<button data-del="1" title="${su && m.by !== me ? "Remove (superuser)" : "Delete"}">\u2715</button>` : ""}
+      </div></div>`;
+  }).join("") : `<p style="color:var(--ink-dim);font-size:12.5px">The community repository is empty \u2014 publish assets from the Media Library (\uD83D\uDF10 button).</p>`;
+  showModal(`<h3>\uD83D\uDF10 Community repository</h3>
+    <p>Shared image/video/audio gallery for <b>all members</b> of this studio \u2014 every asset is labeled \u201ccreated by\u201d its maker. ${su ? "You have <b>superuser</b> moderation rights." : "Members manage their own uploads; the superuser can moderate."}</p>
+    <div class="ml-grid" id="commGrid">${cells}</div>
+    <div class="m-actions"><button class="abtn primary" data-close style="margin-left:auto">Done</button></div>`);
+  $$("#commGrid .ml-cell").forEach(cell => {
+    const id = cell.dataset.id;
+    const rec = items.find(m => m.id === id);
+    const ins = cell.querySelector("[data-ins]"), dl = cell.querySelector("[data-dl]"), del = cell.querySelector("[data-del]");
+    if (ins) ins.onclick = () => {
+      closeModal(); pushHistory();
+      const el = { id: uid(), type: "image", x: Math.round(project.w*0.2), y: Math.round(project.h*0.2),
+        w: Math.round(project.w*0.6), h: Math.round(project.h*0.4), src: rec.data || "", fit: "cover", radius: 0, opacity: 1, filter: "none" };
+      curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("Inserted from community repository");
+    };
+    if (dl) dl.onclick = () => {
+      const a = document.createElement("a");
+      a.href = rec.blob ? URL.createObjectURL(rec.blob) : (rec.data || "");
+      a.download = rec.name || "asset"; a.click();
+    };
+    if (del) del.onclick = () => {
+      commSave(commAll().filter(m => m.id !== id));
+      closeModal(); showCommunityRepo(); toast("Removed from community repository");
+    };
   });
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
