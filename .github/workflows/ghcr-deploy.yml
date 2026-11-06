@@ -1,6 +1,6 @@
-# Aura Studio â€” build & publish container image to GitHub Container Registry (ghcr.io)
+# Aura Studio — build & publish container image to GitHub Container Registry (ghcr.io)
 #
-# ZERO extra secrets needed â€” the built-in GITHUB_TOKEN handles authentication.
+# ZERO extra secrets needed — the built-in GITHUB_TOKEN handles authentication.
 # The image lands at: ghcr.io/prgmedia/aura-studio
 #
 # To pull locally:
@@ -40,6 +40,6 @@ jobs:
           docker push ghcr.io/${{ github.repository_owner }}/aura-studio:${{ github.sha }}
           docker push ghcr.io/${{ github.repository_owner }}/aura-studio:latest
 
-      - name: Deploy to VPS (optional â€” requires VPS secrets)
+      - name: Deploy to VPS (optional — requires VPS secrets)
         if: vars.VPS_DEPLOY_ENABLED == 'true'
-        run: echo "VPS deploy step â€” configure your deploy.yml or add SSH deploy here"
+        run: echo "VPS deploy step — configure your deploy.yml or add SSH deploy here"
