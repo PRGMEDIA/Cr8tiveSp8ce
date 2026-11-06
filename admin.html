@@ -127,6 +127,34 @@ function $(s){ return document.querySelector(s); }
 // Superuser: member-account administration (device-local role — the first
 // member created on a device holds it). Lists every member, allows opening
 // their workspace or removing them. Requires same-origin iframe context.
+// recovery-code helpers (mirror the app's hashing: SHA-256 of "salt:secret")
+async function sha256Hex(s){
+  try {
+    const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+  } catch(e){
+    let h = 0x811c9dc5; const str = s;
+    for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return "fnv:" + h.toString(16);
+  }
+}
+function genRecCode(){
+  const ch = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let o = "";
+  try { const a = new Uint8Array(8); crypto.getRandomValues(a); for (let i = 0; i < 8; i++) o += ch[a[i] % ch.length]; }
+  catch(e){ for (let i = 0; i < 8; i++) o += ch[Math.floor(Math.random() * ch.length)]; }
+  return o.slice(0, 4) + "-" + o.slice(4);
+}
+function normCode(c){ return String(c || "").replace(/[\s-]/g, "").toUpperCase(); }
+async function issueRecCode(u){
+  let st; try { st = JSON.parse(localStorage.getItem("aura.members") || "{}"); } catch(e){ st = { members:{} }; }
+  const rec = st.members[u]; if (!rec) return;
+  const code = genRecCode();
+  rec.recovery = { hash: await sha256Hex("rc:" + u + ":" + normCode(code)), created: Date.now() };
+  localStorage.setItem("aura.members", JSON.stringify(st));
+  log("Recovery code issued for " + u + " \u2014 shown once below", "warn");
+  alert("Recovery code for " + u + ":\n\n" + code + "\n\nGive it to the member now. It is not stored anywhere \u2014 only its hash is.");
+  renderSuper();
+}
 function renderSuper(){
   const wrap = document.getElementById("superPanel");
   if (!wrap) return;
@@ -155,18 +183,21 @@ function renderSuper(){
     const m = members[u];
     const isSu = !!m.super;
     const active = u === session;
+    const recSt = m.recovery ? "\uD83D\uDD11 code on file" : "\u26A0 no recovery code";
     return `<div class="titem"><span>👤 <b>${u.replace(/</g,"&lt;")}</b>${isSu ? " 🛡" : ""}${active ? " <span class=\"tag ok\">active session</span>" : ""}
-      <span style="color:var(--dim)"> · created ${new Date(m.created || Date.now()).toLocaleDateString()}</span></span>
+      <span style="color:var(--dim)"> · created ${new Date(m.created || Date.now()).toLocaleDateString()} · ${recSt}</span></span>
       <span style="display:flex;gap:6px">
         <button class="btn" style="width:auto;padding:5px 10px" data-open="${u.replace(/"/g,"")}" ${active ? "disabled" : ""}>Open workspace</button>
+        <button class="btn" style="width:auto;padding:5px 10px" data-rc="${u.replace(/"/g,"")}" title="Issue a new recovery code (shown once)">🔑 Issue code</button>
         ${!isSu ? `<button class="btn" style="width:auto;padding:5px 10px" data-promo="${u.replace(/"/g,"")}">Promote</button>` : ""}
       </span></div>`;
-  }).join("") + `<p class="desc" style="margin-top:8px">Superuser ${superName} can open any member's workspace and moderate the community repository. Device-local role.</p>`;
+  }).join("") + `<p class="desc" style="margin-top:8px">Superuser ${superName} can open any member's workspace, issue recovery codes and moderate the community repository. Device-local role.</p>`;
   wrap.querySelectorAll("[data-open]").forEach(b => b.onclick = () => {
     localStorage.setItem("aura.currentMember", JSON.stringify(b.dataset.open));
     log("Switched studio workspace to member " + b.dataset.open, "ok");
     try { window.parent.location.reload(); } catch(e){ try { window.top.location.reload(); } catch(e2){ alert("Reload the studio to switch member."); } }
   });
+  wrap.querySelectorAll("[data-rc]").forEach(b => b.onclick = async () => { await issueRecCode(b.dataset.rc); });
   wrap.querySelectorAll("[data-promo]").forEach(b => b.onclick = () => {
     const st2 = (() => { try { return JSON.parse(localStorage.getItem("aura.members") || "{}"); } catch(e){ return { members:{} }; } })();
     if (st2.members[b.dataset.promo]){ st2.members[b.dataset.promo].super = true; localStorage.setItem("aura.members", JSON.stringify(st2)); log(b.dataset.promo + " promoted to superuser", "ok"); renderSuper(); }

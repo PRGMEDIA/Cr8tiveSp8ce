@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.6.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -206,6 +206,7 @@ function showMemberGate(after){
     <div class="m-actions" style="flex-wrap:wrap">
       <button class="abtn ghost" id="mNew" style="margin-right:auto">\u2795 Create member</button>
       <button class="abtn ghost" id="mGuest">Continue as guest</button>
+      <button class="abtn ghost" id="mForgot">\uD83D\uDD11 Forgot password?</button>
       <button class="abtn primary" id="mIn">Sign in</button></div>`);
   $$("#modalCard [data-member]").forEach(b => b.onclick = () => { $("#mUser").value = b.dataset.member; $("#mPass").focus(); });
   const done = (u) => { localStorage.setItem(SESSION_LS, JSON.stringify(u)); closeModal(); updateMemberChip(); if (after) after(); };
@@ -222,6 +223,7 @@ function showMemberGate(after){
   };
   $("#mIn").onclick = signIn;
   ["mUser", "mPass"].forEach(id => $("#" + id).addEventListener("keydown", (e) => { if (e.key === "Enter") signIn(); }));
+  $("#mForgot").onclick = showRecoveryModal;
   $("#mNew").onclick = async () => {
     const u = ($("#mUser").value || "").trim(), pw = $("#mPass").value || "";
     if (!/^\S{2,24}$/.test(u)){ toast("Member ID: 2\u201324 characters, no spaces \u2014 special characters allowed"); return; }
@@ -231,12 +233,79 @@ function showMemberGate(after){
     const salt = uid() + uid();
     // the first member created on a device becomes the superuser (admin role)
     st.members[u] = { salt, hash: await hashPassword(salt, pw), created: Date.now(), super: Object.keys(st.members).length === 0 };
+    // password recovery code (shown ONCE, stored hashed) — Phase III item I-021
+    const rc = genRecoveryCode();
+    st.members[u].recovery = { hash: await hashPassword("rc:" + u, normCode(rc)), created: Date.now() };
     setMembers(st);
     toast(`Member \u201c${u}\u201d created \u2014 signed in`);
     done(u);
+    showRecoveryCodeModal(u, rc);
   };
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
+/* ---- password recovery (Phase III item I-021) ----
+   Device-local workflow: a recovery code is issued at member creation
+   (shown once, stored hashed). Redeeming it sets a new password and
+   rotates the code. Email-based reset arrives with the cloud tier. */
+function genRecoveryCode(){
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let out = "";
+  try {
+    const a = new Uint8Array(8);
+    crypto.getRandomValues(a);
+    for (let i = 0; i < 8; i++) out += chars[a[i] % chars.length];
+  } catch(e){
+    for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out.slice(0, 4) + "-" + out.slice(4);
+}
+function normCode(c){ return String(c || "").replace(/[\s-]/g, "").toUpperCase(); }
+function showRecoveryCodeModal(u, code){
+  showModal(`<h3>\uD83D\uDD11 Recovery code for ${esc(u)}</h3>
+    <p><b>Write this down or copy it now.</b> It is shown <b>only this once</b> and is required to reset your password if you forget it.</p>
+    <div style="text-align:center;font-family:'Courier New',monospace;font-size:26px;font-weight:800;letter-spacing:2px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0">${esc(code)}</div>
+    <div class="m-actions"><button class="abtn primary" data-close style="margin-left:auto">I've saved it</button></div>`);
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+}
+function showRecoveryModal(){
+  const names = Object.keys(getMembers().members);
+  if (!names.length){ toast("No members exist on this device"); return; }
+  showModal(`<h3>\uD83D\uDD11 Password recovery</h3>
+    <p>Enter your member ID and your recovery code, then choose a new password.</p>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:110px;flex-shrink:0">Member ID</span>
+      <input id="rcUser" autocomplete="off" spellcheck="false"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:110px;flex-shrink:0">Recovery code</span>
+      <input id="rcCode" placeholder="XXXX-XXXX" autocomplete="off" spellcheck="false"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:110px;flex-shrink:0">New password</span>
+      <input id="rcNew" type="password"></div>
+    <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:110px;flex-shrink:0">Repeat</span>
+      <input id="rcNew2" type="password"></div>
+    <div class="m-actions"><button class="abtn ghost" data-close style="margin-right:auto">Back</button>
+      <button class="abtn primary" id="rcGo">Set new password</button></div>`);
+  $("#rcGo").onclick = async () => {
+    const u = ($("#rcUser").value || "").trim();
+    const st = getMembers();
+    const rec = st.members[u];
+    if (!rec){ toast("Unknown member ID"); return; }
+    if (!rec.recovery || !rec.recovery.hash){ toast("No recovery code on file \u2014 ask the superuser to issue one"); return; }
+    const h = await hashPassword("rc:" + u, normCode($("#rcCode").value));
+    if (h !== rec.recovery.hash){ toast("Invalid recovery code"); return; }
+    const np = $("#rcNew").value || "", np2 = $("#rcNew2").value || "";
+    if (np.length < 4 || np !== np2){ toast("New passwords must match (min 4 characters)"); return; }
+    const salt = uid() + uid();
+    rec.salt = salt;
+    rec.hash = await hashPassword(salt, np);
+    const nc = genRecoveryCode();
+    rec.recovery = { hash: await hashPassword("rc:" + u, normCode(nc)), created: Date.now() };
+    setMembers(st);
+    localStorage.setItem(SESSION_LS, JSON.stringify(u));
+    updateMemberChip(); closeModal();
+    toast("Password updated \u2014 signed in");
+    showRecoveryCodeModal(u, nc);
+  };
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+}
+
 function isSuperuser(){
   const u = currentUser();
   const st = getMembers();
