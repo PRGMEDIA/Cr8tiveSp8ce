@@ -112,6 +112,30 @@ globalThis.__undoResults = (function(){
     localStorage.removeItem("aura.currentMember");
     return out;
   })();
+  // 7) password recovery (async)
+  globalThis.__recPromise = (async () => {
+    const out = {};
+    localStorage.removeItem("aura.members"); localStorage.removeItem("aura.currentMember");
+    const salt = "s1", pw = "old-pass";
+    const code = genRecoveryCode(); const norm = normCode(code);
+    const st = { members: {} };
+    st.members["u1"] = { salt, hash: await hashPassword(salt, pw), created: 1,
+      recovery: { hash: await hashPassword("rc:u1", norm), created: 1 } };
+    localStorage.setItem("aura.members", JSON.stringify(st));
+    const rec0 = getMembers().members["u1"];
+    out.verifyCode = !!rec0.recovery && (await hashPassword("rc:u1", norm)) === rec0.recovery.hash;
+    out.wrongCode = (await hashPassword("rc:u1", normCode("ZZZZ-ZZZZ"))) !== rec0.recovery.hash;
+    const st2 = getMembers();               // fresh parse (driver bug: was saving a stale object)
+    const rec = st2.members["u1"];
+    const ns = "n1";
+    rec.salt = ns; rec.hash = await hashPassword(ns, "new-pass");
+    rec.recovery = { hash: await hashPassword("rc:u1", normCode(genRecoveryCode())), created: 2 };
+    setMembers(st2);
+    const r2 = getMembers().members["u1"];
+    out.newPw = (await hashPassword(r2.salt, "new-pass")) === r2.hash;
+    out.oldPwGone = (await hashPassword(r2.salt, "old-pass")) !== r2.hash;
+    return out;
+  })();
   return out;
 })();
 `;
@@ -520,6 +544,12 @@ check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", (
 
 /* ---------------- report (async-aware) ---------------- */
 const asyncChecks = [
+  { id: "31", name: "Password recovery: code verify, wrong code rejected, reset works, old password gone",
+    run: () => Promise.resolve(sandbox.__recPromise).then(r => {
+      const bad = Object.keys(r).filter(k => !r[k]);
+      assert(bad.length === 0, "failed scenarios: " + bad.join(", "));
+      return Object.keys(r).map(k => k + "=ok").join(", ");
+    }) },
   { id: "30", name: "Members logic: create/verify/reject + member-scoped keys",
     run: () => Promise.resolve(sandbox.__memPromise).then(r => {
       const bad = Object.keys(r).filter(k => !r[k]);
