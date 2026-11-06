@@ -2884,7 +2884,7 @@ function showCommunityRepo(){
       : tab === "animated" ? "No animated assets yet — generate one with Photo → Video."
       : "No images yet — publish from the Media Library (🌐 button).");
   showModal('<h3>🌐 Community repository — "created by u"</h3>' +
-    '<p>Shared by <b>all members</b> — every item credited to its maker.' +
+    '<p>Shared by <b>all members</b> — every item credited to its maker. Shared assets are name-attributed and copyright-protected. Royalties accrue through the S³ Production Publishing house. Content stored on the Oracle database remains strictly your property.' +
     (su ? ' You have <b>superuser</b> moderation rights.' : '') + '</p>' +
     '<div class="pj-tabs">' +
     '<button data-folder="images" class="' + (tab === "images" ? "on" : "") + '">🖼 Images (' + groups.image.length + ')</button>' +
