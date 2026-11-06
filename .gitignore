@@ -1,0 +1,10 @@
+mail-config.php
+oracle-config.php
+oracle-failure-log.php
+oracle-test.php
+oracle-wallet/
+sanctuary/
+email-submittal/
+*.key
+*.pem
+.env
