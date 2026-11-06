@@ -1416,7 +1416,7 @@ function exportDiagnostics(c, label){
       `${failed ? " \u2014 " + failed + " element(s) failed to render" : ""}` +
       ` \u2014 page ${curPage+1}/${project.pages.length}, ${curPageData().elements.length} element(s). Details in console (F12).`;
     console.error("[Aura Studio]", msg);
-    try { console.error("[Aura Studio] page data:", JSON.stringify(curPageData()).slice(0, 2000)); } catch(e){}
+    try { const _t = {}; curPageData().elements.forEach(function(e) { _t[e.type] = (_t[e.type] || 0) + 1; }); console.error("[Aura Studio] element summary:", JSON.stringify(_t)); } catch(e){}
     toast("\u26A0 " + msg, 6000);
   }
   return !blank && !failed;
