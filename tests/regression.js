@@ -35,6 +35,7 @@ const SRC = {
   assets: fs.readFileSync(path.join(ROOT, "assets-s3-logo.js"), "utf8"),
   app: fs.readFileSync(path.join(ROOT, "app.js"), "utf8"),
   data: fs.readFileSync(path.join(ROOT, "dataLayer.js"), "utf8"),
+  suite: fs.readFileSync(path.join(ROOT, "community-templates.js"), "utf8"),
 };
 
 /* ---- 01-03: real syntax validation (catches what greps cannot) ---- */
@@ -196,15 +197,15 @@ vm.createContext(sandbox);
 
 let LIB = null;
 check("02", "Load: all three modules initialize together in sandbox", () => {
-  const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.assets + "\n" + SRC.app + "\n" + SRC.data +
+  const src = SRC.templates + "\n" + SRC.zip + "\n" + SRC.assets + "\n" + SRC.app + "\n" + SRC.data + "\n" + SRC.suite +
     "\nthis.__out = { TEMPLATES, CATS, ZipWriter, cmykToHex, rgbToCmyk, cmykToRgb, hexToRgb, rgbToHex," +
-    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL, buildPdf, AuraDB };" +
+    " CMYK_PRESETS, CMYK_PALETTE, cmykLabel, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, odfDoc, APP_VERSION, S3_LOGO_DATAURL, buildPdf, AuraDB, AURA_SUITE_TEMPLATES, pvDrawPhoto };" +
     "\n" + UNDO_DRIVER + ";";
   vm.runInContext(src, sandbox, { filename: "combined.js" });
   LIB = sandbox.__out;
   return `APP_VERSION ${LIB.APP_VERSION}, ${LIB.TEMPLATES.length} templates loaded`;
 });
-const { TEMPLATES, CATS, ZipWriter, cmykToHex, cmykToRgb, rgbToCmyk, CMYK_PALETTE, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt } = LIB || {};
+const { TEMPLATES, CATS, ZipWriter, cmykToHex, cmykToRgb, rgbToCmyk, CMYK_PALETTE, VIDEO_STYLES, VIDEO_FORMATS, fillTpl, buildOdt, buildFodt, buildPdf, pvDrawPhoto } = LIB || {};
 
 check("26", "Data layer: AuraDB dual-backend adapter present and wired", () => {
   assert(LIB.AuraDB && typeof LIB.AuraDB.status === "function", "AuraDB missing or incomplete");
@@ -235,11 +236,56 @@ check("28", "Superuser role + community repository (created-by attribution)", ()
                    "const COMM_LS", "created by", "super: Object.keys(st.members).length === 0"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
   const adm = fs.readFileSync(path.join(ROOT, "admin.html"), "utf8");
-  for (const s of ["function renderSuper", "Open workspace", "data-promo", "superuser"])
+  for (const s of ["function renderSuper", "data-open", "data-promo", "superuser"])
     assert(adm.includes(s), "admin.html missing: " + s);
   const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   assert(idx.includes("data-community"), "index.html missing Community button");
   return "superuser member admin + publish/browse/moderate repository";
+});
+check("33", "Community suite: bundled templates valid + publish/use/seed wiring", () => {
+  const suite = sandbox.__out.AURA_SUITE_TEMPLATES;
+  assert(suite && suite.length >= 20, "suite too small: " + (suite ? suite.length : "missing"));
+  let count = 0;
+  for (const t of suite){
+    assert(t.name && t.cat && t.w > 0 && t.h > 0 && Array.isArray(t.pages) && t.pages.length >= 1, t.name + ": bad meta");
+    for (const pg of t.pages) for (const el of pg.elements){
+      count++;
+      assert(["text","rect","ellipse","line","image","glyph"].indexOf(el.type) >= 0, t.name + ": bad type");
+      assert(Number.isFinite(el.x) && Number.isFinite(el.y), t.name + ": bad coords");
+    }
+  }
+  assert(SRC.app.indexOf("function publishCommunityTemplate") >= 0, "publish helper missing");
+  assert(SRC.app.indexOf('m.kind === "template"') >= 0, "community template section missing");
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idx.indexOf("community-templates.js") >= 0, "bundle missing community-templates include");
+  const adm = fs.readFileSync(path.join(ROOT, "admin.html"), "utf8");
+  assert(adm.indexOf("seedCommunity") >= 0 && adm.indexOf("AURA_SUITE_TEMPLATES") >= 0, "admin seeding missing");
+  return suite.length + " suite templates, " + count + " elements validated";
+});
+check("34", "I-022 fix: pan motions travel the full image margin (behavioral)", () => {
+  const calls = [];
+  const fakeCtx = { drawImage(){ calls.push(Array.prototype.slice.call(arguments, 1, 3)); },
+    imageSmoothingEnabled: false, imageSmoothingQuality: "" };
+  const img = { width: 1600, height: 900 };
+  pvDrawPhoto(fakeCtx, img, "panleft", 0, 1280, 720, "cover", null, 0);
+  const dxL0 = calls[calls.length-1][0];
+  pvDrawPhoto(fakeCtx, img, "panleft", 1, 1280, 720, "cover", null, 0);
+  const dxL1 = calls[calls.length-1][0];
+  pvDrawPhoto(fakeCtx, img, "panright", 0, 1280, 720, "cover", null, 0);
+  const dxR0 = calls[calls.length-1][0];
+  pvDrawPhoto(fakeCtx, img, "panright", 1, 1280, 720, "cover", null, 0);
+  const dxR1 = calls[calls.length-1][0];
+  const tl = Math.abs(dxL1 - dxL0), tr = Math.abs(dxR1 - dxR0);
+  assert(tl >= 250, "panleft travel only " + tl.toFixed(1) + "px (full margin ~256px)");
+  assert(tr >= 250, "panright travel only " + tr.toFixed(1) + "px");
+  assert(Math.sign(dxL1 - dxL0) !== Math.sign(dxR1 - dxR0), "panleft/panright move the same way");
+  return "panleft travel " + tl.toFixed(0) + "px, panright " + tr.toFixed(0) + "px, opposite directions";
+});
+check("35", "I-023: duplicate feedback + page duplication", () => {
+  for (const s of ["then Duplicate copies it", "function duplicatePage", "now editing the copy",
+                   "Duplicate current page (elements included)"])
+    assert(SRC.app.indexOf(s) >= 0, "app.js missing: " + s);
+  return "silent no-op fixed + page duplication shipped";
 });
 check("03", "Library: at least 50 templates", () => {
   assert(TEMPLATES.length >= 50, `only ${TEMPLATES.length}`);
@@ -480,7 +526,7 @@ check("23a", "Members: hashed credentials, no plaintext passwords, scoped storag
 check("23c", "Photo\u2192Video: generator wired (canvas stream + MediaRecorder + library storage)", () => {
   for (const s of ["function showPhotoToVideo", "function pvDrawPhoto", "function pvPaintWatermark",
                    "canvas.captureStream", "new MediaRecorder", "mediaPut({ id: uid(), name, type: blob.type, blob", "function pvRenderClip",
-                   "cancelToken", "Rendering cancelled"])
+                   "cancelToken", "Rendering cancelled", 'id="pvClose"'])
     assert(SRC.app.includes(s), "app.js missing: " + s);
   assert(SRC.app.includes("id=\"pvCancel\""), "Cancel button missing from generator UI");
   const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");

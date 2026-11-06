@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "2.6.0";
+const APP_VERSION = "3.1.1";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -348,6 +348,7 @@ function restoreAutosave(){
 }
 
 function hydrate(p){
+  if (!p.id) p.id = uid();
   p.pages.forEach(pg => pg.elements.forEach(el => {
     if(!el.id) el.id = uid();
     // legacy normalization: glyph elements once stored their character only in .ch
@@ -866,6 +867,10 @@ function renderPages(){
     th.onclick = ()=>{ curPage=i; selId=null; renderBoard(); renderPages(); renderProps(); };
     strip.appendChild(th);
   });
+  const dupBtn = document.createElement("button");
+  dupBtn.className = "pstrip-btn"; dupBtn.textContent = "\u29C9"; dupBtn.title = "Duplicate current page (elements included)";
+  dupBtn.onclick = duplicatePage;
+  strip.appendChild(dupBtn);
   const add = document.createElement("button");
   add.className = "pstrip-btn"; add.textContent = "+"; add.title = "Add page";
   add.onclick = ()=>{
@@ -914,7 +919,7 @@ function pickImage(existing, forBrand){
       else {
         pushHistory();
         // archive a copy in the persistent media library (IndexedDB)
-        try { mediaPut({ id: uid(), name: f.name, type: f.type, data: rd.result, added: Date.now() }); } catch(e){}
+        try { mediaStore({ id: uid(), name: f.name, type: f.type, data: rd.result, added: Date.now() }); } catch(e){}
         const el = {id:uid(), type:"image", x:project.w*0.2, y:project.h*0.2, w:project.w*0.6, h:project.h*0.4, src:rd.result, fit:"cover", radius:0, opacity:1};
         curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave();
       }
@@ -937,7 +942,8 @@ function pickGlyph(cb){
 
 /* ---------- actions ---------- */
 function duplicateSel(){
-  const el = selElement(); if (!el) return;
+  const el = selElement();
+  if (!el){ toast("Select an element first \u2014 then Duplicate copies it"); return; }
   pushHistory();
   const c = clone(el); c.id = uid(); c.x += 20; c.y += 20;
   curPageData().elements.push(c);
@@ -1020,7 +1026,11 @@ function bindTopbar(){
         project = hydrate({name:"Untitled design",cat:"custom",w,h,pages:[{bg:"#ffffff",elements:[]}]}); curPage=0; undoStack=[]; openEditor(); saveAutosave(); };
     }
     if (act==="watermark"){ showWatermarkModal(); }
+    if (act==="manuscript"){ window.open("email-submittal/index.html", "_blank"); }
+    if (act==="sanctuary"){ window.open("sanctuary/sanctuarymagazine/login.php", "_blank"); }
     if (act==="members"){ showMemberMenu(); }
+    if (act==="library"){ showProjectLibrary(); }
+    if (act==="save-lib"){ saveProjectToLibrary("draft").then(rec => { if (rec) toast("Saved to library \u2014 Drafts folder"); }); }
     if (act==="help") showHelp();
   });
 
@@ -1963,6 +1973,175 @@ function watermarkSvg(){
    of this same library in Phase II.
    ============================================================ */
 const MEDIA_DB = "auraMedia";
+const MEDIA_MAX_BYTES = 2 * 1024 * 1024;   // per-record image storage cap (2 MB)
+const MEDIA_LOC_LOCAL = "local-idb";       // DB record location (cloud tier writes "cloud-oracle")
+
+function dataUrlBytes(dataUrl){
+  const i = String(dataUrl || "").indexOf(",");
+  return i < 0 ? 0 : Math.round((String(dataUrl).length - i - 1) * 0.75);
+}
+async function compressImageToCap(dataUrl, type){
+  const img = await loadImage(dataUrl);
+  if (!img) return { dataUrl: dataUrl, bytes: dataUrlBytes(dataUrl), compressed: false, ok: false };
+  let scale = 1, q = 0.9, out = dataUrl, bytes = dataUrlBytes(dataUrl);
+  for (let attempt = 0; attempt < 9; attempt++){
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * scale));
+    c.height = Math.max(1, Math.round(img.height * scale));
+    const x = c.getContext("2d");
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+    x.drawImage(img, 0, 0, c.width, c.height);
+    const t = (attempt === 0 && type === "image/png") ? "image/png" : "image/jpeg";
+    out = c.toDataURL(t, q);
+    bytes = dataUrlBytes(out);
+    if (bytes <= MEDIA_MAX_BYTES) return { dataUrl: out, bytes: bytes, compressed: attempt > 0, ok: true };
+    scale *= 0.8; q = Math.max(0.5, q - 0.06);
+  }
+  return { dataUrl: out, bytes: bytes, compressed: true, ok: bytes <= MEDIA_MAX_BYTES };
+}
+async function mediaStore(rec){
+  const isImage = (rec.type || "").startsWith("image");
+  if (isImage && rec.data && dataUrlBytes(rec.data) > MEDIA_MAX_BYTES){
+    const r = await compressImageToCap(rec.data, rec.type || "image/jpeg");
+    if (!r.ok) return { stored: false, reason: "exceeds the 2 MB storage limit even after compression" };
+    rec.data = r.dataUrl; rec.type = "image/jpeg";
+    rec.bytes = r.bytes; rec.compressed = true; rec.origBytes = dataUrlBytes(rec.data);
+  } else {
+    rec.bytes = rec.blob ? rec.blob.size : dataUrlBytes(rec.data);
+  }
+  rec.loc = MEDIA_LOC_LOCAL;              // DB record location (cloud tier writes "cloud-oracle")
+  await mediaPut(rec);
+  return { stored: true, bytes: rec.bytes, compressed: !!rec.compressed };
+}
+
+/* ============================================================
+   PROJECT LIBRARY — Drafts / Complete / Trash (Phase III).
+   Projects persist in IndexedDB ("projects" store), scoped per
+   member. Trash auto-purges after 30 days. The full project JSON
+   travels with the record, so Open restores everything.
+   ============================================================ */
+const PROJ_TRASH_DAYS = 30;
+async function projPut(rec){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("projects", "readwrite");
+    tx.objectStore("projects").put(rec);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function projAll(){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const rq = db.transaction("projects").objectStore("projects").getAll();
+    rq.onsuccess = () => res(rq.result || []); rq.onerror = () => rej(rq.error);
+  });
+}
+async function projDelete(id){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("projects", "readwrite");
+    tx.objectStore("projects").delete(id);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function projPurgeTrash(){
+  try {
+    const cutoff = Date.now() - PROJ_TRASH_DAYS * 864e5;
+    for (const r of await projAll()){
+      if (r.state === "trash" && (r.updated || 0) < cutoff) await projDelete(r.id);
+    }
+  } catch(e){}
+}
+async function saveProjectToLibrary(state){
+  if (!project) return null;
+  if (!project.id) project.id = uid();
+  const me = currentUser() || "Guest";
+  const all = await projAll();
+  const existing = all.find(r => r.id === project.id && r.by === me);
+  const rec = { id: project.id, by: me,
+    name: project.name || "Untitled design",
+    state: state || (existing ? existing.state : "draft"),
+    created: existing ? existing.created : Date.now(), updated: Date.now(),
+    pages: project.pages.length, project: JSON.parse(JSON.stringify(project)) };
+  await projPut(rec);
+  return rec;
+}
+function openLibraryProject(rec){
+  project = hydrate(JSON.parse(JSON.stringify(rec.project)));
+  project.id = rec.id;
+  project.name = rec.name;
+  curPage = 0; selId = null; undoStack = []; redoStack = [];
+  openEditor(); saveAutosave();
+  toast("Opened \u201c" + rec.name + "\u201d");
+}
+let pjView = "draft";
+async function showProjectLibrary(){
+  if (typeof indexedDB === "undefined"){ toast("Project library unavailable in this browser"); return; }
+  await projPurgeTrash();
+  const me = currentUser() || "Guest";
+  const all = (await projAll()).filter(r => r.by === me).sort((a,b) => (b.updated||0) - (a.updated||0));
+  const counts = { draft: 0, complete: 0, trash: 0 };
+  all.forEach(r => { counts[r.state] = (counts[r.state] || 0) + 1; });
+  const list = all.filter(r => r.state === pjView);
+  const card = (r) => {
+    const inTrash = r.state === "trash";
+    const sz = r.project ? JSON.stringify(r.project).length : 0;
+    const szTxt = sz > 1048576 ? (sz/1048576).toFixed(1) + " MB" : Math.round(sz/1024) + " KB";
+    const acts = [];
+    acts.push('<button data-open="1" title="Open this project">▶ Open</button>');
+    if (r.state === "draft") acts.push('<button data-cmp="1" title="Mark as complete">✓ Complete</button>');
+    if (r.state === "complete") acts.push('<button data-draft="1" title="Reopen as draft">↩ Reopen</button>');
+    if (!inTrash) acts.push('<button data-trash="1" title="Move to trash">✕ Trash</button>');
+    else {
+      acts.push('<button data-rest="1" title="Restore to drafts">↩ Restore</button>');
+      acts.push('<button data-del="1" title="Delete permanently">✕ Delete</button>');
+    }
+    return '<div class="pj-card" data-id="' + r.id + '">' +
+      '<div class="pj-name">' + (r.name || "Untitled").replace(/</g, "&lt;") + '</div>' +
+      '<div class="pj-meta">' + r.pages + ' page(s) · ~' + szTxt + ' · updated ' +
+      new Date(r.updated || Date.now()).toLocaleDateString() + '</div>' +
+      '<div class="pj-acts">' + acts.join("") + '</div></div>';
+  };
+  const tabs = '<div class="pj-tabs">' +
+    '<button data-tab="draft" class="' + (pjView === "draft" ? "on" : "") + '">\u{1F4C1} Drafts (' + counts.draft + ')</button>' +
+    '<button data-tab="complete" class="' + (pjView === "complete" ? "on" : "") + '">✓ Complete (' + counts.complete + ')</button>' +
+    '<button data-tab="trash" class="' + (pjView === "trash" ? "on" : "") + '">✕ Trash (' + counts.trash + ')</button></div>';
+  const rows = list.length ? list.map(card).join("") :
+    (pjView === "draft" ? "<p style=\"color:var(--ink-dim);font-size:12.5px\">No drafts — open a template or start a new design, then Project ▸ Save to library.</p>"
+     : pjView === "complete" ? "<p style=\"color:var(--ink-dim);font-size:12.5px\">No completed projects yet.</p>"
+     : "<p style=\"color:var(--ink-dim);font-size:12.5px\">Trash is empty. Deleted projects rest here for 30 days.</p>");
+  showModal('<h3>\u{1F4C1} Project library <span style="font-size:12px;color:var(--ink-dim)">— member: ' + me + '</span></h3>' +
+    tabs + '<div class="pj-grid" id="pjGrid">' + rows + '</div>' +
+    '<div class="m-actions" style="justify-content:space-between">' +
+    '<button class="abtn ghost" id="pjNew">➕ New blank design</button>' +
+    '<button class="abtn primary" data-close style="margin-left:auto">Done</button></div>');
+  $$("#pjGrid .pj-card").forEach(cardEl => {
+    const id = cardEl.dataset.id;
+    const rec = list.find(r => r.id === id);
+    cardEl.querySelector("[data-open]").onclick = () => { closeModal(); openLibraryProject(rec); };
+    const cmp = cardEl.querySelector("[data-cmp]");
+    if (cmp) cmp.onclick = async () => { rec.state = "complete"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const drft = cardEl.querySelector("[data-draft]");
+    if (drft) drft.onclick = async () => { rec.state = "draft"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const tr = cardEl.querySelector("[data-trash]");
+    if (tr) tr.onclick = async () => { rec.state = "trash"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const rst = cardEl.querySelector("[data-rest]");
+    if (rst) rst.onclick = async () => { rec.state = "draft"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const del = cardEl.querySelector("[data-del]");
+    if (del) del.onclick = async () => {
+      if (!confirm("“" + rec.name + "” will be permanently deleted. Continue?")) return;
+      await projDelete(rec.id); showProjectLibrary();
+    };
+  });
+  $$("#modalCard [data-tab]").forEach(b => b.onclick = () => { pjView = b.dataset.tab; showProjectLibrary(); });
+  $("#pjNew").onclick = () => {
+    closeModal();
+    project = hydrate({ name: "Untitled design", cat: "custom", w: 850, h: 1100, pages: [{ bg: "#ffffff", elements: [] }] });
+    curPage = 0; selId = null; undoStack = []; redoStack = [];
+    openEditor(); saveAutosave(); toast("New blank design");
+  };
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+}
 let _mediaDb = null;
 function openMediaDb(){
   return new Promise((res, rej) => {
@@ -2026,15 +2205,17 @@ async function showMediaLibrary(){
     const inp = document.createElement("input");
     inp.type = "file"; inp.accept = "image/*,video/*,audio/*"; inp.multiple = true;
     inp.onchange = async () => {
-      let n = 0;
+      let n = 0, skipped = 0, shrunk = 0;
       for (const f of inp.files){
         try {
           const src = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); });
-          await mediaPut({ id: uid(), name: f.name, type: f.type, data: src, added: Date.now() });
-          n++;
+          const r = await mediaStore({ id: uid(), name: f.name, type: f.type, data: src, added: Date.now() });
+          if (r.stored){ n++; if (r.compressed) shrunk++; }
+          else { skipped++; toast(f.name + ": " + r.reason, 4000); }
         } catch(e){ toast("Failed to store " + f.name); }
       }
-      toast(n + " asset(s) stored locally"); rerun();
+      if (n) toast(n + " stored \u00b7 " + (shrunk ? shrunk + " compressed to fit 2 MB \u00b7 " : "") + (skipped ? skipped + " skipped" : ""));
+      rerun();
     };
     inp.click();
   };
@@ -2108,9 +2289,9 @@ function pvDrawPhoto(ctx, img, motion, local, w, h, fit, bg, idx){
   let s = 1.08, dx = 0, dy = 0;
   if (motion === "zoomin"){ s = 1.02 + 0.16*local; }
   else if (motion === "zoomout"){ s = 1.18 - 0.16*local; }
-  else if (motion === "panright"){ s = 1.15; dx = (local - 0.5) * (iw*base*s - w) * 0.5; }
-  else if (motion === "panleft"){ s = 1.15; dx = (0.5 - local) * (iw*base*s - w) * 0.5; }
-  else if (motion === "panup"){ s = 1.15; dy = (0.5 - local) * (ih*base*s - h) * 0.5; }
+  else if (motion === "panright"){ s = 1.2; dx = (0.5 - local) * (iw*base*s - w); }
+  else if (motion === "panleft"){ s = 1.2; dx = (local - 0.5) * (iw*base*s - w); }
+  else if (motion === "panup"){ s = 1.2; dy = (local - 0.5) * (ih*base*s - h); }
   else if (motion === "walkfwd"){
     s = 1.04 + 0.14*local; dy = -Math.abs(Math.sin(local * Math.PI * 4)) * h * 0.008;
   }
@@ -2199,6 +2380,7 @@ async function pvRenderClip(opts){
 }
 
 async function showPhotoToVideo(){
+  let cancelToken = null;   // hoisted so Close can abort an in-flight render
   let items = [];
   try { items = (await mediaAll()).filter(m => !(m.type || "").startsWith("video")); }
   catch(e){ toast("Media library unavailable: " + e.message); return; }
@@ -2236,6 +2418,7 @@ async function showPhotoToVideo(){
     <div class="m-actions" style="justify-content:space-between">
       <button class="abtn ghost" id="pvAdd">\u2b06 Upload photos</button>
       <span style="display:flex;gap:8px">
+        <button class="abtn ghost" id="pvClose">\u2715 Close</button>
         <button class="abtn ghost" id="pvCancel" style="display:none">\u2715 Cancel</button>
         <button class="abtn primary" id="pvGo">\u25B6 Generate video</button></span></div>`);
   let selected = items.length ? [items[0].id] : [];
@@ -2272,10 +2455,11 @@ async function showPhotoToVideo(){
     const fit = $("#pvFit").value;
     const useWm = $("#pvWm").checked;
     $("#pvProg").style.display = "block"; $("#pvGo").disabled = true;
-    const cancelToken = { cancelled: false };
+    cancelToken = { cancelled: false };
     const cancelBtn = $("#pvCancel");
     cancelBtn.style.display = "";
     cancelBtn.onclick = () => { cancelToken.cancelled = true; toast("Cancelling\u2026"); };
+    $("#pvClose").onclick = () => { cancelToken.cancelled = true; closeModal(); toast("Rendering cancelled \u2014 nothing was saved"); };
     const canvas = document.createElement("canvas");
     canvas.width = w; canvas.height = h;
     const wm = useWm ? ((project && project.watermark && project.watermark.enabled) ? project.watermark
@@ -2295,8 +2479,8 @@ async function showPhotoToVideo(){
         if (pctEl) pctEl.textContent = Math.round(p*100) + "% \u2014 rendering in real time\u2026";
     } });
     cancelBtn.style.display = "none";
-    $("#pvProg").style.display = "none";
-    if (cancelToken.cancelled){ $("#pvGo").disabled = false; toast("Rendering cancelled \u2014 nothing was saved"); return; }
+    const prog = $("#pvProg"); if (prog) prog.style.display = "none";
+    if (cancelToken.cancelled){ const go = $("#pvGo"); if (go) go.disabled = false; toast("Rendering cancelled \u2014 nothing was saved"); return; }
     const ext = blob.type.includes("mp4") ? "mp4" : "webm";
     const name = `photo-video-${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.${ext}`;
     await mediaPut({ id: uid(), name, type: blob.type, blob, added: Date.now() });
@@ -2595,75 +2779,144 @@ async function showAiCreate(){
     curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("AI artwork inserted");
   });
   $("#aiSave").onclick = () => arm(async () => {
-    await mediaPut({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
-    toast("Saved to Media Library");
+    const r = await mediaStore({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
+    toast(r.stored ? (r.compressed ? "Saved (compressed to fit 2 MB)" : "Saved to Media Library") : r.reason);
   });
   $("#aiAnim").onclick = () => arm(async () => {
-    await mediaPut({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
+    await mediaStore({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
     closeModal(); showPhotoToVideo();      // newest library item auto-selected
   });
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
 
+function duplicatePage(){
+  if (!project) return;
+  pushHistory();
+  const clonePage = JSON.parse(JSON.stringify(curPageData()));
+  (clonePage.elements || []).forEach(el => { el.id = uid(); });
+  project.pages.splice(curPage + 1, 0, clonePage);
+  curPage++;
+  selId = null;
+  renderBoard(); renderPages(); renderProps(); saveAutosave();
+  toast("Page duplicated \u2014 now editing the copy");
+}
+
 /* ============================================================
-   COMMUNITY REPOSITORY \u2014 \u201ccreated by u\u201d shared asset gallery.
-   All members on this device can publish and browse; the superuser
-   can moderate. Stored in localStorage (aura.community); the AuraDB
-   cloud tier syncs it across devices in Phase II.
+   COMMUNITY REPOSITORY — "created by u" shared gallery for ALL members.
+   Foldered: 🖼 Images · 🎬 Animated · ✨ Templates (per category).
+   Superuser moderates. Stored in localStorage (aura.community);
+   AuraDB cloud tier syncs it across devices in Phase III.
    ============================================================ */
 const COMM_LS = "aura.community";
 function commAll(){ try { return JSON.parse(localStorage.getItem(COMM_LS) || "[]"); } catch(e){ return []; } }
 function commSave(a){ localStorage.setItem(COMM_LS, JSON.stringify(a.slice(0, 500))); }
 async function publishToCommunity(rec){
   const a = commAll();
-  a.unshift({ id: uid(), name: rec.name || "asset", type: rec.type || "image/png",
+  a.unshift({ id: uid(), kind: "media", name: rec.name || "asset", type: rec.type || "image/png",
     data: rec.data || rec.src || "", blob: rec.blob || null,
     by: currentUser() || "Guest", added: Date.now() });
   commSave(a);
-  toast("Published to the community repository \u2014 created by " + (currentUser() || "Guest"));
+  toast("Published to the community repository — created by " + (currentUser() || "Guest"));
+}
+function publishCommunityTemplate(tpl, by){
+  const a = commAll();
+  a.unshift({ id: uid(), kind: "template", name: tpl.name, by: by || (currentUser() || "Guest"),
+    added: Date.now(), tpl: JSON.parse(JSON.stringify(tpl)) });
+  commSave(a);
+}
+function commClassOf(m){
+  if (m.kind === "template") return "template";
+  const t = m.type || "";
+  if (t.indexOf("audio") === 0) return "audio";
+  if (t.indexOf("video") === 0 || m.blob || t === "image/gif") return "animated";
+  return "image";
+}
+function commTemplateCell(m){
+  const canDelete = isSuperuser() || m.by === (currentUser() || "Guest");
+  return '<div class="ml-cell"><div class="ml-thumb" style="font-size:26px">✨</div>' +
+    '<div class="ml-nm">' + (m.name || "template").slice(0, 26) + '</div>' +
+    '<div class="ml-by">created by <b>' + (m.by || "unknown").replace(/</g, "&lt;") + '</b></div>' +
+    '<div class="ml-ops"><button data-use="1" title="Open as a new design">▶ Use</button>' +
+    '<button data-dl="1" title="Download template .json">⬇</button>' +
+    (canDelete ? '<button data-del="1" title="Remove">✕</button>' : '') + '</div></div>';
+}
+function commMediaCell(m, su, me){
+  const isAud = (m.type || "").indexOf("audio") === 0;
+  const isVid = (m.type || "").indexOf("video") === 0 || !!m.blob;
+  const icon = isAud ? "🔊" : isVid ? "📽️" : "";
+  const canDelete = su || m.by === me;
+  return '<div class="ml-cell" data-id="' + m.id + '">' +
+    '<div class="ml-thumb">' + (icon ? '<span style="font-size:26px">' + icon + '</span>' : '<img src="' + (m.data || "") + '" alt="">') + '</div>' +
+    '<div class="ml-nm">' + (m.name || "asset").slice(0, 22) + '</div>' +
+    '<div class="ml-by">created by <b>' + (m.by || "unknown") + '</b></div>' +
+    '<div class="ml-ops">' + (isVid || isAud ? "" : '<button data-ins="1" title="Insert into page">➕</button>') +
+    '<button data-dl="1" title="Download">⬇</button>' +
+    (canDelete ? '<button data-del="1" title="Remove">✕</button>' : '') + '</div></div>';
 }
 function showCommunityRepo(){
   const items = commAll().sort((a,b) => (b.added||0) - (a.added||0));
   const su = isSuperuser();
   const me = currentUser() || "Guest";
-  const cells = items.length ? items.map(m => {
-    const isVid = (m.type || "").startsWith("video") || !!m.blob;
-    const isAud = (m.type || "").startsWith("audio");
-    const icon = isAud ? "\uD83D\uDD0A" : isVid ? "\uD83D\uDCFD\uFE0F" : "";
-    const canDelete = su || m.by === me;
-    return `<div class="ml-cell" data-id="${esc(m.id)}">
-      <div class="ml-thumb">${icon ? `<span style="font-size:26px">${icon}</span>` : `<img src="${m.data || ""}" alt="">`}</div>
-      <div class="ml-nm">${esc((m.name || "asset").slice(0,22))}</div>
-      <div class="ml-by">created by <b>${esc(m.by || "unknown")}</b></div>
-      <div class="ml-ops">
-        ${isVid || isAud ? "" : `<button data-ins="1" title="Insert into page">\u2795</button>`}
-        <button data-dl="1" title="Download">\u2b07</button>
-        ${canDelete ? `<button data-del="1" title="${su && m.by !== me ? "Remove (superuser)" : "Delete"}">\u2715</button>` : ""}
-      </div></div>`;
-  }).join("") : `<p style="color:var(--ink-dim);font-size:12.5px">The community repository is empty \u2014 publish assets from the Media Library (\uD83D\uDF10 button).</p>`;
-  showModal(`<h3>\uD83D\uDF10 Community repository</h3>
-    <p>Shared image/video/audio gallery for <b>all members</b> of this studio \u2014 every asset is labeled \u201ccreated by\u201d its maker. ${su ? "You have <b>superuser</b> moderation rights." : "Members manage their own uploads; the superuser can moderate."}</p>
-    <div class="ml-grid" id="commGrid">${cells}</div>
-    <div class="m-actions"><button class="abtn primary" data-close style="margin-left:auto">Done</button></div>`);
-  $$("#commGrid .ml-cell").forEach(cell => {
-    const id = cell.dataset.id;
-    const rec = items.find(m => m.id === id);
-    const ins = cell.querySelector("[data-ins]"), dl = cell.querySelector("[data-dl]"), del = cell.querySelector("[data-del]");
-    if (ins) ins.onclick = () => {
+  const groups = { image: [], animated: [], audio: [], template: [] };
+  items.forEach(m => groups[commClassOf(m)].push(m));
+  const view = (window.__commView || (window.__commView = { tab: "images", cat: "all" }));
+  const tab = view.tab;
+  const cats = [["all","All categories"]].concat(CATS.map(c => [c.id, c.icon + " " + c.name]));
+  const catSel = tab === "templates"
+    ? '<div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:110px;flex-shrink:0">Category</span>' +
+      '<select id="commCat" class="prop-select">' + cats.map(c =>
+        '<option value="' + c[0] + '"' + (view.cat === c[0] ? " selected" : "") + '>' + c[1] + '</option>').join("") + '</select></div>'
+    : "";
+  const list = tab === "templates"
+    ? groups.template.filter(m => view.cat === "all" || (m.tpl && m.tpl.cat === view.cat))
+    : tab === "animated" ? groups.animated.concat(groups.audio)
+    : groups.image;
+  const cell = (m) => tab === "templates" ? commTemplateCell(m) : commMediaCell(m, su, me);
+  const empty = (msg) => '<p style="color:var(--ink-dim);font-size:12.5px">' + msg + '</p>';
+  const body = list.length ? list.map(cell).join("")
+    : empty(tab === "templates" ? "No community templates in this category yet — seed the bundled suite from the Admin Agent (superuser)."
+      : tab === "animated" ? "No animated assets yet — generate one with Photo → Video."
+      : "No images yet — publish from the Media Library (🌐 button).");
+  showModal('<h3>🌐 Community repository — "created by u"</h3>' +
+    '<p>Shared by <b>all members</b> — every item credited to its maker.' +
+    (su ? ' You have <b>superuser</b> moderation rights.' : '') + '</p>' +
+    '<div class="pj-tabs">' +
+    '<button data-folder="images" class="' + (tab === "images" ? "on" : "") + '">🖼 Images (' + groups.image.length + ')</button>' +
+    '<button data-folder="animated" class="' + (tab === "animated" ? "on" : "") + '">🎬 Animated (' + (groups.animated.length + groups.audio.length) + ')</button>' +
+    '<button data-folder="templates" class="' + (tab === "templates" ? "on" : "") + '">✨ Templates (' + groups.template.length + ')</button></div>' +
+    catSel +
+    '<div class="ml-grid" id="commGrid">' + body + '</div>' +
+    '<div class="m-actions"><button class="abtn primary" data-close style="margin-left:auto">Done</button></div>');
+  $$("#modalCard [data-folder]").forEach(b => b.onclick = () => { view.tab = b.dataset.folder; showCommunityRepo(); });
+  const catSelEl = document.getElementById("commCat");
+  if (catSelEl) catSelEl.onchange = () => { view.cat = catSelEl.value; showCommunityRepo(); };
+  $$("#commGrid .ml-cell").forEach(cellEl => {
+    const id = cellEl.dataset.id;
+    const rec = list.find(m => m.id === id);
+    const use = cellEl.querySelector("[data-use]"), dl = cellEl.querySelector("[data-dl]"), del = cellEl.querySelector("[data-del]");
+    if (tab === "templates" && use) use.onclick = () => {
+      if (!rec.tpl || !rec.tpl.pages){ toast("Template data missing"); return; }
+      closeModal();
+      project = hydrate(JSON.parse(JSON.stringify(rec.tpl)));
+      project.name = (rec.tpl.name || "Community template") + " — by " + rec.by;
+      project.cat = rec.tpl.cat || "community";
+      curPage = 0; selId = null; undoStack = []; redoStack = [];
+      openEditor(); saveAutosave();
+      toast("Opened community template — by " + rec.by);
+    };
+    if (tab !== "templates" && ins) ins.onclick = () => {
       closeModal(); pushHistory();
       const el = { id: uid(), type: "image", x: Math.round(project.w*0.2), y: Math.round(project.h*0.2),
         w: Math.round(project.w*0.6), h: Math.round(project.h*0.4), src: rec.data || "", fit: "cover", radius: 0, opacity: 1, filter: "none" };
-      curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("Inserted from community repository");
+      curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave();
+      toast("Inserted from community repository");
     };
     if (dl) dl.onclick = () => {
       const a = document.createElement("a");
       a.href = rec.blob ? URL.createObjectURL(rec.blob) : (rec.data || "");
       a.download = rec.name || "asset"; a.click();
     };
-    if (del) del.onclick = () => {
-      commSave(commAll().filter(m => m.id !== id));
-      closeModal(); showCommunityRepo(); toast("Removed from community repository");
-    };
+    if (del) del.onclick = () => { commSave(commAll().filter(m => m.id !== id)); showCommunityRepo(); };
   });
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
