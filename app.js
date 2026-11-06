@@ -210,14 +210,18 @@ function showMemberGate(after){
   $$("#modalCard [data-member]").forEach(b => b.onclick = () => { $("#mUser").value = b.dataset.member; $("#mPass").focus(); });
   const done = (u) => { localStorage.setItem(SESSION_LS, JSON.stringify(u)); closeModal(); updateMemberChip(); if (after) after(); };
   $("#mGuest").onclick = () => { localStorage.removeItem(SESSION_LS); closeModal(); updateMemberChip(); if (after) after(); };
-  $("#mIn").onclick = async () => {
+  // defect fix: always read the FRESH registry (a stale snapshot rejected
+  // members created after the modal opened)
+  const signIn = async () => {
     const u = ($("#mUser").value || "").trim(), pw = $("#mPass").value || "";
-    const rec = store.members[u];
+    const rec = getMembers().members[u];
     if (!rec){ toast("Unknown member ID \u2014 create one first"); return; }
     const h = await hashPassword(rec.salt, pw);
     if (h !== rec.hash){ toast("Wrong password"); return; }
     done(u);
   };
+  $("#mIn").onclick = signIn;
+  ["mUser", "mPass"].forEach(id => $("#" + id).addEventListener("keydown", (e) => { if (e.key === "Enter") signIn(); }));
   $("#mNew").onclick = async () => {
     const u = ($("#mUser").value || "").trim(), pw = $("#mPass").value || "";
     if (!/^\S{2,24}$/.test(u)){ toast("Member ID: 2\u201324 characters, no spaces \u2014 special characters allowed"); return; }
