@@ -49,7 +49,7 @@ for (const [name, src] of Object.entries(SRC)) {
    top-level state (project, undoStack, curPage...). Exercises the real
    pushHistory/doUndo/doRedo code paths headlessly. */
 const UNDO_DRIVER = `
-this.__undoResults = (function(){
+globalThis.__undoResults = (function(){
   const out = {};
   project = { name:"t", cat:"custom", w:200, h:200, pages:[{ bg:"#ffffff", elements:[
     { id:"e1", type:"rect", x:10, y:10, w:50, h:50, fill:"#123456", stroke:"none", strokeWidth:0, radius:0, opacity:1 } ] }] };
@@ -94,6 +94,24 @@ this.__undoResults = (function(){
   out.rotate = !project.pages[0].elements[0].rot;
   doRedo();
   out.rotateRedo = project.pages[0].elements[0].rot === 45;
+  // 6) members (async — exposed as a promise for the suite to await)
+  globalThis.__memPromise = (async () => {
+    const out = {};
+    localStorage.removeItem("aura.members");
+    localStorage.removeItem("aura.currentMember");
+    const salt = "ab12cd34", pw = "secret1!";
+    const h = await hashPassword(salt, pw);
+    const st = { members: {} };
+    st.members["villa#1"] = { salt, hash: h, created: 1, super: true };
+    localStorage.setItem("aura.members", JSON.stringify(st));
+    const rec = getMembers().members["villa#1"];
+    out.verify = !!rec && (await hashPassword(rec.salt, pw)) === rec.hash;
+    out.reject = (await hashPassword(rec.salt, "wrong-pass")) !== rec.hash;
+    localStorage.setItem("aura.currentMember", JSON.stringify("villa#1"));
+    out.scope = mkey("aura.autosave") === "aura.m.villa#1.aura.autosave";
+    localStorage.removeItem("aura.currentMember");
+    return out;
+  })();
   return out;
 })();
 `;
@@ -500,15 +518,32 @@ check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", (
   return "all three renderers wired; logo embedded (" + (LIB.S3_LOGO_DATAURL.length/1024).toFixed(1) + " KB)";
 });
 
-/* ---------------- report ---------------- */
-const line = "─".repeat(78);
-console.log("\n" + line);
-console.log("AURA STUDIO — AUTOMATED REGRESSION VALIDATION SUITE");
-console.log(line);
-for (const r of results) {
-  console.log(`${r.ok ? "  PASS" : "✗ FAIL"}  ${r.id.padEnd(10)} ${r.name}${r.detail ? "  — " + r.detail : ""}`);
+/* ---------------- report (async-aware) ---------------- */
+const asyncChecks = [
+  { id: "30", name: "Members logic: create/verify/reject + member-scoped keys",
+    run: () => Promise.resolve(sandbox.__memPromise).then(r => {
+      const bad = Object.keys(r).filter(k => !r[k]);
+      assert(bad.length === 0, "failed scenarios: " + bad.join(", "));
+      return Object.keys(r).map(k => k + "=ok").join(", ");
+    }) },
+];
+
+function printReport(){
+  const line = "\u2500".repeat(78);
+  console.log("\n" + line);
+  console.log("AURA STUDIO \u2014 AUTOMATED REGRESSION VALIDATION SUITE");
+  console.log(line);
+  for (const r of results) {
+    console.log((r.ok ? "  PASS" : "\u2717 FAIL") + "  " + r.id.padEnd(11) + " " + r.name + (r.detail ? "  \u2014 " + r.detail : ""));
+  }
+  console.log(line);
+  console.log("RESULT: " + pass + " passed, " + fail + " failed, " + results.length + " total");
+  console.log(line + "\n");
 }
-console.log(line);
-console.log(`RESULT: ${pass} passed, ${fail} failed, ${results.length} total`);
-console.log(line + "\n");
-process.exit(fail ? 1 : 0);
+
+Promise.all(asyncChecks.map(ac =>
+  Promise.resolve().then(ac.run)
+    .then(detail => { results.push({ id: ac.id, name: ac.name, ok: true, detail }); pass++; })
+    .catch(e => { results.push({ id: ac.id, name: ac.name, ok: false, detail: e.message }); fail++; })
+)).then(() => { printReport(); process.exit(fail ? 1 : 0); })
+  .catch(e => { console.error("SUITE ERROR:", e); process.exit(1); });
