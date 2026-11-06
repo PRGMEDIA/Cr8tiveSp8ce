@@ -1002,7 +1002,13 @@ function bindTopbar(){
   $("#btnWatermark").onclick = showWatermarkModal;
   $("#memberChip").onclick = showMemberMenu;
   $("#btnAdmin").onclick = openAdminOverlay;
-  $("#searchBox").addEventListener("input", doSearch);
+  const sel = document.getElementById("templateType");
+  if (sel){
+    sel.innerHTML = '<option value="all">All template types</option>' +
+      CATS.map(c => '<option value="' + c.id + '">' + c.icon + " " + c.name + '</option>').join("");
+    sel.value = activeCat;
+    sel.addEventListener("change", () => { activeCat = sel.value; buildCategoryRail(); renderGallery(); });
+  }
 
   // dropdowns
   $$(".dropdown > button").forEach(btn=>{
