@@ -14,11 +14,6 @@ name: Build & publish container (GHCR)
 on:
   push:
     branches: [main]
-    paths:
-      - "index.html"
-      - "styles.css"
-      - "**.js"
-      - "Dockerfile"
   workflow_dispatch:
 
 permissions:
