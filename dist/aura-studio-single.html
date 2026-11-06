@@ -263,8 +263,13 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
         <button data-act="import-json">⬆ Import project (.json)</button>
         <hr>
         <button data-act="new-blank">✨ New blank design</button>
+        <button data-act="library">📁 Project library…</button>
+        <button data-act="save-lib">💾 Save to library (draft)</button>
         <button data-act="watermark">💧 Watermark all pages…</button>
         <button data-act="members">👥 Members / Sign out…</button>
+        <hr>
+        <button data-act="manuscript">📚 Submit a manuscript…</button>
+        <button data-act="sanctuary">🔐 Sanctuary Magazine — member login…</button>
         <button data-act="help">❓ Help &amp; shortcuts</button>
       </div>
     </div>
@@ -1149,6 +1154,383 @@ if (typeof window !== "undefined") window.TEMPLATES = TEMPLATES, window.CATS = C
 </script>
 <script>
 /* ============================================================
+   Aura Suite — community template collection (21 templates)
+   Inspired by classic print/digital layouts (guides), rebuilt as
+   native, fully-editable Aura Studio templates.
+   Exposes: AURA_SUITE_TEMPLATES (array, same schema as TEMPLATES)
+   ============================================================ */
+const AURA_SUITE_TEMPLATES = (() => {
+  const S = [];
+  const T = (x,y,w,h,text,o={}) => ({type:"text",x,y,w,h,text,
+    fontSize:o.fs||20,fontFamily:o.ff||"'Segoe UI', Arial, sans-serif",fontWeight:o.fw||"400",
+    color:o.c||"#222",align:o.al||"left",italic:o.it||false,uppercase:o.up||false,
+    lineHeight:o.lh||1.3,letterSpacing:(o.ls||0)+"px",opacity:(o.op!=null?o.op:1)});
+  const R = (x,y,w,h,o={}) => ({type:"rect",x,y,w,h,fill:o.f||"#ffffff",
+    stroke:o.s||"none",strokeWidth:o.sw||0,radius:o.r||0,opacity:(o.op!=null?o.op:1)});
+  const E = (x,y,w,h,o={}) => ({type:"ellipse",x,y,w,h,fill:o.f||"none",
+    stroke:o.s||"none",strokeWidth:o.sw||0,opacity:(o.op!=null?o.op:1)});
+  const LN = (x,y,x2,y2,o={}) => ({type:"line",x,y,w:Math.abs(x2-x),h:Math.abs(y2-y),
+    x1:Math.min(x,x2),y1:Math.min(y,y2),x2a:Math.max(x,x2),y2a:Math.max(y,y2),
+    stroke:o.s||"#999",strokeWidth:o.sw||1,opacity:(o.op!=null?o.op:1)});
+  const IM = (x,y,w,h,label,c1,c2,o={}) => ({type:"image",x,y,w,h,
+    src:"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'+
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'+
+      '<stop offset="0" stop-color="'+c1+'"/><stop offset="1" stop-color="'+c2+'"/></linearGradient></defs>'+
+      '<rect width="100%" height="100%" fill="url(#g)"/>'+
+      '<text x="50%" y="50%" font-family="Segoe UI,Arial" font-size="'+Math.max(11,Math.min(w,h)*0.08)+
+      '" fill="#fff" text-anchor="middle" dominant-baseline="middle">'+label+'</text></svg>'),
+    fit:"cover",radius:o.r||0,opacity:(o.op!=null?o.op:1)});
+  const GL = (x,y,w,h,ch,o={}) => ({type:"glyph",x,y,w,h,ch,text:ch,fontSize:o.fs||64,color:o.c||"#333",opacity:(o.op!=null?o.op:1)});
+  const tpl = (name,cat,desc,tags,w,h,pages) => S.push({name,cat,desc,tags:tags.toLowerCase(),w,h,pages});
+
+  /* ---- 1) Business Card Sheet — Classic (guide: 10-up card sheet) ---- */
+  {
+    const els = [ T(60,40,730,44,"Business Cards \u2014 10-up sheet (3.5\u00d72\u2033)",{fs:26,fw:"700"}),
+      T(60,88,730,26,"Trim guides: cut along the card edges \u00b7 standard 3.5\u00d72\u2033 cards",{fs:13,c:"#888"}) ];
+    for (let row = 0; row < 5; row++) for (let col = 0; col < 2; col++){
+      const x = 70 + col*360, y = 140 + row*186;
+      els.push(R(x, y, 340, 170, {f:"#ffffff", s:"#b9b4a8", sw:1, r:6}));
+      els.push(T(x+20, y+22, 300, 34, "YOUR NAME", {fs:22, fw:"700", c:"#2b2b2b", ls:"2"}));
+      els.push(T(x+20, y+58, 300, 24, "Title / Business", {fs:14, c:"#777"}));
+      els.push(LN(x+20, y+92, x+320, y+92, {s:"#ddd"}));
+      els.push(T(x+20, y+102, 300, 22, "+1 (555) 000-0000", {fs:12, c:"#555"}));
+      els.push(T(x+20, y+126, 300, 22, "hello@yourbrand.com", {fs:12, c:"#555"}));
+    }
+    tpl("Business Card Sheet \u2014 Classic 10-up","marketing","Ten standard 3.5\u00d72\u2033 business cards on a letter sheet \u2014 editable name/title/contact on every card.","business card, print, sheet, 10-up",850,1100,[{bg:"#f6f4ef",elements:els}]);
+  }
+  /* ---- 2) Business Card Sheet — Noir (different) ---- */
+  {
+    const els = [ T(60,40,730,44,"Business Cards \u2014 Noir 10-up",{fs:26,fw:"700",c:"#e8b84b"}),
+      T(60,88,730,26,"Gold-accented dark cards \u00b7 cut along the edges",{fs:13,c:"#8a8a7a"}) ];
+    for (let row = 0; row < 5; row++) for (let col = 0; col < 2; col++){
+      const x = 70 + col*360, y = 140 + row*186;
+      els.push(R(x, y, 340, 170, {f:"#191919", s:"#e8b84b", sw:1, r:6}));
+      els.push(T(x+20, y+24, 300, 34, "YOUR NAME", {fs:22, fw:"700", c:"#e8b84b", ls:"3"}));
+      els.push(T(x+20, y+60, 300, 24, "CONSULTANT", {fs:12, c:"#bbb", ls:"3"}));
+      els.push(LN(x+20, y+94, x+320, y+94, {s:"#e8b84b"}));
+      els.push(T(x+20, y+104, 300, 22, "+1 (555) 000-0000", {fs:12, c:"#ddd"}));
+      els.push(T(x+20, y+128, 300, 22, "studio@noir.example", {fs:12, c:"#ddd"}));
+    }
+    tpl("Business Card Sheet \u2014 Noir 10-up","marketing","Dark gold-accented business card sheet \u2014 ten editable cards.","business card, print, noir, gold",850,1100,[{bg:"#101010",elements:els}]);
+  }
+  /* ---- 3) Case Study — Clean (guide) ---- */
+  tpl("Case Study \u2014 Clean","docs","Beginner-friendly case study layout: overview, challenge, solution and results with image slots.","case study, portfolio, project",850,1100,[
+    {bg:"#ffffff",elements:[
+      T(60,70,500,60,"Case Study",{fs:44,fw:"800",c:"#1a1a1a"}),
+      T(60,140,500,90,"A short summary of the project \u2014 who it was for, what it changed, and the outcome.",{fs:16,c:"#555",lh:1.5}),
+      IM(60,250,350,200,"Project image","#9db4d0","#5a7ba6",{r:8}),
+      IM(440,250,350,200,"Result image","#b4c9d9","#6a8aa6",{r:8}),
+      T(60,480,730,36,"The challenge",{fs:22,fw:"700",c:"#1a1a1a"}),
+      T(60,520,730,70,"Describe the problem your client faced \u2014 context, constraints and stakes.",{fs:14,c:"#444",lh:1.6}),
+      T(60,610,730,36,"The solution",{fs:22,fw:"700",c:"#1a1a1a"}),
+      T(60,650,730,70,"What you built or changed, and why it worked.",{fs:14,c:"#444",lh:1.6}),
+      T(60,740,730,36,"The results",{fs:22,fw:"700",c:"#1a1a1a"}),
+      T(60,780,730,70,"\u2022 Result one \u2014 metric or outcome\n\u2022 Result two \u2014 metric or outcome\n\u2022 Result three \u2014 metric or outcome",{fs:14,c:"#444",lh:1.7}),
+      R(60,900,180,44,{f:"#1a1a1a",r:6}),
+      T(60,912,180,26,"See the work",{fs:14,fw:"600",c:"#fff",al:"center"}),
+      T(60,990,730,26,"Made with Aura Studio \u00b7 yourname.example",{fs:12,c:"#999",al:"center"})
+    ]}]);
+  /* ---- 4) Case Study — Purple Tech (different) ---- */
+  tpl("Case Study \u2014 Purple Tech","docs","Tech-flavoured case study with gradient header, product shot and metric cards.","case study, tech, saas, purple",850,1100,[
+    {bg:"#f6f5ff",elements:[
+      R(0,0,850,190,{f:"#3b2a78"}),
+      T(60,50,700,60,"SaaS relaunch: +38% activation",{fs:34,fw:"800",c:"#fff"}),
+      T(60,120,700,40,"A redesign story in three moves.",{fs:17,c:"#cfc6ff"}),
+      IM(60,230,730,240,"Product screenshot","#7c5cff","#3b2a78",{r:12}),
+      R(60,510,230,140,{f:"#ffffff",s:"#ded8ff",sw:1,r:12}),
+      T(80,530,190,50,"+38%",{fs:32,fw:"800",c:"#3b2a78"}),
+      T(80,582,190,50,"activation in 60 days",{fs:13,c:"#666",lh:1.4}),
+      R(310,510,230,140,{f:"#ffffff",s:"#ded8ff",sw:1,r:12}),
+      T(330,530,190,50,"\u221245%",{fs:32,fw:"800",c:"#3b2a78"}),
+      T(330,582,190,50,"support tickets",{fs:13,c:"#666",lh:1.4}),
+      R(560,510,230,140,{f:"#ffffff",s:"#ded8ff",sw:1,r:12}),
+      T(580,530,190,50,"4.8/5",{fs:32,fw:"800",c:"#3b2a78"}),
+      T(580,582,190,50,"user rating",{fs:13,c:"#666",lh:1.4}),
+      T(60,690,730,36,"What changed",{fs:22,fw:"700",c:"#1a1a1a"}),
+      T(60,732,730,120,"Onboarding rebuilt around a single checklist \u2014 three screens instead of nine, with progress saved at every step.",{fs:14,c:"#444",lh:1.6}),
+      R(60,880,730,1,{f:"#ded8ff"}),
+      T(60,905,730,60,"Team: 2 designers \u00b7 3 engineers \u00b7 8 weeks",{fs:13,c:"#777"}),
+      T(60,990,730,26,"Made with Aura Studio",{fs:12,c:"#999",al:"center"})
+    ]}]);
+  /* ---- 5) Build A Bee — cut & color (guide: build-a-bee) ---- */
+  {
+    const els = [ T(60,60,560,70,"Build a Bee",{fs:44,fw:"800",c:"#2b2b2b",al:"center"}),
+      T(650,80,140,110,"\uD83D\uDC1D",{fs:88}),
+      T(60,150,730,30,"Color each part, cut along the edges, and glue your bee together.",{fs:15,c:"#777",al:"center"}),
+      E(90,240,300,220,{s:"#333",sw:2}), T(90,470,300,26,"body",{fs:14,c:"#555",al:"center"}),
+      E(430,240,180,180,{s:"#333",sw:2}), T(430,430,180,26,"head",{fs:14,c:"#555",al:"center"}),
+      E(640,250,130,90,{s:"#333",sw:2}), T(620,350,170,26,"wing",{fs:14,c:"#555",al:"center"}),
+      LN(100,560,240,560,{s:"#333",sw:2}), LN(140,590,260,590,{s:"#333",sw:2}), LN(180,620,240,650,{s:"#333",sw:2}),
+      T(100,660,300,26,"stripes",{fs:14,c:"#555"}),
+      E(470,520,120,70,{s:"#333",sw:2}), T(450,600,170,26,"antenna",{fs:14,c:"#555",al:"center"}),
+      E(650,480,110,70,{s:"#333",sw:2}), T(640,560,150,26,"stinger",{fs:14,c:"#555",al:"center"}),
+      T(60,990,730,26,"Made with Aura Studio \u00b7 print on card stock for best results",{fs:12,c:"#999",al:"center"}) ];
+    tpl("Build a Bee \u2014 Cut & Color","docs","Kids craft page: color and cut bee parts (body, head, wings, stripes) and assemble.","coloring, kids, bee, craft, cut and paste",850,1100,[{bg:"#fdf9ee",elements:els}]);
+  }
+  /* ---- 6) Build a Bug — ladybug (different) ---- */
+  {
+    const els = [ T(60,60,560,70,"Build a Ladybug",{fs:44,fw:"800",c:"#7a1f2b",al:"center"}),
+      GL(650,80,140,110,"\uD83D\uDC1E",{fs:88}),
+      T(60,150,730,30,"Color the pieces, cut them out and build your ladybug.",{fs:15,c:"#777",al:"center"}),
+      E(110,230,320,260,{s:"#5a1a24",sw:2}),
+      E(120,300,140,140,{s:"#5a1a24",sw:2}),
+      E(280,300,140,140,{s:"#5a1a24",sw:2}),
+      T(110,500,320,26,"wing covers",{fs:14,c:"#8a4a55",al:"center"}),
+      E(480,240,160,150,{s:"#5a1a24",sw:2}),
+      T(470,400,190,26,"head",{fs:14,c:"#8a4a55",al:"center"}),
+      LN(500,430,560,470,{s:"#5a1a24",sw:2}), LN(560,470,620,430,{s:"#5a1a24",sw:2}),
+      T(480,480,190,26,"antennae",{fs:14,c:"#8a4a55",al:"center"}),
+      E(120,620,100,70,{s:"#5a1a24",sw:2}), T(100,700,150,26,"leg \u00d76",{fs:14,c:"#8a4a55",al:"center"}),
+      E(480,600,140,80,{s:"#5a1a24",sw:2}), T(460,690,190,26,"spots",{fs:14,c:"#8a4a55",al:"center"}) ];
+    tpl("Build a Bug \u2014 Cut & Color","docs","Ladybug cut-and-color craft page for kids.","coloring, kids, ladybug, craft",850,1100,[{bg:"#fff5f5",elements:els}]);
+  }
+  /* ---- 7) Fall Leaves — color & cut (guide) ---- */
+  {
+    const els = [ T(60,60,730,60,"Fall Leaves \u2014 color & cut",{fs:40,fw:"800",c:"#5a3a1a",al:"center"}),
+      T(60,130,730,28,"Twelve leaves \u2014 color them, cut them out, decorate anything.",{fs:15,c:"#8a6a45",al:"center"}) ];
+    const pos = [[80,190],[320,180],[580,190],[80,380],[330,370],[600,380],[90,560],[350,560],[600,560],[80,760],[330,760],[590,760]];
+    pos.forEach((p,i)=>{
+      els.push(E(p[0], p[1], 170, 150, {s:"#8a6a45", sw:2}));
+      els.push(LN(p[0]+83, p[1]+150, p[0]+83, p[1]+185, {s:"#8a6a45", sw:2}));
+      els.push(T(p[0], p[1]+190, 170, 22, "leaf "+(i+1), {fs:11, c:"#a88a65", al:"center"}));
+    });
+    els.push(T(60,1000,730,26,"Made with Aura Studio",{fs:12,c:"#b09a78",al:"center"}));
+    tpl("Fall Leaves \u2014 Color & Cut","docs","Twelve outline leaves to color and cut \u2014 autumn craft sheet.","coloring, leaves, autumn, craft",850,1100,[{bg:"#fffdf6",elements:els}]);
+  }
+  /* ---- 8) Fall Leaves — mini 12-up (different) ---- */
+  {
+    const els = [ T(60,50,730,50,"Mini Leaves \u2014 12-up",{fs:34,fw:"800",c:"#4a6b3a",al:"center"}) ];
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++){
+      const x = 120 + c*230, y = 130 + r*230;
+      els.push(E(x, y, 150, 190, {s:"#4a6b3a", sw:2}));
+      els.push(LN(x+75, y+190, x+75, y+215, {s:"#4a6b3a", sw:2}));
+    }
+    els.push(T(60,1060,730,26,"Cut along the outlines \u00b7 garland, table d\u00e9cor, gift tags",{fs:13,c:"#7a9a6a",al:"center"}));
+    tpl("Mini Leaves \u2014 12-up Garland","docs","Small leaf outlines for garlands and gift tags.","leaves, garland, autumn, mini",850,1100,[{bg:"#f7fbf3",elements:els}]);
+  }
+  /* ---- 9) Recipe Page — script title (guide) ---- */
+  {
+    const els = [ T(60,50,730,80,"Recipe",{fs:72,ff:"'Brush Script MT', cursive",c:"#222"}),
+      T(60,150,300,28,"From the kitchen of",{fs:15,it:true,c:"#777"}),
+      LN(60,185,790,185,{s:"#222",sw:2}),
+      T(60,210,200,28,"Title:",{fs:16,fw:"600",c:"#333"}), LN(140,238,790,238,{s:"#bbb"}),
+      T(60,270,340,28,"Ingredients:",{fs:16,fw:"600",c:"#333"}),
+      T(430,270,340,28,"Directions:",{fs:16,fw:"600",c:"#333"}) ];
+    for (let i = 0; i < 9; i++) els.push(LN(60, 320 + i*34, 400, 320 + i*34, {s:"#999"}));
+    for (let i = 0; i < 9; i++) els.push(LN(430, 320 + i*34, 790, 320 + i*34, {s:"#999"}));
+    els.push(T(60,650,200,28,"Notes:",{fs:16,fw:"600",c:"#333"}));
+    for (let i = 0; i < 5; i++) els.push(LN(60, 700 + i*36, 790, 700 + i*36, {s:"#999"}));
+    els.push(T(60,990,730,26,"Made with Aura Studio",{fs:12,c:"#999",al:"center"}));
+    tpl("Recipe Page \u2014 Script Title","docs","Classic recipe page with script title, ingredients/directions columns and notes.","recipe, kitchen, printable, cooking",850,1100,[{bg:"#ffffff",elements:els}]);
+  }
+  /* ---- 10) Recipe Card — Rustic (different) ---- */
+  {
+    const els = [ R(40,40,770,1020,{f:"#f5efe4",r:14}),
+      R(60,60,730,120,{f:"#e8dfcc",r:10}),
+      T(80,80,690,70,"Grandma\u2019s Kitchen",{fs:40,ff:"Georgia, serif",c:"#5a4632",al:"center"}),
+      T(80,150,690,26,"RECIPE CARD",{fs:14,c:"#8a7a5a",al:"center",ls:"6"}),
+      T(80,220,300,30,"Ingredients",{fs:20,fw:"700",c:"#5a4632"}),
+      T(430,220,300,30,"Method",{fs:20,fw:"700",c:"#5a4632"}) ];
+    for (let i = 0; i < 8; i++) els.push(LN(80, 280 + i*36, 380, 280 + i*36, {s:"#b8a888"}));
+    for (let i = 0; i < 8; i++) els.push(LN(430, 280 + i*36, 770, 280 + i*36, {s:"#b8a888"}));
+    els.push(T(80,600,300,30,"Notes",{fs:20,fw:"700",c:"#5a4632"}));
+    for (let i = 0; i < 4; i++) els.push(LN(80, 650 + i*40, 770, 650 + i*40, {s:"#b8a888"}));
+    els.push(T(80,850,690,60,"Serves: ____  \u00b7  Time: ____  \u00b7  Oven: ____\u00b0F",{fs:16,c:"#8a7a5a"}));
+    els.push(T(80,990,690,26,"From our kitchen to yours \u00b7 Aura Studio",{fs:12,c:"#a89878",al:"center"}));
+    tpl("Recipe Card \u2014 Rustic Kitchen","docs","Kraft-toned recipe card with columns for ingredients and method.","recipe, rustic, kitchen, card",850,1100,[{bg:"#efe9db",elements:els}]);
+  }
+  /* ---- 11) Daily Schedule — hourly (guide) ---- */
+  {
+    const els = [ T(60,50,480,50,"Daily Schedule",{fs:34,fw:"700",c:"#2b3a2e"}),
+      T(600,58,120,30,"Date",{fs:16,c:"#5a7a5a"}),
+      R(710,52,80,34,{f:"#c8e6c9",r:17}),
+      T(60,120,220,30,"Top priorities",{fs:16,fw:"700",c:"#2b3a2e"}) ];
+    for (let i = 0; i < 3; i++){
+      els.push(E(70, 165 + i*42, 22, 22, {s:"#5a7a5a", sw:2}));
+      els.push(R(105, 163 + i*42, 180, 26, {f:"#c8e6c9", r:13}));
+    }
+    els.push(T(60,320,220,30,"To-do list",{fs:16,fw:"700",c:"#2b3a2e"}));
+    for (let i = 0; i < 5; i++){
+      els.push(T(70, 355 + i*36, 20, 24, String(i+1)+".", {fs:13, c:"#5a7a5a"}));
+      els.push(LN(95, 375 + i*36, 260, 375 + i*36, {s:"#9ab89a"}));
+    }
+    els.push(T(60,560,220,30,"Notes",{fs:16,fw:"700",c:"#2b3a2e"}));
+    for (let i = 0; i < 6; i++) els.push(LN(60, 600 + i*38, 290, 600 + i*38, {s:"#9ab89a"}));
+    const times = ["6:00","6:30","7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30"];
+    times.forEach((t, i) => {
+      const y = 120 + i*28;
+      els.push(T(320, y, 60, 24, t, {fs:11, c:"#5a7a5a"}));
+      els.push(LN(385, y+22, 790, y+22, {s:"#bcd8bc"}));
+    });
+    els.push(T(60,1080,730,20,"Download free printable planners on bordio.com \u2192 replace with your brand",{fs:10,c:"#a8c0a8",al:"center"}));
+    tpl("Daily Schedule \u2014 Hourly","docs","Half-hour schedule 6:00\u201321:30 with priorities, to-dos and notes.","planner, schedule, daily, productivity",850,1100,[{bg:"#fbfdf9",elements:els}]);
+  }
+  /* ---- 12) Daily Schedule — minimal (different) ---- */
+  {
+    const els = [ T(60,50,500,54,"Today",{fs:40,fw:"800",c:"#1d3a5f"}),
+      R(620,55,170,40,{f:"#e3edf7",r:20}), T(640,64,130,24,"date",{fs:13,c:"#5a7a9a"}) ];
+    for (let i = 0; i < 12; i++){
+      const y = 140 + i*72;
+      els.push(T(60, y, 90, 30, ["6 am","7 am","8 am","9 am","10 am","11 am","12 pm","1 pm","2 pm","3 pm","4 pm","5 pm"][i], {fs:14, fw:"600", c:"#5a7a9a"}));
+      els.push(LN(160, y+34, 790, y+34, {s:"#c3d5e8"}));
+    }
+    els.push(T(60,1030,730,26,"One line per hour \u2014 keep it light.",{fs:12,c:"#8aa8c8",al:"center"}));
+    tpl("Daily Schedule \u2014 Minimal Blue","docs","One-hour rows, calm blue palette \u2014 a lighter daily plan.","planner, schedule, minimal",850,1100,[{bg:"#fbfdff",elements:els}]);
+  }
+  /* ---- 13) Polka labels — 6-up (guide) ---- */
+  {
+    const els = [ T(60,40,730,44,"Labels \u2014 6-up (3.3\u00d74\u2033)",{fs:26,fw:"700",c:"#333"}) ];
+    const cols = ["#5b8def","#ef5da8","#8e44ad","#6aa84f","#c0392b","#2e7d32"];
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++){
+      const x = 70 + c*360, y = 110 + r*320;
+      els.push(R(x, y, 340, 290, {f: cols[r*2+c], r:8}));
+      els.push(R(x+28, y+30, 284, 230, {f:"#ffffff", r:14}));
+      els.push(T(x+40, y+130, 260, 40, "Label", {fs:26, c:"#444", al:"center"}));
+    }
+    els.push(T(60,1090,730,20,"Write-on labels \u00b7 print on sticker paper",{fs:11,c:"#999",al:"center"}));
+    tpl("Labels \u2014 Polka 6-up","marketing","Six bold label frames \u2014 print on sticker paper and cut.","labels, print, stickers",850,1100,[{bg:"#ffffff",elements:els}]);
+  }
+  /* ---- 14) Labels — pastel (different) ---- */
+  {
+    const els = [ T(60,40,730,44,"Pastel Labels \u2014 6-up",{fs:26,fw:"700",c:"#6a5a6a"}) ];
+    const cols = ["#ffe5ec","#e2ece9","#fff3e0","#e8eaf6","#f3e5f5","#e0f2f1"];
+    const brd = ["#c48b9f","#7aa89a","#c9a227","#7986cb","#a56baf","#4db6ac"];
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++){
+      const x = 70 + c*360, y = 110 + r*320, i = r*2+c;
+      els.push(R(x, y, 340, 290, {f: cols[i], r:8}));
+      els.push(R(x+28, y+30, 284, 230, {f:"#ffffff", r:14, s: brd[i], sw:2}));
+      els.push(T(x+40, y+130, 260, 40, "Label", {fs:26, c:"#666", al:"center"}));
+    }
+    els.push(T(60,1090,730,20,"Soft pastel set \u00b7 jam jars, pantry, gifts",{fs:11,c:"#a89aa8",al:"center"}));
+    tpl("Labels \u2014 Pastel 6-up","marketing","Six soft-pastel label frames with colored borders.","labels, pastel, print",850,1100,[{bg:"#fdfcfe",elements:els}]);
+  }
+  /* ---- 15) Album layouts — 12×36 pink (guide) ---- */
+  {
+    const els = [ R(0,0,1320,440,{f:"#f3e3e3"}),
+      T(40,20,400,30,"12\u00d736 spreads \u2014 pink collection",{fs:20,fw:"700",c:"#7a4a4a"}) ];
+    const cells = [[40,60,300,340],[360,60,220,160],[360,230,220,170],[600,60,160,340],[780,60,250,170],[1050,60,230,340],[1050,210,230,190],[600,230,160,170],[40,60,120,340]];
+    cells.forEach((c,i)=>{
+      const pinks = ["#c98a8a","#e8c8c8","#8a5555","#f0dede","#a86a6a","#d4a0a0","#b88a8a","#e8d0d0","#c98a8a"];
+      els.push(R(c[0], c[1], c[2], c[3], {f: pinks[i % pinks.length], r:4}));
+    });
+    els.push(T(40,415,400,20,"wedding \u00b7 family \u00b7 newborn \u2014 swap in your photos",{fs:11,c:"#a87a7a"}));
+    tpl("Album Layouts \u2014 12\u00d736 Pink","marketing","Photography album spread (12\u00d736 in) \u2014 pink mosaic of photo wells.","album, photography, 12x36, wedding",1320,440,[{bg:"#f8f0f0",elements:els}]);
+  }
+  /* ---- 16) Album layouts — mono (different) ---- */
+  {
+    const els = [ R(0,0,1320,440,{f:"#f2f2f2"}),
+      T(40,20,400,30,"12\u00d736 spreads \u2014 mono",{fs:20,fw:"700",c:"#333"}) ];
+    const cells = [[40,60,260,340],[320,60,300,160],[320,240,140,160],[480,240,140,160],[640,60,300,340],[960,60,160,160],[1140,60,140,160],[960,240,320,160],[40,415,600,20]];
+    const grays = ["#2b2b2b","#e8e8e8","#8a8a8a","#d4d4d4","#3a3a3a","#c0c0c0","#5a5a5a","#eee","#bbb"];
+    cells.forEach((c,i)=>{ if (c[3] > 20) els.push(R(c[0], c[1], c[2], c[3], {f: grays[i % grays.length], r:2})); });
+    els.push(T(40,415,400,20,"black & white editorial spread",{fs:11,c:"#888"}));
+    tpl("Album Layouts \u2014 12\u00d736 Mono","marketing","Black-and-white editorial album spread (12\u00d736 in).","album, photography, mono, editorial",1320,440,[{bg:"#fafafa",elements:els}]);
+  }
+  /* ---- 17) Business infographic — 4 steps (guide) ---- */
+  {
+    const els = [ T(60,40,1160,50,"Business infographic \u2014 four steps",{fs:30,fw:"800",c:"#222",al:"center"}) ];
+    const pos = [[80,140],[740,140],[80,430],[740,430]];
+    const num = ["01","02","03","04"];
+    const cols = ["#5b8def","#ef5da8","#f2a33c","#41b883"];
+    pos.forEach((p,i)=>{
+      els.push(R(p[0], p[1], 460, 220, {f:"#ffffff", s:"#e2e6ef", sw:1, r:14}));
+      els.push(R(p[0], p[1], 64, 64, {f: cols[i], r:32}));
+      els.push(T(p[0], p[1]+12, 64, 40, num[i], {fs:22, fw:"800", c:"#fff", al:"center"}));
+      els.push(T(p[0]+84, p[1]+16, 360, 34, "Step title",{fs:20, fw:"700", c:"#222"}));
+      els.push(T(p[0]+84, p[1]+58, 360, 120, "Describe this step in one or two short sentences \u2014 what happens and why it matters.",{fs:14, c:"#666", lh:1.5}));
+    });
+    els.push(E(540,290,200,200,{f:"#41b883"}));
+    els.push(T(540,350,200,90,"business\ninfographics",{fs:20,fw:"700",c:"#fff",al:"center",lh:1.2}));
+    els.push(T(60,700,1160,20,"Replace the step titles and copy \u2014 colors follow your Brand Kit",{fs:12,c:"#999",al:"center"}));
+    tpl("Business Infographic \u2014 4 Steps","presentation","Four-step process infographic with numbered cards around a central hub.","infographic, business, steps, presentation",1280,720,[{bg:"#f7f8fc",elements:els}]);
+  }
+  /* ---- 18) Infographic — timeline (different) ---- */
+  {
+    const els = [ T(60,50,1160,50,"Project timeline",{fs:30,fw:"800",c:"#222",al:"center"}),
+      LN(120,380,1160,380,{s:"#c9d2e8",sw:4}) ];
+    const x0 = [200,450,700,950];
+    const cols = ["#7c5cff","#41b883","#f2a33c","#ef5da8"];
+    x0.forEach((x,i)=>{
+      els.push(E(x-28, 352, 56, 56, {f: cols[i]}));
+      els.push(T(x-28, 366, 56, 30, "Q"+(i+1), {fs:16, fw:"800", c:"#fff", al:"center"}));
+      els.push(T(x-90, 240, 180, 30, "Milestone "+(i+1), {fs:16, fw:"700", c:"#222", al:"center"}));
+      els.push(T(x-90, 272, 180, 60, "What ships this quarter.",{fs:12, c:"#666", al:"center", lh:1.4}));
+    });
+    els.push(T(60,650,1160,20,"Horizontal roadmap \u2014 four quarters",{fs:12,c:"#999",al:"center"}));
+    tpl("Infographic \u2014 Quarterly Timeline","presentation","Four-quarter roadmap with milestone markers on a timeline.","timeline, roadmap, infographic, quarters",1280,720,[{bg:"#fbfcff",elements:els}]);
+  }
+  /* ---- 19) Tech blog — homepage (guide) ---- */
+  {
+    const els = [ R(0,0,1280,64,{f:"#1b1f27"}),
+      T(30,16,160,32,"techblog",{fs:20,fw:"800",c:"#fff"}),
+      T(200,20,600,24,"Reviews \u00b7 How-to \u00b7 News \u00b7 Deals",{fs:13,c:"#a8b0bc"}),
+      IM(0,64,1280,300,"Hero image \u2014 latest review","#3a4a5c","#1b1f27"),
+      T(40,400,700,40,"The 25 best gadgets we tested this year",{fs:26,fw:"800",c:"#111"}) ];
+    for (let i = 0; i < 4; i++){
+      const x = 40 + i*305;
+      els.push(IM(x, 470, 285, 150, "Article image","#5a6a7a","#2a3a4a",{r:8}));
+      els.push(T(x, 634, 285, 50, "Article title goes here in two lines",{fs:15, fw:"700", c:"#222", lh:1.3}));
+    }
+    tpl("Tech Blog \u2014 Homepage","marketing","Tech blog homepage: header, hero story and a four-card article grid.","blog, tech, homepage, magazine",1280,720,[{bg:"#ffffff",elements:els}]);
+  }
+  /* ---- 20) Tech blog — magazine (different) ---- */
+  {
+    const els = [ T(40,30,600,44,"The Weekly Byte",{fs:30,fw:"800",c:"#0a3d62"}),
+      T(660,36,580,30,"Issue 42 \u00b7 this week in tech",{fs:13,c:"#666",al:"right"}),
+      LN(40,84,1240,84,{s:"#0a3d62",sw:2}) ];
+    for (let c = 0; c < 3; c++){
+      const x = 40 + c*410;
+      els.push(IM(x, 110, 390, 200, "Cover story","#4a90d9","#0a3d62",{r:6}));
+      els.push(T(x, 324, 390, 30, "COVER STORY",{fs:11, fw:"700", c:"#0a3d62", ls:"2"}));
+      els.push(T(x, 350, 390, 60, "Big headline for the lead article of the week",{fs:17, fw:"700", c:"#111", lh:1.3}));
+      els.push(T(x, 416, 390, 60, "A short standfirst summarising the story in two sentences.",{fs:12, c:"#555", lh:1.5}));
+    }
+    for (let i = 0; i < 4; i++){
+      const y = 500 + i*55;
+      els.push(R(40, y, 70, 44, {f:"#d9e4f1", r:4}));
+      els.push(T(124, y+4, 1116, 36, "Short headline for story number "+(i+1)+" \u2014 one line",{fs:14, fw:"600", c:"#222"}));
+    }
+    tpl("Tech Blog \u2014 Magazine Layout","marketing","Magazine-style tech blog front page: cover story plus a briefing list.","blog, magazine, tech, editorial",1280,720,[{bg:"#ffffff",elements:els}]);
+  }
+  /* ---- 21) To Do — pastel floral (guide) ---- */
+  {
+    const els = [ T(60,50,420,60,"To Do List",{fs:40,ff:"'Comic Sans MS', 'Segoe UI', cursive",c:"#4a3a4a"}),
+      R(560,58,200,40,{f:"#c8d8e8",r:20}), T(580,66,160,24,"date",{fs:13,c:"#5a6a7a"}),
+      GL(760,30,120,110,"\uD83C\uDF3C",{fs:80}) ];
+    const quads = [[60,180,"MUST DO","#f8dce4"],[450,180,"SHOULD DO","#e8ddd0"],[60,600,"COULD DO","#d8e4f0"],[450,600,"IF I HAVE TIME","#e4dcf0"]];
+    quads.forEach(q=>{
+      els.push(R(q[0], q[1], 340, 380, {f: q[3], r:14}));
+      els.push(T(q[0]+24, q[1]+24, 290, 30, q[2], {fs:15, fw:"700", c:"#5a4a5a", ls:"2"}));
+      for (let i = 0; i < 5; i++){
+        els.push(R(q[0]+24, q[1]+72 + i*56, 20, 20, {f:"#ffffff", s:"#b8a8b8", sw:1}));
+        els.push(LN(q[0]+56, q[1]+88 + i*56, q[0]+316, q[1]+88 + i*56, {s:"#b8a8b8"}));
+      }
+    });
+    GL(60,980,140,100,"\uD83C\uDF3C",{fs:70});
+    tpl("To Do \u2014 Pastel Floral","docs","Four-quadrant pastel to-do board with checkboxes and floral accents.","todo, planner, pastel, checklist",850,1100,[{bg:"#fdfbfc",elements:els}]);
+  }
+  /* ---- 22) To Do — bold checklist (different) ---- */
+  {
+    const els = [ T(60,50,600,60,"TODAY\u2019S HITS",{fs:44,fw:"900",c:"#111"}),
+      T(60,120,600,30,"Cross them off. Every single one.",{fs:16,c:"#666"}) ];
+    for (let i = 0; i < 7; i++){
+      const y = 180 + i*108;
+      els.push(R(60, y, 720, 92, {f:"#f4f4f4", r:12}));
+      els.push(R(84, y+26, 40, 40, {f:"#111", r:6}));
+      els.push(T(84, y+34, 40, 24, "\u2713", {fs:16, fw:"900", c:"#f4f4f4", al:"center"}));
+      els.push(T(148, y+22, 600, 30, "Task "+(i+1)+" \u2014 what needs to happen", {fs:18, fw:"700", c:"#111"}));
+      els.push(T(148, y+54, 600, 24, "notes / deadline / who", {fs:12, c:"#888"}));
+    }
+    tpl("To Do \u2014 Bold Checklist","docs","High-contrast checklist \u2014 seven task cards with bold checkboxes.","todo, checklist, bold, productivity",850,1100,[{bg:"#ffffff",elements:els}]);
+  }
+  return S;
+})();
+if (typeof window !== "undefined") window.AURA_SUITE_TEMPLATES = AURA_SUITE_TEMPLATES;
+
+</script>
+<script>
+/* ============================================================
    Aura Studio — minimal ZIP writer (store method, no deps)
    Produces valid .zip / .odt containers entirely in the browser.
    ============================================================ */
@@ -1247,7 +1629,7 @@ if (typeof window !== "undefined") window.ZipWriter = ZipWriter;
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "2.6.0";
+const APP_VERSION = "3.1.1";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",
@@ -1591,6 +1973,7 @@ function restoreAutosave(){
 }
 
 function hydrate(p){
+  if (!p.id) p.id = uid();
   p.pages.forEach(pg => pg.elements.forEach(el => {
     if(!el.id) el.id = uid();
     // legacy normalization: glyph elements once stored their character only in .ch
@@ -2109,6 +2492,10 @@ function renderPages(){
     th.onclick = ()=>{ curPage=i; selId=null; renderBoard(); renderPages(); renderProps(); };
     strip.appendChild(th);
   });
+  const dupBtn = document.createElement("button");
+  dupBtn.className = "pstrip-btn"; dupBtn.textContent = "\u29C9"; dupBtn.title = "Duplicate current page (elements included)";
+  dupBtn.onclick = duplicatePage;
+  strip.appendChild(dupBtn);
   const add = document.createElement("button");
   add.className = "pstrip-btn"; add.textContent = "+"; add.title = "Add page";
   add.onclick = ()=>{
@@ -2157,7 +2544,7 @@ function pickImage(existing, forBrand){
       else {
         pushHistory();
         // archive a copy in the persistent media library (IndexedDB)
-        try { mediaPut({ id: uid(), name: f.name, type: f.type, data: rd.result, added: Date.now() }); } catch(e){}
+        try { mediaStore({ id: uid(), name: f.name, type: f.type, data: rd.result, added: Date.now() }); } catch(e){}
         const el = {id:uid(), type:"image", x:project.w*0.2, y:project.h*0.2, w:project.w*0.6, h:project.h*0.4, src:rd.result, fit:"cover", radius:0, opacity:1};
         curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave();
       }
@@ -2180,7 +2567,8 @@ function pickGlyph(cb){
 
 /* ---------- actions ---------- */
 function duplicateSel(){
-  const el = selElement(); if (!el) return;
+  const el = selElement();
+  if (!el){ toast("Select an element first \u2014 then Duplicate copies it"); return; }
   pushHistory();
   const c = clone(el); c.id = uid(); c.x += 20; c.y += 20;
   curPageData().elements.push(c);
@@ -2263,7 +2651,11 @@ function bindTopbar(){
         project = hydrate({name:"Untitled design",cat:"custom",w,h,pages:[{bg:"#ffffff",elements:[]}]}); curPage=0; undoStack=[]; openEditor(); saveAutosave(); };
     }
     if (act==="watermark"){ showWatermarkModal(); }
+    if (act==="manuscript"){ window.open("email-submittal/index.html", "_blank"); }
+    if (act==="sanctuary"){ window.open("sanctuary/sanctuarymagazine/login.php", "_blank"); }
     if (act==="members"){ showMemberMenu(); }
+    if (act==="library"){ showProjectLibrary(); }
+    if (act==="save-lib"){ saveProjectToLibrary("draft").then(rec => { if (rec) toast("Saved to library \u2014 Drafts folder"); }); }
     if (act==="help") showHelp();
   });
 
@@ -2878,7 +3270,7 @@ async function printProject(){
 <script>
 /* --- single-file build: admin embedded --- */
 (function(){
-  const ADMIN_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Aura Studio \u2014 Admin Agent<\/title>\n<style>\n:root{--bg:#0f1222;--bg2:#171b31;--bg3:#1f2444;--panel:#141831;--line:#2a2f55;--ink:#eef0ff;--dim:#9aa0c7;--accent:#7c5cff;--ok:#4ad48a;--warn:#ffd479;--err:#ff7b7b}\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:24px}\n.wrap{max-width:960px;margin:0 auto}\nheader{display:flex;align-items:center;gap:12px;margin-bottom:6px}\n.dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#7c5cff,#ff5c8a);display:flex;align-items:center;justify-content:center;font-weight:800}\nh1{font-size:20px} .sub{color:var(--dim);font-size:13px;margin-bottom:22px}\n.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}\n.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}\n.card h2{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}\n.card p.desc{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:12px}\n.btn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;width:100%;text-align:left;margin-bottom:8px}\n.btn:hover{background:var(--bg3);border-color:var(--accent)}\n.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;text-align:center}\n.btn.danger:hover{border-color:var(--err);color:var(--err)}\n.row{display:flex;gap:8px;margin-bottom:8px}\n.row .btn{margin-bottom:0}\ninput[type=text],input[type=url]{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;outline:none}\ninput:focus{border-color:var(--accent)}\n.stat{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}\n.stat:last-child{border-bottom:none}\n.stat .v{font-weight:700}\n.tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}\n.tag.ok{color:var(--ok);border-color:var(--ok)}\n.tag.new{color:var(--warn);border-color:var(--warn)}\n#log{background:#0b0d1a;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:'Cascadia Code','Courier New',monospace;font-size:12px;height:190px;overflow-y:auto;line-height:1.7}\n#log .t{color:#556} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}\n.tlist{max-height:230px;overflow-y:auto;margin-top:8px}\n.titem{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;font-size:12.5px}\n.titem .x{color:var(--err);cursor:pointer;font-weight:700;background:none;border:none}\n.full{grid-column:1 / -1}\na{color:#a78bff}\nfooter{color:#55608c;font-size:11px;margin-top:24px;text-align:center}\n@media(max-width:760px){.grid{grid-template-columns:1fr}}\n<\/style>\n<\/head>\n<body>\n<div class=\"wrap\">\n  <header><div class=\"dot\">A<\/div><div><h1>Aura Studio \u2014 Admin Agent<\/h1><div class=\"sub\">Local template management \u00b7 updates \u00b7 upgrades \u00b7 maintenance<\/div><\/div><\/header>\n\n  <div class=\"grid\">\n    <div class=\"card\">\n      <h2>\ud83d\udccb Status<\/h2>\n      <div class=\"stat\"><span>App version<\/span><span class=\"v\" id=\"stVer\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Latest known version<\/span><span class=\"v\" id=\"stLatest\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Built-in templates<\/span><span class=\"v\" id=\"stBuiltin\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Custom templates<\/span><span class=\"v\" id=\"stCustom\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Update source<\/span><span class=\"v\" id=\"stSource\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Autosave present<\/span><span class=\"v\" id=\"stAutosave\">\u2014<\/span><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udee1 Member accounts <span class=\"tag\" id=\"suTag\">superuser<\/span><\/h2>\n      <div id=\"superPanel\"><p class=\"desc\">Loading\u2026<\/p><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udd04 Updates & upgrades<\/h2>\n      <p class=\"desc\">The agent checks a manifest for newer versions. On <code>file://<\/code>, place <b>aura-update.json<\/b> next to the app files and press \u201cCheck locally\u201d, or point to any URL below (run via a local server or the web).<\/p>\n      <div class=\"row\"><input type=\"url\" id=\"updateUrl\" placeholder=\"https://example.com/aura-update.json (optional)\"><button class=\"btn\" style=\"width:auto\" id=\"btnCheckUrl\">Check URL<\/button><\/div>\n      <button class=\"btn\" id=\"btnCheckLocal\">\ud83d\udcc2 Check for local update file (aura-update.json)<\/button>\n      <button class=\"btn\" id=\"btnImportUpdate\">\u2b06 Import update / upgrade package (.json)<\/button>\n      <div id=\"updateResult\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83c\udfa8 Template manager <span class=\"tag\" id=\"tplCount\"><\/span><\/h2>\n      <p class=\"desc\">Custom templates appear in the main gallery immediately. Distribute template packs as JSON \u2014 colleagues or future-you can import them below.<\/p>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnExportTpl\">\u2b07 Export custom templates (pack)<\/button>\n        <button class=\"btn\" id=\"btnImportTpl\">\u2b06 Import template pack (.json)<\/button>\n      <\/div>\n      <div class=\"tlist\" id=\"tplList\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udee0 Maintenance<\/h2>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnClearAutosave\">Clear working autosave<\/button>\n        <button class=\"btn danger\" id=\"btnResetTpl\">Remove ALL custom templates<\/button>\n        <button class=\"btn danger\" id=\"btnFactory\">\u26a0 Factory reset (everything)<\/button>\n      <\/div>\n      <p class=\"desc\" style=\"margin-top:6px\">Factory reset clears autosave, custom templates and remembered version \u2014 built-in templates are never touched.<\/p>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udda5 Agent log<\/h2>\n      <div id=\"log\"><\/div>\n    <\/div>\n  <\/div>\n  <footer>Aura Studio Admin Agent \u00b7 runs fully offline \u00b7 data stays in this browser's localStorage<\/footer>\n<\/div>\n\n<script src=\"assets-s3-logo.js\"><\/script>\n<script>\n\"use strict\";\nconst LS = {\n  customTpl: \"aura.templates.custom\",\n  autosave: \"aura.autosave\",\n  seenVersion: \"aura.seenVersion\",\n  updateUrl: \"aura.updateUrl\",\n  appVer: \"aura.appVersion\",\n};\n// member-aware custom-template storage (mirrors the main app's mkey scoping)\nfunction currentMember(){ try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } }\nfunction mkeyAdmin(base){ const u = currentMember(); return u ? \"aura.m.\" + u + \".\" + base : base; }\nfunction getCustom(){\n  const k = mkeyAdmin(LS.customTpl);\n  let raw = localStorage.getItem(k);\n  if (raw == null) raw = localStorage.getItem(LS.customTpl);   // legacy fallback\n  try { const v = JSON.parse(raw || \"[]\"); return Array.isArray(v) ? v : []; } catch(e){ return []; }\n}\nfunction setCustom(arr){ localStorage.setItem(mkeyAdmin(LS.customTpl), JSON.stringify(arr)); }\nfunction log(msg, cls){\n  const l = document.getElementById(\"log\");\n  const t = new Date().toLocaleTimeString();\n  l.innerHTML = `<div><span class=\"t\">[${t}]<\/span> <span class=\"${cls||\"\"}\">${msg}<\/span><\/div>` + l.innerHTML;\n}\nfunction $(s){ return document.querySelector(s); }\n\n// Superuser: member-account administration (device-local role \u2014 the first\n// member created on a device holds it). Lists every member, allows opening\n// their workspace or removing them. Requires same-origin iframe context.\n// recovery-code helpers (mirror the app's hashing: SHA-256 of \"salt:secret\")\nasync function sha256Hex(s){\n  try {\n    const b = await crypto.subtle.digest(\"SHA-256\", new TextEncoder().encode(s));\n    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, \"0\")).join(\"\");\n  } catch(e){\n    let h = 0x811c9dc5; const str = s;\n    for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }\n    return \"fnv:\" + h.toString(16);\n  }\n}\nfunction genRecCode(){\n  const ch = \"ABCDEFGHJKMNPQRSTUVWXYZ23456789\"; let o = \"\";\n  try { const a = new Uint8Array(8); crypto.getRandomValues(a); for (let i = 0; i < 8; i++) o += ch[a[i] % ch.length]; }\n  catch(e){ for (let i = 0; i < 8; i++) o += ch[Math.floor(Math.random() * ch.length)]; }\n  return o.slice(0, 4) + \"-\" + o.slice(4);\n}\nfunction normCode(c){ return String(c || \"\").replace(/[\\s-]/g, \"\").toUpperCase(); }\nasync function issueRecCode(u){\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = { members:{} }; }\n  const rec = st.members[u]; if (!rec) return;\n  const code = genRecCode();\n  rec.recovery = { hash: await sha256Hex(\"rc:\" + u + \":\" + normCode(code)), created: Date.now() };\n  localStorage.setItem(\"aura.members\", JSON.stringify(st));\n  log(\"Recovery code issued for \" + u + \" \\u2014 shown once below\", \"warn\");\n  alert(\"Recovery code for \" + u + \":\\n\\n\" + code + \"\\n\\nGive it to the member now. It is not stored anywhere \\u2014 only its hash is.\");\n  renderSuper();\n}\nfunction renderSuper(){\n  const wrap = document.getElementById(\"superPanel\");\n  if (!wrap) return;\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = {}; }\n  const members = st.members || {};\n  const names = Object.keys(members);\n  const superName = names.find(u => members[u] && members[u].super);\n  const session = (() => { try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } })();\n  const tag = document.getElementById(\"suTag\");\n  if (tag) tag.className = \"tag\" + (superName ? \" ok\" : \"\");\n  if (!names.length){ wrap.innerHTML = '<p class=\"desc\">No members exist yet on this device. Create one in the studio \u2014 the first member becomes the superuser.<\/p>'; return; }\n  if (!superName){\n    // recovery: members created before the role existed have no superuser \u2014\n    // allow designating one so member administration is never locked out\n    wrap.innerHTML = names.map(u =>\n      `<div class=\"titem\"><span>\\uD83D\\uDC64 <b>${u.replace(/<\/g, \"&lt;\")}<\/b><\/span>` +\n      `<span><button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-su=\"${u.replace(/\"/g, \"\")}\">\\uD83D\\uDEE1 Designate as superuser<\/button><\/span><\/div>`\n    ).join(\"\") + '<p class=\"desc\">No superuser is designated yet (members created before the role existed). Pick who should hold the superuser role \\u2014 they gain member-account administration.<\/p>';\n    wrap.querySelectorAll(\"[data-su]\").forEach(b => b.onclick = () => {\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[b.dataset.su]){ st2.members[b.dataset.su].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.su + \" designated as superuser\", \"ok\"); renderSuper(); }\n    });\n    return;\n  }\n  wrap.innerHTML = names.map(u => {\n    const m = members[u];\n    const isSu = !!m.super;\n    const active = u === session;\n    const recSt = m.recovery ? \"\\uD83D\\uDD11 code on file\" : \"\\u26A0 no recovery code\";\n    return `<div class=\"titem\"><span>\ud83d\udc64 <b>${u.replace(/<\/g,\"&lt;\")}<\/b>${isSu ? \" \ud83d\udee1\" : \"\"}${active ? \" <span class=\\\"tag ok\\\">active session<\/span>\" : \"\"}\n      <span style=\"color:var(--dim)\"> \u00b7 created ${new Date(m.created || Date.now()).toLocaleDateString()} \u00b7 ${recSt}<\/span><\/span>\n      <span style=\"display:flex;gap:6px\">\n        <button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-open=\"${u.replace(/\"/g,\"\")}\" ${active ? \"disabled\" : \"\"}>Open workspace<\/button>\n        <button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-rc=\"${u.replace(/\"/g,\"\")}\" title=\"Issue a new recovery code (shown once)\">\ud83d\udd11 Issue code<\/button>\n        ${!isSu ? `<button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-promo=\"${u.replace(/\"/g,\"\")}\">Promote<\/button>` : \"\"}\n      <\/span><\/div>`;\n  }).join(\"\") + `<p class=\"desc\" style=\"margin-top:8px\">Superuser ${superName} can open any member's workspace, issue recovery codes and moderate the community repository. Device-local role.<\/p>`;\n  wrap.querySelectorAll(\"[data-open]\").forEach(b => b.onclick = () => {\n    localStorage.setItem(\"aura.currentMember\", JSON.stringify(b.dataset.open));\n    log(\"Switched studio workspace to member \" + b.dataset.open, \"ok\");\n    try { window.parent.location.reload(); } catch(e){ try { window.top.location.reload(); } catch(e2){ alert(\"Reload the studio to switch member.\"); } }\n  });\n  wrap.querySelectorAll(\"[data-rc]\").forEach(b => b.onclick = async () => { await issueRecCode(b.dataset.rc); });\n  wrap.querySelectorAll(\"[data-promo]\").forEach(b => b.onclick = () => {\n    const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n    if (st2.members[b.dataset.promo]){ st2.members[b.dataset.promo].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.promo + \" promoted to superuser\", \"ok\"); renderSuper(); }\n  });\n}\n\nfunction init(){\n  if (typeof S3_LOGO_DATAURL !== \"undefined\"){\n    const dot = document.querySelector(\".dot\");\n    if (dot) dot.innerHTML = `<img src=\"${S3_LOGO_DATAURL}\" alt=\"S3\" style=\"width:100%;height:100%;object-fit:contain;background:#fff;border-radius:9px\">`;\n  }\n  renderSuper();\n  const appVer = localStorage.getItem(LS.appVer) || \"2.4.0\";\n  $(\"#stVer\").textContent = appVer;\n  $(\"#stBuiltin\").textContent = \"55 templates (10 categories)\";\n  $(\"#stSource\").textContent = localStorage.getItem(LS.updateUrl) || \"local file (aura-update.json)\";\n  $(\"#updateUrl\").value = localStorage.getItem(LS.updateUrl) || \"\";\n  refresh();\n  log(`Admin agent started. App version ${appVer}.`, \"ok\");\n}\n\nfunction refresh(){\n  const c = getCustom();\n  $(\"#stCustom\").textContent = c.length;\n  $(\"#tplCount\").textContent = c.length + \" custom\";\n  $(\"#stAutosave\").textContent = localStorage.getItem(LS.autosave) ? \"Yes\" : \"No\";\n  const list = $(\"#tplList\");\n  list.innerHTML = c.length ? \"\" : `<div class=\"titem\" style=\"color:var(--dim)\">No custom templates yet \u2014 import a pack or an upgrade package.<\/div>`;\n  c.forEach((t,i)=>{\n    const d = document.createElement(\"div\"); d.className = \"titem\";\n    d.innerHTML = `<span>\ud83c\udfa8 <b>${(t.name||\"unnamed\").replace(/<\/g,\"&lt;\")}<\/b> &nbsp;<span style=\"color:var(--dim)\">${t.w}\u00d7${t.h} \u00b7 ${(t.pages||[]).length} page(s) \u00b7 cat: ${t.cat||\"custom\"}<\/span><\/span>`;\n    const x = document.createElement(\"button\"); x.className=\"x\"; x.textContent=\"\u2715\"; x.title=\"Delete\";\n    x.onclick = ()=>{ const arr=getCustom(); arr.splice(i,1); setCustom(arr); log(`Deleted custom template \u201c${t.name}\u201d`,\"warn\"); refresh(); };\n    d.appendChild(x); list.appendChild(d);\n  });\n}\n\n/* ---------- update checking ---------- */\nasync function fetchManifest(url){\n  const r = await fetch(url, {cache:\"no-store\"});\n  if (!r.ok) throw new Error(\"HTTP \" + r.status);\n  return r.json();\n}\nfunction showUpdate(m){\n  const cur = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  const isNewer = compare(m.version, cur) > 0;\n  $(\"#stLatest\").textContent = m.version + (isNewer ? \"  \u2b06\" : \"\");\n  const el = $(\"#updateResult\");\n  el.innerHTML = `\n    <div style=\"margin-top:10px;padding:12px;background:var(--bg2);border:1px solid ${isNewer?\"var(--warn)\":\"var(--line)\"};border-radius:10px;font-size:13px\">\n      <b>${m.version}<\/b> ${isNewer?'<span class=\"tag new\">upgrade available<\/span>':'<span class=\"tag ok\">up to date<\/span>'}\n      ${m.notes?`<div style=\"color:var(--dim);margin-top:6px;line-height:1.6\">${String(m.notes).replace(/<\/g,\"&lt;\").replace(/\\n/g,\"<br>\")}<\/div>`:\"\"}\n      ${m.templates?`<div style=\"margin-top:6px\">Includes <b>${m.templates.length}<\/b> template(s).<\/div>`:\"\"}\n      ${isNewer?`<button class=\"btn primary\" id=\"btnApply\" style=\"margin-top:10px\">\u2b06 Apply update ${m.version}<\/button>`:\"\"}\n    <\/div>`;\n  const btn = $(\"#btnApply\");\n  if (btn) btn.onclick = ()=> applyUpdate(m);\n}\nfunction applyUpdate(m){\n  if (m.templates && m.templates.length){\n    const cur = getCustom();\n    let added = 0;\n    for (const t of m.templates){\n      if (!t || !t.pages || !t.name) continue;\n      t.custom = true;\n      const idx = cur.findIndex(x => x.name === t.name);\n      if (idx >= 0) cur[idx] = t; else { cur.push(t); added++; }\n    }\n    setCustom(cur);\n    log(`Applied update ${m.version}: ${added} template(s) installed, ${m.templates.length-added} refreshed.`, \"ok\");\n  } else log(`Applied update ${m.version} (manifest only).`, \"ok\");\n  localStorage.setItem(LS.appVer, m.version);\n  localStorage.setItem(LS.seenVersion, m.version);\n  $(\"#stVer\").textContent = m.version;\n  showUpdate(m);\n  refresh();\n}\nfunction compare(a,b){\n  const pa = String(a).split(\".\").map(Number), pb = String(b).split(\".\").map(Number);\n  for (let i=0;i<3;i++){ if ((pa[i]||0) > (pb[i]||0)) return 1; if ((pa[i]||0) < (pb[i]||0)) return -1; }\n  return 0;\n}\n\n$(\"#btnCheckLocal\").onclick = async ()=>{\n  log(\"Checking for local update file aura-update.json\u2026\");\n  try {\n    const m = await fetchManifest(\"aura-update.json\");\n    log(\"Found update manifest v\" + m.version, \"ok\");\n    showUpdate(m);\n  } catch(e){\n    log(\"No local aura-update.json found (\" + e.message + \"). Drop the file next to index.html and retry.\", \"warn\");\n    $(\"#updateResult\").innerHTML = `<div style=\"margin-top:10px;color:var(--warn);font-size:12.5px\">No aura-update.json next to the app files. Note: on <code>file://<\/code> some browsers block local fetches \u2014 use \u201cImport update package\u201d instead, it always works.<\/div>`;\n  }\n};\n$(\"#btnCheckUrl\").onclick = async ()=>{\n  const url = $(\"#updateUrl\").value.trim();\n  if (!url){ log(\"No update URL provided.\", \"warn\"); return; }\n  localStorage.setItem(LS.updateUrl, url);\n  $(\"#stSource\").textContent = url;\n  log(\"Checking \" + url + \"\u2026\");\n  try { const m = await fetchManifest(url); log(\"Fetched manifest v\" + m.version, \"ok\"); showUpdate(m); }\n  catch(e){ log(\"Update check failed: \" + e.message, \"err\"); }\n};\n$(\"#btnImportUpdate\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const m = JSON.parse(txt);\n      if (!m.version){ throw new Error(\"manifest missing 'version'\"); }\n      log(\"Imported update package v\" + m.version, \"ok\");\n      showUpdate(m);\n    } catch(e){ log(\"Invalid update package: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- template packs ---------- */\n$(\"#btnExportTpl\").onclick = ()=>{\n  const c = getCustom();\n  if (!c.length){ log(\"Nothing to export \u2014 no custom templates.\", \"warn\"); return; }\n  download(JSON.stringify({type:\"aura-template-pack\",version:1,templates:c},null,2), \"aura-template-pack.json\");\n  log(`Exported ${c.length} custom template(s).`, \"ok\");\n};\n$(\"#btnImportTpl\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const p = JSON.parse(txt);\n      const arr = p.templates || (Array.isArray(p) ? p : null);\n      if (!arr) throw new Error(\"no 'templates' array\");\n      const cur = getCustom(); let n = 0;\n      for (const t of arr){ if (t && t.pages && t.name){ t.custom = true; cur.push(t); n++; } }\n      setCustom(cur); refresh();\n      log(`Imported ${n} template(s) from pack.`, \"ok\");\n    } catch(e){ log(\"Invalid template pack: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- maintenance ---------- */\n$(\"#btnClearAutosave\").onclick = ()=>{ localStorage.removeItem(LS.autosave); log(\"Working autosave cleared.\", \"warn\"); refresh(); };\n$(\"#btnResetTpl\").onclick = ()=>{ if(confirm(\"Remove ALL custom templates?\")){ setCustom([]); log(\"All custom templates removed.\", \"err\"); refresh(); } };\n$(\"#btnFactory\").onclick = ()=>{\n  if (confirm(\"Factory reset: clears autosave, custom templates and version memory. Continue?\")){\n    Object.values(LS).forEach(k=>localStorage.removeItem(k));\n    log(\"Factory reset complete. Built-in templates untouched.\", \"err\");\n    init();\n  }\n};\n\n/* ---------- utils ---------- */\nfunction pick(accept, cb){\n  const i = document.createElement(\"input\"); i.type = \"file\"; i.accept = accept;\n  i.onchange = ()=>{ const f = i.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>cb(r.result); r.readAsText(f); };\n  i.click();\n}\nfunction download(text, name){\n  const a = document.createElement(\"a\");\n  a.href = URL.createObjectURL(new Blob([text], {type:\"application/json\"}));\n  a.download = name; a.click();\n}\ninit();\n<\/script>\n<\/body>\n<\/html>\n";
+  const ADMIN_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Aura Studio \u2014 Admin Agent<\/title>\n<style>\n:root{--bg:#0f1222;--bg2:#171b31;--bg3:#1f2444;--panel:#141831;--line:#2a2f55;--ink:#eef0ff;--dim:#9aa0c7;--accent:#7c5cff;--ok:#4ad48a;--warn:#ffd479;--err:#ff7b7b}\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:24px}\n.wrap{max-width:960px;margin:0 auto}\nheader{display:flex;align-items:center;gap:12px;margin-bottom:6px}\n.dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#7c5cff,#ff5c8a);display:flex;align-items:center;justify-content:center;font-weight:800}\nh1{font-size:20px} .sub{color:var(--dim);font-size:13px;margin-bottom:22px}\n.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}\n.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}\n.card h2{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}\n.card p.desc{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:12px}\n.btn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;width:100%;text-align:left;margin-bottom:8px}\n.btn:hover{background:var(--bg3);border-color:var(--accent)}\n.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;text-align:center}\n.btn.danger:hover{border-color:var(--err);color:var(--err)}\n.row{display:flex;gap:8px;margin-bottom:8px}\n.row .btn{margin-bottom:0}\ninput[type=text],input[type=url]{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;outline:none}\ninput:focus{border-color:var(--accent)}\n.stat{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}\n.stat:last-child{border-bottom:none}\n.stat .v{font-weight:700}\n.tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}\n.tag.ok{color:var(--ok);border-color:var(--ok)}\n.tag.new{color:var(--warn);border-color:var(--warn)}\n#log{background:#0b0d1a;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:'Cascadia Code','Courier New',monospace;font-size:12px;height:190px;overflow-y:auto;line-height:1.7}\n#log .t{color:#556} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}\n.tlist{max-height:230px;overflow-y:auto;margin-top:8px}\n.titem{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;font-size:12.5px}\n.titem .x{color:var(--err);cursor:pointer;font-weight:700;background:none;border:none}\n.full{grid-column:1 / -1}\na{color:#a78bff}\nfooter{color:#55608c;font-size:11px;margin-top:24px;text-align:center}\n@media(max-width:760px){.grid{grid-template-columns:1fr}}\n<\/style>\n<\/head>\n<body>\n<div class=\"wrap\">\n  <header><div class=\"dot\">A<\/div><div><h1>Aura Studio \u2014 Admin Agent<\/h1><div class=\"sub\">Local template management \u00b7 updates \u00b7 upgrades \u00b7 maintenance<\/div><\/div><\/header>\n\n  <div class=\"grid\">\n    <div class=\"card\">\n      <h2>\ud83d\udccb Status<\/h2>\n      <div class=\"stat\"><span>App version<\/span><span class=\"v\" id=\"stVer\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Latest known version<\/span><span class=\"v\" id=\"stLatest\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Built-in templates<\/span><span class=\"v\" id=\"stBuiltin\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Custom templates<\/span><span class=\"v\" id=\"stCustom\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Update source<\/span><span class=\"v\" id=\"stSource\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Autosave present<\/span><span class=\"v\" id=\"stAutosave\">\u2014<\/span><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udee1 Member accounts <span class=\"tag\" id=\"suTag\">superuser<\/span><\/h2>\n      <div id=\"superPanel\"><p class=\"desc\">Loading\u2026<\/p><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udd04 Updates & upgrades<\/h2>\n      <p class=\"desc\">The agent checks a manifest for newer versions. On <code>file://<\/code>, place <b>aura-update.json<\/b> next to the app files and press \u201cCheck locally\u201d, or point to any URL below (run via a local server or the web).<\/p>\n      <div class=\"row\"><input type=\"url\" id=\"updateUrl\" placeholder=\"https://example.com/aura-update.json (optional)\"><button class=\"btn\" style=\"width:auto\" id=\"btnCheckUrl\">Check URL<\/button><\/div>\n      <button class=\"btn\" id=\"btnCheckLocal\">\ud83d\udcc2 Check for local update file (aura-update.json)<\/button>\n      <button class=\"btn\" id=\"btnImportUpdate\">\u2b06 Import update / upgrade package (.json)<\/button>\n      <div id=\"updateResult\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83c\udfa8 Template manager <span class=\"tag\" id=\"tplCount\"><\/span><\/h2>\n      <p class=\"desc\">Custom templates appear in the main gallery immediately. Distribute template packs as JSON \u2014 colleagues or future-you can import them below.<\/p>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnExportTpl\">\u2b07 Export custom templates (pack)<\/button>\n        <button class=\"btn\" id=\"btnImportTpl\">\u2b06 Import template pack (.json)<\/button>\n      <\/div>\n      <div class=\"tlist\" id=\"tplList\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udee0 Maintenance<\/h2>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnClearAutosave\">Clear working autosave<\/button>\n        <button class=\"btn danger\" id=\"btnResetTpl\">Remove ALL custom templates<\/button>\n        <button class=\"btn danger\" id=\"btnFactory\">\u26a0 Factory reset (everything)<\/button>\n      <\/div>\n      <p class=\"desc\" style=\"margin-top:6px\">Factory reset clears autosave, custom templates and remembered version \u2014 built-in templates are never touched.<\/p>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udda5 Agent log<\/h2>\n      <div id=\"log\"><\/div>\n    <\/div>\n  <\/div>\n  <footer>Aura Studio Admin Agent \u00b7 runs fully offline \u00b7 data stays in this browser's localStorage<\/footer>\n<\/div>\n\n<script src=\"community-templates.js\"><\/script>\n<script src=\"assets-s3-logo.js\"><\/script>\n<script>\n\"use strict\";\nconst LS = {\n  customTpl: \"aura.templates.custom\",\n  autosave: \"aura.autosave\",\n  seenVersion: \"aura.seenVersion\",\n  updateUrl: \"aura.updateUrl\",\n  appVer: \"aura.appVersion\",\n};\n// member-aware custom-template storage (mirrors the main app's mkey scoping)\nfunction currentMember(){ try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } }\nfunction mkeyAdmin(base){ const u = currentMember(); return u ? \"aura.m.\" + u + \".\" + base : base; }\nfunction getCustom(){\n  const k = mkeyAdmin(LS.customTpl);\n  let raw = localStorage.getItem(k);\n  if (raw == null) raw = localStorage.getItem(LS.customTpl);   // legacy fallback\n  try { const v = JSON.parse(raw || \"[]\"); return Array.isArray(v) ? v : []; } catch(e){ return []; }\n}\nfunction setCustom(arr){ localStorage.setItem(mkeyAdmin(LS.customTpl), JSON.stringify(arr)); }\nfunction log(msg, cls){\n  const l = document.getElementById(\"log\");\n  const t = new Date().toLocaleTimeString();\n  l.innerHTML = `<div><span class=\"t\">[${t}]<\/span> <span class=\"${cls||\"\"}\">${msg}<\/span><\/div>` + l.innerHTML;\n}\nfunction $(s){ return document.querySelector(s); }\n\n// Superuser: member-account administration (device-local role \u2014 the first\n// member created on a device holds it). Lists every member, allows opening\n// their workspace or removing them. Requires same-origin iframe context.\n// recovery-code helpers (mirror the app's hashing: SHA-256 of \"salt:secret\")\nasync function sha256Hex(s){\n  try {\n    const b = await crypto.subtle.digest(\"SHA-256\", new TextEncoder().encode(s));\n    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, \"0\")).join(\"\");\n  } catch(e){\n    let h = 0x811c9dc5; const str = s;\n    for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }\n    return \"fnv:\" + h.toString(16);\n  }\n}\nfunction genRecCode(){\n  const ch = \"ABCDEFGHJKMNPQRSTUVWXYZ23456789\"; let o = \"\";\n  try { const a = new Uint8Array(8); crypto.getRandomValues(a); for (let i = 0; i < 8; i++) o += ch[a[i] % ch.length]; }\n  catch(e){ for (let i = 0; i < 8; i++) o += ch[Math.floor(Math.random() * ch.length)]; }\n  return o.slice(0, 4) + \"-\" + o.slice(4);\n}\nfunction normCode(c){ return String(c || \"\").replace(/[\\s-]/g, \"\").toUpperCase(); }\nasync function issueRecCode(u){\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = { members:{} }; }\n  const rec = st.members[u]; if (!rec) return;\n  const code = genRecCode();\n  rec.recovery = { hash: await sha256Hex(\"rc:\" + u + \":\" + normCode(code)), created: Date.now() };\n  localStorage.setItem(\"aura.members\", JSON.stringify(st));\n  log(\"Recovery code issued for \" + u + \" \\u2014 shown once below\", \"warn\");\n  alert(\"Recovery code for \" + u + \":\\n\\n\" + code + \"\\n\\nGive it to the member now. It is not stored anywhere \\u2014 only its hash is.\");\n  renderSuper();\n}\nfunction memberUsage(u){\n  let keys = 0, bytes = 0;\n  const pfx = \"aura.m.\" + u + \".\";\n  for (let i = 0; i < localStorage.length; i++){\n    const k = localStorage.key(i);\n    if (k && k.indexOf(pfx) === 0){ keys++; bytes += (localStorage.getItem(k) || \"\").length; }\n  }\n  return { keys: keys, kb: Math.round(bytes / 1024) };\n}\nfunction commCountBy(u){\n  try { return (JSON.parse(localStorage.getItem(\"aura.community\") || \"[]\") || []).filter(m => m.by === u).length; }\n  catch(e){ return 0; }\n}\nlet memberView = { q: \"\", filter: \"all\", sort: \"created\" };\n\nfunction seedCommunity(){\n  if (typeof AURA_SUITE_TEMPLATES === \"undefined\"){ log(\"Bundled suite not loaded\", \"err\"); return; }\n  let comm = []; try { comm = JSON.parse(localStorage.getItem(\"aura.community\") || \"[]\"); } catch(e){}\n  const have = new Set(comm.filter(m => m.kind === \"template\").map(m => m.name));\n  let n = 0, i = 0;\n  AURA_SUITE_TEMPLATES.forEach(t => {\n    if (!have.has(t.name)){\n      comm.unshift({ id: \"cm\" + Date.now() + \"-\" + (i++), kind: \"template\", name: t.name,\n        by: superName || \"superuser\", added: Date.now(), tpl: JSON.parse(JSON.stringify(t)) });\n      n++;\n    }\n  });\n  localStorage.setItem(\"aura.community\", JSON.stringify(comm.slice(0, 500)));\n  log(\"Seeded \" + n + \" community templates (created by \" + (superName || \"superuser\") + \")\", \"ok\");\n  renderSuper();\n}\nfunction renderSuper(){\n  const wrap = document.getElementById(\"superPanel\");\n  if (!wrap) return;\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = {}; }\n  const members = st.members || {};\n  const names = Object.keys(members);\n  const superName = names.find(u => members[u] && members[u].super);\n  const session = (() => { try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } })();\n  const tag = document.getElementById(\"suTag\");\n  if (tag) tag.className = \"tag\" + (superName ? \" ok\" : \"\");\n\n  if (!names.length){ wrap.innerHTML = '<p class=\"desc\">No members exist yet on this device. Create one in the studio \u2014 the first member becomes the superuser.<\/p>'; return; }\n  if (!superName){\n    wrap.innerHTML = names.map(u =>\n      '<div class=\"titem\"><span>\\\\uD83D\\\\uDC64 <b>' + u.replace(/<\/g, \"&lt;\") + '<\/b><\/span>' +\n      '<span><button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-su=\"' + u.replace(/\"/g, \"\") + '\">\\\\uD83D\\\\uDEE1 Designate as superuser<\/button><\/span><\/div>'\n    ).join(\"\") + '<p class=\"desc\">No superuser is designated yet. Pick who should hold the superuser role.<\/p>';\n    wrap.querySelectorAll(\"[data-su]\").forEach(b => b.onclick = () => {\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[b.dataset.su]){ st2.members[b.dataset.su].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.su + \" designated as superuser\", \"ok\"); renderSuper(); }\n    });\n    return;\n  }\n\n  const rows = names.map(u => {\n    const m = members[u];\n    const usage = memberUsage(u);\n    return { u: u, m: m, usage: usage,\n      comm: commCountBy(u),\n      active: u === session,\n      isSu: !!m.super,\n      created: m.created || 0 };\n  });\n\n  const controls = '<div class=\"row\" style=\"flex-wrap:wrap\">' +\n    '<input type=\"text\" id=\"suQ\" placeholder=\"Filter by member ID\\u2026\" style=\"flex:2;min-width:140px\" value=\"' + memberView.q.replace(/\"/g, \"&quot;\") + '\">' +\n    '<select id=\"suF\" class=\"btn\" style=\"width:auto;padding:7px 8px\">' +\n      '<option value=\"all\"' + (memberView.filter === \"all\" ? \" selected\" : \"\") + '>All members<\/option>' +\n      '<option value=\"super\"' + (memberView.filter === \"super\" ? \" selected\" : \"\") + '>Superusers<\/option>' +\n      '<option value=\"active\"' + (memberView.filter === \"active\" ? \" selected\" : \"\") + '>Active session<\/option>' +\n      '<option value=\"norecov\"' + (memberView.filter === \"norecov\" ? \" selected\" : \"\") + '>No recovery code<\/option>' +\n    '<\/select>' +\n    '<select id=\"suS\" class=\"btn\" style=\"width:auto;padding:7px 8px\">' +\n      '<option value=\"created\"' + (memberView.sort === \"created\" ? \" selected\" : \"\") + '>Newest first<\/option>' +\n      '<option value=\"name\"' + (memberView.sort === \"name\" ? \" selected\" : \"\") + '>Name A\\u2013Z<\/option>' +\n      '<option value=\"usage\"' + (memberView.sort === \"usage\" ? \" selected\" : \"\") + '>Most storage<\/option>' +\n    '<\/select>' +\n    '<button id=\"suSeed\" class=\"btn\" style=\"width:auto;padding:7px 10px\">\\U0001F331 Seed bundled suite (21)<\/button><\/div>' +\n    '<p class=\"desc\" style=\"margin:6px 0\"><b id=\"suCount\"><\/b><\/p>' +\n    '<div id=\"suRows\"><\/div>' +\n    '<p class=\"desc\" style=\"margin-top:8px\">Superuser ' + superName + ' can open any member\\u2019s workspace, issue recovery codes, promote and remove members. Device-local role.<\/p>';\n\n  wrap.innerHTML = controls;\n\n  function apply(){\n    let list = rows.slice();\n    const q = memberView.q.toLowerCase();\n    if (q) list = list.filter(r => r.u.toLowerCase().indexOf(q) >= 0);\n    if (memberView.filter === \"super\") list = list.filter(r => r.isSu);\n    if (memberView.filter === \"active\") list = list.filter(r => r.active);\n    if (memberView.filter === \"norecov\") list = list.filter(r => !r.m.recovery);\n    if (memberView.sort === \"name\") list.sort((a, b) => a.u.localeCompare(b.u));\n    else if (memberView.sort === \"usage\") list.sort((a, b) => b.usage.bytes - a.usage.bytes);\n    else list.sort((a, b) => b.created - a.created);\n\n    const cnt = document.getElementById(\"suCount\");\n    if (cnt) cnt.textContent = list.length + \" of \" + rows.length + \" member(s)\";\n    const box = document.getElementById(\"suRows\");\n    if (!box) return;\n    box.innerHTML = list.length ? list.map(r =>\n      '<div class=\"titem\"><span>\\\\uD83D\\\\uDC64 <b>' + r.u.replace(/<\/g, \"&lt;\") + '<\/b>' + (r.isSu ? \" \\\\uD83D\\\\uDEE1\" : \"\") +\n      (r.active ? ' <span class=\"tag ok\">active<\/span>' : '') +\n      '<br><span style=\"color:var(--dim);font-size:11px\">created ' + (r.created ? new Date(r.created).toLocaleDateString() : \"?\") +\n      ' \\u00b7 ' + r.usage.keys + ' keys / ~' + r.usage.kb + ' KB \\u00b7 community: ' + r.comm + '<\/span><\/span>' +\n      '<span style=\"display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end\">' +\n      '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-open=\"' + r.u.replace(/\"/g, \"\") + '\"' + (r.active ? \" disabled\" : \"\") + '>Open<\/button>' +\n      '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-rc=\"' + r.u.replace(/\"/g, \"\") + '\">Code<\/button>' +\n      (r.isSu ? '' : '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-promo=\"' + r.u.replace(/\"/g, \"\") + '\">Promote<\/button>') +\n      '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-del=\"' + r.u.replace(/\"/g, \"\") + '\">Remove<\/button>' +\n      '<\/span><\/div>').join(\"\")\n      : '<p class=\"desc\">No members match the current filter.<\/p>';\n\n    box.querySelectorAll(\"[data-open]\").forEach(b => b.onclick = () => {\n      localStorage.setItem(\"aura.currentMember\", JSON.stringify(b.dataset.open));\n      log(\"Switched studio workspace to member \" + b.dataset.open, \"ok\");\n      try { window.parent.location.reload(); } catch(e){ try { window.top.location.reload(); } catch(e2){ alert(\"Reload the studio to switch member.\"); } }\n    });\n    box.querySelectorAll(\"[data-rc]\").forEach(b => b.onclick = async () => { await issueRecCode(b.dataset.rc); renderSuper(); });\n    box.querySelectorAll(\"[data-promo]\").forEach(b => b.onclick = () => {\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[b.dataset.promo]){ st2.members[b.dataset.promo].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.promo + \" promoted to superuser\", \"ok\"); renderSuper(); }\n    });\n    box.querySelectorAll(\"[data-del]\").forEach(b => b.onclick = () => {\n      const u = b.dataset.del;\n      if (u === superName){ alert(\"The superuser cannot be removed from this screen.\"); return; }\n      if (!confirm(\"Remove member \\u201c\" + u + \"\\u201d and all their local data? This cannot be undone.\")) return;\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[u]){ delete st2.members[u]; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); }\n      Object.keys(localStorage).filter(k => k.indexOf(\"aura.m.\" + u + \".\") === 0).forEach(k => localStorage.removeItem(k));\n      log(\"Member \" + u + \" removed (with scoped data)\", \"warn\");\n      memberView.q = \"\"; renderSuper();\n    });\n  }\n\n  apply();\n  const q = document.getElementById(\"suQ\"), f = document.getElementById(\"suF\"), so = document.getElementById(\"suS\");\n  if (q) q.addEventListener(\"input\", () => { memberView.q = q.value; apply(); });\n  if (f) f.addEventListener(\"change\", () => { memberView.filter = f.value; apply(); });\n  if (so) so.addEventListener(\"change\", () => { memberView.sort = so.value; apply(); });\n}\n\nfunction init(){\n  if (typeof S3_LOGO_DATAURL !== \"undefined\"){\n    const dot = document.querySelector(\".dot\");\n    if (dot) dot.innerHTML = `<img src=\"${S3_LOGO_DATAURL}\" alt=\"S3\" style=\"width:100%;height:100%;object-fit:contain;background:#fff;border-radius:9px\">`;\n  }\n  renderSuper();\n  const appVer = localStorage.getItem(LS.appVer) || \"2.4.0\";\n  $(\"#stVer\").textContent = appVer;\n  $(\"#stBuiltin\").textContent = \"55 templates (10 categories)\";\n  $(\"#stSource\").textContent = localStorage.getItem(LS.updateUrl) || \"local file (aura-update.json)\";\n  $(\"#updateUrl\").value = localStorage.getItem(LS.updateUrl) || \"\";\n  refresh();\n  log(`Admin agent started. App version ${appVer}.`, \"ok\");\n}\n\nfunction refresh(){\n  const c = getCustom();\n  $(\"#stCustom\").textContent = c.length;\n  $(\"#tplCount\").textContent = c.length + \" custom\";\n  $(\"#stAutosave\").textContent = localStorage.getItem(LS.autosave) ? \"Yes\" : \"No\";\n  const list = $(\"#tplList\");\n  list.innerHTML = c.length ? \"\" : `<div class=\"titem\" style=\"color:var(--dim)\">No custom templates yet \u2014 import a pack or an upgrade package.<\/div>`;\n  c.forEach((t,i)=>{\n    const d = document.createElement(\"div\"); d.className = \"titem\";\n    d.innerHTML = `<span>\ud83c\udfa8 <b>${(t.name||\"unnamed\").replace(/<\/g,\"&lt;\")}<\/b> &nbsp;<span style=\"color:var(--dim)\">${t.w}\u00d7${t.h} \u00b7 ${(t.pages||[]).length} page(s) \u00b7 cat: ${t.cat||\"custom\"}<\/span><\/span>`;\n    const x = document.createElement(\"button\"); x.className=\"x\"; x.textContent=\"\u2715\"; x.title=\"Delete\";\n    x.onclick = ()=>{ const arr=getCustom(); arr.splice(i,1); setCustom(arr); log(`Deleted custom template \u201c${t.name}\u201d`,\"warn\"); refresh(); };\n    d.appendChild(x); list.appendChild(d);\n  });\n}\n\n/* ---------- update checking ---------- */\nasync function fetchManifest(url){\n  const r = await fetch(url, {cache:\"no-store\"});\n  if (!r.ok) throw new Error(\"HTTP \" + r.status);\n  return r.json();\n}\nfunction showUpdate(m){\n  const cur = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  const isNewer = compare(m.version, cur) > 0;\n  $(\"#stLatest\").textContent = m.version + (isNewer ? \"  \u2b06\" : \"\");\n  const el = $(\"#updateResult\");\n  el.innerHTML = `\n    <div style=\"margin-top:10px;padding:12px;background:var(--bg2);border:1px solid ${isNewer?\"var(--warn)\":\"var(--line)\"};border-radius:10px;font-size:13px\">\n      <b>${m.version}<\/b> ${isNewer?'<span class=\"tag new\">upgrade available<\/span>':'<span class=\"tag ok\">up to date<\/span>'}\n      ${m.notes?`<div style=\"color:var(--dim);margin-top:6px;line-height:1.6\">${String(m.notes).replace(/<\/g,\"&lt;\").replace(/\\n/g,\"<br>\")}<\/div>`:\"\"}\n      ${m.templates?`<div style=\"margin-top:6px\">Includes <b>${m.templates.length}<\/b> template(s).<\/div>`:\"\"}\n      ${isNewer?`<button class=\"btn primary\" id=\"btnApply\" style=\"margin-top:10px\">\u2b06 Apply update ${m.version}<\/button>`:\"\"}\n    <\/div>`;\n  const btn = $(\"#btnApply\");\n  if (btn) btn.onclick = ()=> applyUpdate(m);\n}\nfunction applyUpdate(m){\n  if (m.templates && m.templates.length){\n    const cur = getCustom();\n    let added = 0;\n    for (const t of m.templates){\n      if (!t || !t.pages || !t.name) continue;\n      t.custom = true;\n      const idx = cur.findIndex(x => x.name === t.name);\n      if (idx >= 0) cur[idx] = t; else { cur.push(t); added++; }\n    }\n    setCustom(cur);\n    log(`Applied update ${m.version}: ${added} template(s) installed, ${m.templates.length-added} refreshed.`, \"ok\");\n  } else log(`Applied update ${m.version} (manifest only).`, \"ok\");\n  localStorage.setItem(LS.appVer, m.version);\n  localStorage.setItem(LS.seenVersion, m.version);\n  $(\"#stVer\").textContent = m.version;\n  showUpdate(m);\n  refresh();\n}\nfunction compare(a,b){\n  const pa = String(a).split(\".\").map(Number), pb = String(b).split(\".\").map(Number);\n  for (let i=0;i<3;i++){ if ((pa[i]||0) > (pb[i]||0)) return 1; if ((pa[i]||0) < (pb[i]||0)) return -1; }\n  return 0;\n}\n\n$(\"#btnCheckLocal\").onclick = async ()=>{\n  log(\"Checking for local update file aura-update.json\u2026\");\n  try {\n    const m = await fetchManifest(\"aura-update.json\");\n    log(\"Found update manifest v\" + m.version, \"ok\");\n    showUpdate(m);\n  } catch(e){\n    log(\"No local aura-update.json found (\" + e.message + \"). Drop the file next to index.html and retry.\", \"warn\");\n    $(\"#updateResult\").innerHTML = `<div style=\"margin-top:10px;color:var(--warn);font-size:12.5px\">No aura-update.json next to the app files. Note: on <code>file://<\/code> some browsers block local fetches \u2014 use \u201cImport update package\u201d instead, it always works.<\/div>`;\n  }\n};\n$(\"#btnCheckUrl\").onclick = async ()=>{\n  const url = $(\"#updateUrl\").value.trim();\n  if (!url){ log(\"No update URL provided.\", \"warn\"); return; }\n  localStorage.setItem(LS.updateUrl, url);\n  $(\"#stSource\").textContent = url;\n  log(\"Checking \" + url + \"\u2026\");\n  try { const m = await fetchManifest(url); log(\"Fetched manifest v\" + m.version, \"ok\"); showUpdate(m); }\n  catch(e){ log(\"Update check failed: \" + e.message, \"err\"); }\n};\n$(\"#btnImportUpdate\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const m = JSON.parse(txt);\n      if (!m.version){ throw new Error(\"manifest missing 'version'\"); }\n      log(\"Imported update package v\" + m.version, \"ok\");\n      showUpdate(m);\n    } catch(e){ log(\"Invalid update package: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- template packs ---------- */\n$(\"#btnExportTpl\").onclick = ()=>{\n  const c = getCustom();\n  if (!c.length){ log(\"Nothing to export \u2014 no custom templates.\", \"warn\"); return; }\n  download(JSON.stringify({type:\"aura-template-pack\",version:1,templates:c},null,2), \"aura-template-pack.json\");\n  log(`Exported ${c.length} custom template(s).`, \"ok\");\n};\n$(\"#btnImportTpl\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const p = JSON.parse(txt);\n      const arr = p.templates || (Array.isArray(p) ? p : null);\n      if (!arr) throw new Error(\"no 'templates' array\");\n      const cur = getCustom(); let n = 0;\n      for (const t of arr){ if (t && t.pages && t.name){ t.custom = true; cur.push(t); n++; } }\n      setCustom(cur); refresh();\n      log(`Imported ${n} template(s) from pack.`, \"ok\");\n    } catch(e){ log(\"Invalid template pack: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- maintenance ---------- */\n$(\"#btnClearAutosave\").onclick = ()=>{ localStorage.removeItem(LS.autosave); log(\"Working autosave cleared.\", \"warn\"); refresh(); };\n$(\"#btnResetTpl\").onclick = ()=>{ if(confirm(\"Remove ALL custom templates?\")){ setCustom([]); log(\"All custom templates removed.\", \"err\"); refresh(); } };\n$(\"#btnFactory\").onclick = ()=>{\n  if (confirm(\"Factory reset: clears autosave, custom templates and version memory. Continue?\")){\n    Object.values(LS).forEach(k=>localStorage.removeItem(k));\n    log(\"Factory reset complete. Built-in templates untouched.\", \"err\");\n    init();\n  }\n};\n\n/* ---------- utils ---------- */\nfunction pick(accept, cb){\n  const i = document.createElement(\"input\"); i.type = \"file\"; i.accept = accept;\n  i.onchange = ()=>{ const f = i.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>cb(r.result); r.readAsText(f); };\n  i.click();\n}\nfunction download(text, name){\n  const a = document.createElement(\"a\");\n  a.href = URL.createObjectURL(new Blob([text], {type:\"application/json\"}));\n  a.download = name; a.click();\n}\ninit();\n<\/script>\n<\/body>\n<\/html>\n";
   const btn = document.getElementById("btnAdmin");
   btn.onclick = function(){
     // Phase II change (v1.6.2): popup-free. Renders the Admin Agent inside an
@@ -3235,6 +3627,175 @@ function watermarkSvg(){
    of this same library in Phase II.
    ============================================================ */
 const MEDIA_DB = "auraMedia";
+const MEDIA_MAX_BYTES = 2 * 1024 * 1024;   // per-record image storage cap (2 MB)
+const MEDIA_LOC_LOCAL = "local-idb";       // DB record location (cloud tier writes "cloud-oracle")
+
+function dataUrlBytes(dataUrl){
+  const i = String(dataUrl || "").indexOf(",");
+  return i < 0 ? 0 : Math.round((String(dataUrl).length - i - 1) * 0.75);
+}
+async function compressImageToCap(dataUrl, type){
+  const img = await loadImage(dataUrl);
+  if (!img) return { dataUrl: dataUrl, bytes: dataUrlBytes(dataUrl), compressed: false, ok: false };
+  let scale = 1, q = 0.9, out = dataUrl, bytes = dataUrlBytes(dataUrl);
+  for (let attempt = 0; attempt < 9; attempt++){
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * scale));
+    c.height = Math.max(1, Math.round(img.height * scale));
+    const x = c.getContext("2d");
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+    x.drawImage(img, 0, 0, c.width, c.height);
+    const t = (attempt === 0 && type === "image/png") ? "image/png" : "image/jpeg";
+    out = c.toDataURL(t, q);
+    bytes = dataUrlBytes(out);
+    if (bytes <= MEDIA_MAX_BYTES) return { dataUrl: out, bytes: bytes, compressed: attempt > 0, ok: true };
+    scale *= 0.8; q = Math.max(0.5, q - 0.06);
+  }
+  return { dataUrl: out, bytes: bytes, compressed: true, ok: bytes <= MEDIA_MAX_BYTES };
+}
+async function mediaStore(rec){
+  const isImage = (rec.type || "").startsWith("image");
+  if (isImage && rec.data && dataUrlBytes(rec.data) > MEDIA_MAX_BYTES){
+    const r = await compressImageToCap(rec.data, rec.type || "image/jpeg");
+    if (!r.ok) return { stored: false, reason: "exceeds the 2 MB storage limit even after compression" };
+    rec.data = r.dataUrl; rec.type = "image/jpeg";
+    rec.bytes = r.bytes; rec.compressed = true; rec.origBytes = dataUrlBytes(rec.data);
+  } else {
+    rec.bytes = rec.blob ? rec.blob.size : dataUrlBytes(rec.data);
+  }
+  rec.loc = MEDIA_LOC_LOCAL;              // DB record location (cloud tier writes "cloud-oracle")
+  await mediaPut(rec);
+  return { stored: true, bytes: rec.bytes, compressed: !!rec.compressed };
+}
+
+/* ============================================================
+   PROJECT LIBRARY — Drafts / Complete / Trash (Phase III).
+   Projects persist in IndexedDB ("projects" store), scoped per
+   member. Trash auto-purges after 30 days. The full project JSON
+   travels with the record, so Open restores everything.
+   ============================================================ */
+const PROJ_TRASH_DAYS = 30;
+async function projPut(rec){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("projects", "readwrite");
+    tx.objectStore("projects").put(rec);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function projAll(){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const rq = db.transaction("projects").objectStore("projects").getAll();
+    rq.onsuccess = () => res(rq.result || []); rq.onerror = () => rej(rq.error);
+  });
+}
+async function projDelete(id){
+  const db = await openMediaDb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("projects", "readwrite");
+    tx.objectStore("projects").delete(id);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function projPurgeTrash(){
+  try {
+    const cutoff = Date.now() - PROJ_TRASH_DAYS * 864e5;
+    for (const r of await projAll()){
+      if (r.state === "trash" && (r.updated || 0) < cutoff) await projDelete(r.id);
+    }
+  } catch(e){}
+}
+async function saveProjectToLibrary(state){
+  if (!project) return null;
+  if (!project.id) project.id = uid();
+  const me = currentUser() || "Guest";
+  const all = await projAll();
+  const existing = all.find(r => r.id === project.id && r.by === me);
+  const rec = { id: project.id, by: me,
+    name: project.name || "Untitled design",
+    state: state || (existing ? existing.state : "draft"),
+    created: existing ? existing.created : Date.now(), updated: Date.now(),
+    pages: project.pages.length, project: JSON.parse(JSON.stringify(project)) };
+  await projPut(rec);
+  return rec;
+}
+function openLibraryProject(rec){
+  project = hydrate(JSON.parse(JSON.stringify(rec.project)));
+  project.id = rec.id;
+  project.name = rec.name;
+  curPage = 0; selId = null; undoStack = []; redoStack = [];
+  openEditor(); saveAutosave();
+  toast("Opened \u201c" + rec.name + "\u201d");
+}
+let pjView = "draft";
+async function showProjectLibrary(){
+  if (typeof indexedDB === "undefined"){ toast("Project library unavailable in this browser"); return; }
+  await projPurgeTrash();
+  const me = currentUser() || "Guest";
+  const all = (await projAll()).filter(r => r.by === me).sort((a,b) => (b.updated||0) - (a.updated||0));
+  const counts = { draft: 0, complete: 0, trash: 0 };
+  all.forEach(r => { counts[r.state] = (counts[r.state] || 0) + 1; });
+  const list = all.filter(r => r.state === pjView);
+  const card = (r) => {
+    const inTrash = r.state === "trash";
+    const sz = r.project ? JSON.stringify(r.project).length : 0;
+    const szTxt = sz > 1048576 ? (sz/1048576).toFixed(1) + " MB" : Math.round(sz/1024) + " KB";
+    const acts = [];
+    acts.push('<button data-open="1" title="Open this project">▶ Open</button>');
+    if (r.state === "draft") acts.push('<button data-cmp="1" title="Mark as complete">✓ Complete</button>');
+    if (r.state === "complete") acts.push('<button data-draft="1" title="Reopen as draft">↩ Reopen</button>');
+    if (!inTrash) acts.push('<button data-trash="1" title="Move to trash">✕ Trash</button>');
+    else {
+      acts.push('<button data-rest="1" title="Restore to drafts">↩ Restore</button>');
+      acts.push('<button data-del="1" title="Delete permanently">✕ Delete</button>');
+    }
+    return '<div class="pj-card" data-id="' + r.id + '">' +
+      '<div class="pj-name">' + (r.name || "Untitled").replace(/</g, "&lt;") + '</div>' +
+      '<div class="pj-meta">' + r.pages + ' page(s) · ~' + szTxt + ' · updated ' +
+      new Date(r.updated || Date.now()).toLocaleDateString() + '</div>' +
+      '<div class="pj-acts">' + acts.join("") + '</div></div>';
+  };
+  const tabs = '<div class="pj-tabs">' +
+    '<button data-tab="draft" class="' + (pjView === "draft" ? "on" : "") + '">\u{1F4C1} Drafts (' + counts.draft + ')</button>' +
+    '<button data-tab="complete" class="' + (pjView === "complete" ? "on" : "") + '">✓ Complete (' + counts.complete + ')</button>' +
+    '<button data-tab="trash" class="' + (pjView === "trash" ? "on" : "") + '">✕ Trash (' + counts.trash + ')</button></div>';
+  const rows = list.length ? list.map(card).join("") :
+    (pjView === "draft" ? "<p style=\"color:var(--ink-dim);font-size:12.5px\">No drafts — open a template or start a new design, then Project ▸ Save to library.</p>"
+     : pjView === "complete" ? "<p style=\"color:var(--ink-dim);font-size:12.5px\">No completed projects yet.</p>"
+     : "<p style=\"color:var(--ink-dim);font-size:12.5px\">Trash is empty. Deleted projects rest here for 30 days.</p>");
+  showModal('<h3>\u{1F4C1} Project library <span style="font-size:12px;color:var(--ink-dim)">— member: ' + me + '</span></h3>' +
+    tabs + '<div class="pj-grid" id="pjGrid">' + rows + '</div>' +
+    '<div class="m-actions" style="justify-content:space-between">' +
+    '<button class="abtn ghost" id="pjNew">➕ New blank design</button>' +
+    '<button class="abtn primary" data-close style="margin-left:auto">Done</button></div>');
+  $$("#pjGrid .pj-card").forEach(cardEl => {
+    const id = cardEl.dataset.id;
+    const rec = list.find(r => r.id === id);
+    cardEl.querySelector("[data-open]").onclick = () => { closeModal(); openLibraryProject(rec); };
+    const cmp = cardEl.querySelector("[data-cmp]");
+    if (cmp) cmp.onclick = async () => { rec.state = "complete"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const drft = cardEl.querySelector("[data-draft]");
+    if (drft) drft.onclick = async () => { rec.state = "draft"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const tr = cardEl.querySelector("[data-trash]");
+    if (tr) tr.onclick = async () => { rec.state = "trash"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const rst = cardEl.querySelector("[data-rest]");
+    if (rst) rst.onclick = async () => { rec.state = "draft"; rec.updated = Date.now(); await projPut(rec); showProjectLibrary(); };
+    const del = cardEl.querySelector("[data-del]");
+    if (del) del.onclick = async () => {
+      if (!confirm("“" + rec.name + "” will be permanently deleted. Continue?")) return;
+      await projDelete(rec.id); showProjectLibrary();
+    };
+  });
+  $$("#modalCard [data-tab]").forEach(b => b.onclick = () => { pjView = b.dataset.tab; showProjectLibrary(); });
+  $("#pjNew").onclick = () => {
+    closeModal();
+    project = hydrate({ name: "Untitled design", cat: "custom", w: 850, h: 1100, pages: [{ bg: "#ffffff", elements: [] }] });
+    curPage = 0; selId = null; undoStack = []; redoStack = [];
+    openEditor(); saveAutosave(); toast("New blank design");
+  };
+  $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+}
 let _mediaDb = null;
 function openMediaDb(){
   return new Promise((res, rej) => {
@@ -3298,15 +3859,17 @@ async function showMediaLibrary(){
     const inp = document.createElement("input");
     inp.type = "file"; inp.accept = "image/*,video/*,audio/*"; inp.multiple = true;
     inp.onchange = async () => {
-      let n = 0;
+      let n = 0, skipped = 0, shrunk = 0;
       for (const f of inp.files){
         try {
           const src = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); });
-          await mediaPut({ id: uid(), name: f.name, type: f.type, data: src, added: Date.now() });
-          n++;
+          const r = await mediaStore({ id: uid(), name: f.name, type: f.type, data: src, added: Date.now() });
+          if (r.stored){ n++; if (r.compressed) shrunk++; }
+          else { skipped++; toast(f.name + ": " + r.reason, 4000); }
         } catch(e){ toast("Failed to store " + f.name); }
       }
-      toast(n + " asset(s) stored locally"); rerun();
+      if (n) toast(n + " stored \u00b7 " + (shrunk ? shrunk + " compressed to fit 2 MB \u00b7 " : "") + (skipped ? skipped + " skipped" : ""));
+      rerun();
     };
     inp.click();
   };
@@ -3380,9 +3943,9 @@ function pvDrawPhoto(ctx, img, motion, local, w, h, fit, bg, idx){
   let s = 1.08, dx = 0, dy = 0;
   if (motion === "zoomin"){ s = 1.02 + 0.16*local; }
   else if (motion === "zoomout"){ s = 1.18 - 0.16*local; }
-  else if (motion === "panright"){ s = 1.15; dx = (local - 0.5) * (iw*base*s - w) * 0.5; }
-  else if (motion === "panleft"){ s = 1.15; dx = (0.5 - local) * (iw*base*s - w) * 0.5; }
-  else if (motion === "panup"){ s = 1.15; dy = (0.5 - local) * (ih*base*s - h) * 0.5; }
+  else if (motion === "panright"){ s = 1.2; dx = (0.5 - local) * (iw*base*s - w); }
+  else if (motion === "panleft"){ s = 1.2; dx = (local - 0.5) * (iw*base*s - w); }
+  else if (motion === "panup"){ s = 1.2; dy = (local - 0.5) * (ih*base*s - h); }
   else if (motion === "walkfwd"){
     s = 1.04 + 0.14*local; dy = -Math.abs(Math.sin(local * Math.PI * 4)) * h * 0.008;
   }
@@ -3471,6 +4034,7 @@ async function pvRenderClip(opts){
 }
 
 async function showPhotoToVideo(){
+  let cancelToken = null;   // hoisted so Close can abort an in-flight render
   let items = [];
   try { items = (await mediaAll()).filter(m => !(m.type || "").startsWith("video")); }
   catch(e){ toast("Media library unavailable: " + e.message); return; }
@@ -3508,6 +4072,7 @@ async function showPhotoToVideo(){
     <div class="m-actions" style="justify-content:space-between">
       <button class="abtn ghost" id="pvAdd">\u2b06 Upload photos</button>
       <span style="display:flex;gap:8px">
+        <button class="abtn ghost" id="pvClose">\u2715 Close</button>
         <button class="abtn ghost" id="pvCancel" style="display:none">\u2715 Cancel</button>
         <button class="abtn primary" id="pvGo">\u25B6 Generate video</button></span></div>`);
   let selected = items.length ? [items[0].id] : [];
@@ -3544,10 +4109,11 @@ async function showPhotoToVideo(){
     const fit = $("#pvFit").value;
     const useWm = $("#pvWm").checked;
     $("#pvProg").style.display = "block"; $("#pvGo").disabled = true;
-    const cancelToken = { cancelled: false };
+    cancelToken = { cancelled: false };
     const cancelBtn = $("#pvCancel");
     cancelBtn.style.display = "";
     cancelBtn.onclick = () => { cancelToken.cancelled = true; toast("Cancelling\u2026"); };
+    $("#pvClose").onclick = () => { cancelToken.cancelled = true; closeModal(); toast("Rendering cancelled \u2014 nothing was saved"); };
     const canvas = document.createElement("canvas");
     canvas.width = w; canvas.height = h;
     const wm = useWm ? ((project && project.watermark && project.watermark.enabled) ? project.watermark
@@ -3567,8 +4133,8 @@ async function showPhotoToVideo(){
         if (pctEl) pctEl.textContent = Math.round(p*100) + "% \u2014 rendering in real time\u2026";
     } });
     cancelBtn.style.display = "none";
-    $("#pvProg").style.display = "none";
-    if (cancelToken.cancelled){ $("#pvGo").disabled = false; toast("Rendering cancelled \u2014 nothing was saved"); return; }
+    const prog = $("#pvProg"); if (prog) prog.style.display = "none";
+    if (cancelToken.cancelled){ const go = $("#pvGo"); if (go) go.disabled = false; toast("Rendering cancelled \u2014 nothing was saved"); return; }
     const ext = blob.type.includes("mp4") ? "mp4" : "webm";
     const name = `photo-video-${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.${ext}`;
     await mediaPut({ id: uid(), name, type: blob.type, blob, added: Date.now() });
@@ -3867,75 +4433,144 @@ async function showAiCreate(){
     curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("AI artwork inserted");
   });
   $("#aiSave").onclick = () => arm(async () => {
-    await mediaPut({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
-    toast("Saved to Media Library");
+    const r = await mediaStore({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
+    toast(r.stored ? (r.compressed ? "Saved (compressed to fit 2 MB)" : "Saved to Media Library") : r.reason);
   });
   $("#aiAnim").onclick = () => arm(async () => {
-    await mediaPut({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
+    await mediaStore({ id: uid(), name: `ai-${lastPrompt.slice(0,20).replace(/\W+/g,"-")}.png`, type: "image/png", data: lastArt, added: Date.now() });
     closeModal(); showPhotoToVideo();      // newest library item auto-selected
   });
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
 
+function duplicatePage(){
+  if (!project) return;
+  pushHistory();
+  const clonePage = JSON.parse(JSON.stringify(curPageData()));
+  (clonePage.elements || []).forEach(el => { el.id = uid(); });
+  project.pages.splice(curPage + 1, 0, clonePage);
+  curPage++;
+  selId = null;
+  renderBoard(); renderPages(); renderProps(); saveAutosave();
+  toast("Page duplicated \u2014 now editing the copy");
+}
+
 /* ============================================================
-   COMMUNITY REPOSITORY \u2014 \u201ccreated by u\u201d shared asset gallery.
-   All members on this device can publish and browse; the superuser
-   can moderate. Stored in localStorage (aura.community); the AuraDB
-   cloud tier syncs it across devices in Phase II.
+   COMMUNITY REPOSITORY — "created by u" shared gallery for ALL members.
+   Foldered: 🖼 Images · 🎬 Animated · ✨ Templates (per category).
+   Superuser moderates. Stored in localStorage (aura.community);
+   AuraDB cloud tier syncs it across devices in Phase III.
    ============================================================ */
 const COMM_LS = "aura.community";
 function commAll(){ try { return JSON.parse(localStorage.getItem(COMM_LS) || "[]"); } catch(e){ return []; } }
 function commSave(a){ localStorage.setItem(COMM_LS, JSON.stringify(a.slice(0, 500))); }
 async function publishToCommunity(rec){
   const a = commAll();
-  a.unshift({ id: uid(), name: rec.name || "asset", type: rec.type || "image/png",
+  a.unshift({ id: uid(), kind: "media", name: rec.name || "asset", type: rec.type || "image/png",
     data: rec.data || rec.src || "", blob: rec.blob || null,
     by: currentUser() || "Guest", added: Date.now() });
   commSave(a);
-  toast("Published to the community repository \u2014 created by " + (currentUser() || "Guest"));
+  toast("Published to the community repository — created by " + (currentUser() || "Guest"));
+}
+function publishCommunityTemplate(tpl, by){
+  const a = commAll();
+  a.unshift({ id: uid(), kind: "template", name: tpl.name, by: by || (currentUser() || "Guest"),
+    added: Date.now(), tpl: JSON.parse(JSON.stringify(tpl)) });
+  commSave(a);
+}
+function commClassOf(m){
+  if (m.kind === "template") return "template";
+  const t = m.type || "";
+  if (t.indexOf("audio") === 0) return "audio";
+  if (t.indexOf("video") === 0 || m.blob || t === "image/gif") return "animated";
+  return "image";
+}
+function commTemplateCell(m){
+  const canDelete = isSuperuser() || m.by === (currentUser() || "Guest");
+  return '<div class="ml-cell"><div class="ml-thumb" style="font-size:26px">✨</div>' +
+    '<div class="ml-nm">' + (m.name || "template").slice(0, 26) + '</div>' +
+    '<div class="ml-by">created by <b>' + (m.by || "unknown").replace(/</g, "&lt;") + '</b></div>' +
+    '<div class="ml-ops"><button data-use="1" title="Open as a new design">▶ Use</button>' +
+    '<button data-dl="1" title="Download template .json">⬇</button>' +
+    (canDelete ? '<button data-del="1" title="Remove">✕</button>' : '') + '</div></div>';
+}
+function commMediaCell(m, su, me){
+  const isAud = (m.type || "").indexOf("audio") === 0;
+  const isVid = (m.type || "").indexOf("video") === 0 || !!m.blob;
+  const icon = isAud ? "🔊" : isVid ? "📽️" : "";
+  const canDelete = su || m.by === me;
+  return '<div class="ml-cell" data-id="' + m.id + '">' +
+    '<div class="ml-thumb">' + (icon ? '<span style="font-size:26px">' + icon + '</span>' : '<img src="' + (m.data || "") + '" alt="">') + '</div>' +
+    '<div class="ml-nm">' + (m.name || "asset").slice(0, 22) + '</div>' +
+    '<div class="ml-by">created by <b>' + (m.by || "unknown") + '</b></div>' +
+    '<div class="ml-ops">' + (isVid || isAud ? "" : '<button data-ins="1" title="Insert into page">➕</button>') +
+    '<button data-dl="1" title="Download">⬇</button>' +
+    (canDelete ? '<button data-del="1" title="Remove">✕</button>' : '') + '</div></div>';
 }
 function showCommunityRepo(){
   const items = commAll().sort((a,b) => (b.added||0) - (a.added||0));
   const su = isSuperuser();
   const me = currentUser() || "Guest";
-  const cells = items.length ? items.map(m => {
-    const isVid = (m.type || "").startsWith("video") || !!m.blob;
-    const isAud = (m.type || "").startsWith("audio");
-    const icon = isAud ? "\uD83D\uDD0A" : isVid ? "\uD83D\uDCFD\uFE0F" : "";
-    const canDelete = su || m.by === me;
-    return `<div class="ml-cell" data-id="${esc(m.id)}">
-      <div class="ml-thumb">${icon ? `<span style="font-size:26px">${icon}</span>` : `<img src="${m.data || ""}" alt="">`}</div>
-      <div class="ml-nm">${esc((m.name || "asset").slice(0,22))}</div>
-      <div class="ml-by">created by <b>${esc(m.by || "unknown")}</b></div>
-      <div class="ml-ops">
-        ${isVid || isAud ? "" : `<button data-ins="1" title="Insert into page">\u2795</button>`}
-        <button data-dl="1" title="Download">\u2b07</button>
-        ${canDelete ? `<button data-del="1" title="${su && m.by !== me ? "Remove (superuser)" : "Delete"}">\u2715</button>` : ""}
-      </div></div>`;
-  }).join("") : `<p style="color:var(--ink-dim);font-size:12.5px">The community repository is empty \u2014 publish assets from the Media Library (\uD83D\uDF10 button).</p>`;
-  showModal(`<h3>\uD83D\uDF10 Community repository</h3>
-    <p>Shared image/video/audio gallery for <b>all members</b> of this studio \u2014 every asset is labeled \u201ccreated by\u201d its maker. ${su ? "You have <b>superuser</b> moderation rights." : "Members manage their own uploads; the superuser can moderate."}</p>
-    <div class="ml-grid" id="commGrid">${cells}</div>
-    <div class="m-actions"><button class="abtn primary" data-close style="margin-left:auto">Done</button></div>`);
-  $$("#commGrid .ml-cell").forEach(cell => {
-    const id = cell.dataset.id;
-    const rec = items.find(m => m.id === id);
-    const ins = cell.querySelector("[data-ins]"), dl = cell.querySelector("[data-dl]"), del = cell.querySelector("[data-del]");
-    if (ins) ins.onclick = () => {
+  const groups = { image: [], animated: [], audio: [], template: [] };
+  items.forEach(m => groups[commClassOf(m)].push(m));
+  const view = (window.__commView || (window.__commView = { tab: "images", cat: "all" }));
+  const tab = view.tab;
+  const cats = [["all","All categories"]].concat(CATS.map(c => [c.id, c.icon + " " + c.name]));
+  const catSel = tab === "templates"
+    ? '<div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:110px;flex-shrink:0">Category</span>' +
+      '<select id="commCat" class="prop-select">' + cats.map(c =>
+        '<option value="' + c[0] + '"' + (view.cat === c[0] ? " selected" : "") + '>' + c[1] + '</option>').join("") + '</select></div>'
+    : "";
+  const list = tab === "templates"
+    ? groups.template.filter(m => view.cat === "all" || (m.tpl && m.tpl.cat === view.cat))
+    : tab === "animated" ? groups.animated.concat(groups.audio)
+    : groups.image;
+  const cell = (m) => tab === "templates" ? commTemplateCell(m) : commMediaCell(m, su, me);
+  const empty = (msg) => '<p style="color:var(--ink-dim);font-size:12.5px">' + msg + '</p>';
+  const body = list.length ? list.map(cell).join("")
+    : empty(tab === "templates" ? "No community templates in this category yet — seed the bundled suite from the Admin Agent (superuser)."
+      : tab === "animated" ? "No animated assets yet — generate one with Photo → Video."
+      : "No images yet — publish from the Media Library (🌐 button).");
+  showModal('<h3>🌐 Community repository — "created by u"</h3>' +
+    '<p>Shared by <b>all members</b> — every item credited to its maker.' +
+    (su ? ' You have <b>superuser</b> moderation rights.' : '') + '</p>' +
+    '<div class="pj-tabs">' +
+    '<button data-folder="images" class="' + (tab === "images" ? "on" : "") + '">🖼 Images (' + groups.image.length + ')</button>' +
+    '<button data-folder="animated" class="' + (tab === "animated" ? "on" : "") + '">🎬 Animated (' + (groups.animated.length + groups.audio.length) + ')</button>' +
+    '<button data-folder="templates" class="' + (tab === "templates" ? "on" : "") + '">✨ Templates (' + groups.template.length + ')</button></div>' +
+    catSel +
+    '<div class="ml-grid" id="commGrid">' + body + '</div>' +
+    '<div class="m-actions"><button class="abtn primary" data-close style="margin-left:auto">Done</button></div>');
+  $$("#modalCard [data-folder]").forEach(b => b.onclick = () => { view.tab = b.dataset.folder; showCommunityRepo(); });
+  const catSelEl = document.getElementById("commCat");
+  if (catSelEl) catSelEl.onchange = () => { view.cat = catSelEl.value; showCommunityRepo(); };
+  $$("#commGrid .ml-cell").forEach(cellEl => {
+    const id = cellEl.dataset.id;
+    const rec = list.find(m => m.id === id);
+    const use = cellEl.querySelector("[data-use]"), dl = cellEl.querySelector("[data-dl]"), del = cellEl.querySelector("[data-del]");
+    if (tab === "templates" && use) use.onclick = () => {
+      if (!rec.tpl || !rec.tpl.pages){ toast("Template data missing"); return; }
+      closeModal();
+      project = hydrate(JSON.parse(JSON.stringify(rec.tpl)));
+      project.name = (rec.tpl.name || "Community template") + " — by " + rec.by;
+      project.cat = rec.tpl.cat || "community";
+      curPage = 0; selId = null; undoStack = []; redoStack = [];
+      openEditor(); saveAutosave();
+      toast("Opened community template — by " + rec.by);
+    };
+    if (tab !== "templates" && ins) ins.onclick = () => {
       closeModal(); pushHistory();
       const el = { id: uid(), type: "image", x: Math.round(project.w*0.2), y: Math.round(project.h*0.2),
         w: Math.round(project.w*0.6), h: Math.round(project.h*0.4), src: rec.data || "", fit: "cover", radius: 0, opacity: 1, filter: "none" };
-      curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave(); toast("Inserted from community repository");
+      curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave();
+      toast("Inserted from community repository");
     };
     if (dl) dl.onclick = () => {
       const a = document.createElement("a");
       a.href = rec.blob ? URL.createObjectURL(rec.blob) : (rec.data || "");
       a.download = rec.name || "asset"; a.click();
     };
-    if (del) del.onclick = () => {
-      commSave(commAll().filter(m => m.id !== id));
-      closeModal(); showCommunityRepo(); toast("Removed from community repository");
-    };
+    if (del) del.onclick = () => { commSave(commAll().filter(m => m.id !== id)); showCommunityRepo(); };
   });
   $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
 }
@@ -4643,7 +5278,7 @@ window.AuraDB = AuraDB;
 <script>
 /* --- single-file build: admin embedded --- */
 (function(){
-  const ADMIN_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Aura Studio \u2014 Admin Agent<\/title>\n<style>\n:root{--bg:#0f1222;--bg2:#171b31;--bg3:#1f2444;--panel:#141831;--line:#2a2f55;--ink:#eef0ff;--dim:#9aa0c7;--accent:#7c5cff;--ok:#4ad48a;--warn:#ffd479;--err:#ff7b7b}\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:24px}\n.wrap{max-width:960px;margin:0 auto}\nheader{display:flex;align-items:center;gap:12px;margin-bottom:6px}\n.dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#7c5cff,#ff5c8a);display:flex;align-items:center;justify-content:center;font-weight:800}\nh1{font-size:20px} .sub{color:var(--dim);font-size:13px;margin-bottom:22px}\n.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}\n.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}\n.card h2{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}\n.card p.desc{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:12px}\n.btn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;width:100%;text-align:left;margin-bottom:8px}\n.btn:hover{background:var(--bg3);border-color:var(--accent)}\n.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;text-align:center}\n.btn.danger:hover{border-color:var(--err);color:var(--err)}\n.row{display:flex;gap:8px;margin-bottom:8px}\n.row .btn{margin-bottom:0}\ninput[type=text],input[type=url]{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;outline:none}\ninput:focus{border-color:var(--accent)}\n.stat{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}\n.stat:last-child{border-bottom:none}\n.stat .v{font-weight:700}\n.tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}\n.tag.ok{color:var(--ok);border-color:var(--ok)}\n.tag.new{color:var(--warn);border-color:var(--warn)}\n#log{background:#0b0d1a;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:'Cascadia Code','Courier New',monospace;font-size:12px;height:190px;overflow-y:auto;line-height:1.7}\n#log .t{color:#556} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}\n.tlist{max-height:230px;overflow-y:auto;margin-top:8px}\n.titem{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;font-size:12.5px}\n.titem .x{color:var(--err);cursor:pointer;font-weight:700;background:none;border:none}\n.full{grid-column:1 / -1}\na{color:#a78bff}\nfooter{color:#55608c;font-size:11px;margin-top:24px;text-align:center}\n@media(max-width:760px){.grid{grid-template-columns:1fr}}\n<\/style>\n<\/head>\n<body>\n<div class=\"wrap\">\n  <header><div class=\"dot\">A<\/div><div><h1>Aura Studio \u2014 Admin Agent<\/h1><div class=\"sub\">Local template management \u00b7 updates \u00b7 upgrades \u00b7 maintenance<\/div><\/div><\/header>\n\n  <div class=\"grid\">\n    <div class=\"card\">\n      <h2>\ud83d\udccb Status<\/h2>\n      <div class=\"stat\"><span>App version<\/span><span class=\"v\" id=\"stVer\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Latest known version<\/span><span class=\"v\" id=\"stLatest\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Built-in templates<\/span><span class=\"v\" id=\"stBuiltin\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Custom templates<\/span><span class=\"v\" id=\"stCustom\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Update source<\/span><span class=\"v\" id=\"stSource\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Autosave present<\/span><span class=\"v\" id=\"stAutosave\">\u2014<\/span><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udee1 Member accounts <span class=\"tag\" id=\"suTag\">superuser<\/span><\/h2>\n      <div id=\"superPanel\"><p class=\"desc\">Loading\u2026<\/p><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udd04 Updates & upgrades<\/h2>\n      <p class=\"desc\">The agent checks a manifest for newer versions. On <code>file://<\/code>, place <b>aura-update.json<\/b> next to the app files and press \u201cCheck locally\u201d, or point to any URL below (run via a local server or the web).<\/p>\n      <div class=\"row\"><input type=\"url\" id=\"updateUrl\" placeholder=\"https://example.com/aura-update.json (optional)\"><button class=\"btn\" style=\"width:auto\" id=\"btnCheckUrl\">Check URL<\/button><\/div>\n      <button class=\"btn\" id=\"btnCheckLocal\">\ud83d\udcc2 Check for local update file (aura-update.json)<\/button>\n      <button class=\"btn\" id=\"btnImportUpdate\">\u2b06 Import update / upgrade package (.json)<\/button>\n      <div id=\"updateResult\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83c\udfa8 Template manager <span class=\"tag\" id=\"tplCount\"><\/span><\/h2>\n      <p class=\"desc\">Custom templates appear in the main gallery immediately. Distribute template packs as JSON \u2014 colleagues or future-you can import them below.<\/p>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnExportTpl\">\u2b07 Export custom templates (pack)<\/button>\n        <button class=\"btn\" id=\"btnImportTpl\">\u2b06 Import template pack (.json)<\/button>\n      <\/div>\n      <div class=\"tlist\" id=\"tplList\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udee0 Maintenance<\/h2>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnClearAutosave\">Clear working autosave<\/button>\n        <button class=\"btn danger\" id=\"btnResetTpl\">Remove ALL custom templates<\/button>\n        <button class=\"btn danger\" id=\"btnFactory\">\u26a0 Factory reset (everything)<\/button>\n      <\/div>\n      <p class=\"desc\" style=\"margin-top:6px\">Factory reset clears autosave, custom templates and remembered version \u2014 built-in templates are never touched.<\/p>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udda5 Agent log<\/h2>\n      <div id=\"log\"><\/div>\n    <\/div>\n  <\/div>\n  <footer>Aura Studio Admin Agent \u00b7 runs fully offline \u00b7 data stays in this browser's localStorage<\/footer>\n<\/div>\n\n<script src=\"assets-s3-logo.js\"><\/script>\n<script>\n\"use strict\";\nconst LS = {\n  customTpl: \"aura.templates.custom\",\n  autosave: \"aura.autosave\",\n  seenVersion: \"aura.seenVersion\",\n  updateUrl: \"aura.updateUrl\",\n  appVer: \"aura.appVersion\",\n};\n// member-aware custom-template storage (mirrors the main app's mkey scoping)\nfunction currentMember(){ try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } }\nfunction mkeyAdmin(base){ const u = currentMember(); return u ? \"aura.m.\" + u + \".\" + base : base; }\nfunction getCustom(){\n  const k = mkeyAdmin(LS.customTpl);\n  let raw = localStorage.getItem(k);\n  if (raw == null) raw = localStorage.getItem(LS.customTpl);   // legacy fallback\n  try { const v = JSON.parse(raw || \"[]\"); return Array.isArray(v) ? v : []; } catch(e){ return []; }\n}\nfunction setCustom(arr){ localStorage.setItem(mkeyAdmin(LS.customTpl), JSON.stringify(arr)); }\nfunction log(msg, cls){\n  const l = document.getElementById(\"log\");\n  const t = new Date().toLocaleTimeString();\n  l.innerHTML = `<div><span class=\"t\">[${t}]<\/span> <span class=\"${cls||\"\"}\">${msg}<\/span><\/div>` + l.innerHTML;\n}\nfunction $(s){ return document.querySelector(s); }\n\n// Superuser: member-account administration (device-local role \u2014 the first\n// member created on a device holds it). Lists every member, allows opening\n// their workspace or removing them. Requires same-origin iframe context.\n// recovery-code helpers (mirror the app's hashing: SHA-256 of \"salt:secret\")\nasync function sha256Hex(s){\n  try {\n    const b = await crypto.subtle.digest(\"SHA-256\", new TextEncoder().encode(s));\n    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, \"0\")).join(\"\");\n  } catch(e){\n    let h = 0x811c9dc5; const str = s;\n    for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }\n    return \"fnv:\" + h.toString(16);\n  }\n}\nfunction genRecCode(){\n  const ch = \"ABCDEFGHJKMNPQRSTUVWXYZ23456789\"; let o = \"\";\n  try { const a = new Uint8Array(8); crypto.getRandomValues(a); for (let i = 0; i < 8; i++) o += ch[a[i] % ch.length]; }\n  catch(e){ for (let i = 0; i < 8; i++) o += ch[Math.floor(Math.random() * ch.length)]; }\n  return o.slice(0, 4) + \"-\" + o.slice(4);\n}\nfunction normCode(c){ return String(c || \"\").replace(/[\\s-]/g, \"\").toUpperCase(); }\nasync function issueRecCode(u){\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = { members:{} }; }\n  const rec = st.members[u]; if (!rec) return;\n  const code = genRecCode();\n  rec.recovery = { hash: await sha256Hex(\"rc:\" + u + \":\" + normCode(code)), created: Date.now() };\n  localStorage.setItem(\"aura.members\", JSON.stringify(st));\n  log(\"Recovery code issued for \" + u + \" \\u2014 shown once below\", \"warn\");\n  alert(\"Recovery code for \" + u + \":\\n\\n\" + code + \"\\n\\nGive it to the member now. It is not stored anywhere \\u2014 only its hash is.\");\n  renderSuper();\n}\nfunction renderSuper(){\n  const wrap = document.getElementById(\"superPanel\");\n  if (!wrap) return;\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = {}; }\n  const members = st.members || {};\n  const names = Object.keys(members);\n  const superName = names.find(u => members[u] && members[u].super);\n  const session = (() => { try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } })();\n  const tag = document.getElementById(\"suTag\");\n  if (tag) tag.className = \"tag\" + (superName ? \" ok\" : \"\");\n  if (!names.length){ wrap.innerHTML = '<p class=\"desc\">No members exist yet on this device. Create one in the studio \u2014 the first member becomes the superuser.<\/p>'; return; }\n  if (!superName){\n    // recovery: members created before the role existed have no superuser \u2014\n    // allow designating one so member administration is never locked out\n    wrap.innerHTML = names.map(u =>\n      `<div class=\"titem\"><span>\\uD83D\\uDC64 <b>${u.replace(/<\/g, \"&lt;\")}<\/b><\/span>` +\n      `<span><button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-su=\"${u.replace(/\"/g, \"\")}\">\\uD83D\\uDEE1 Designate as superuser<\/button><\/span><\/div>`\n    ).join(\"\") + '<p class=\"desc\">No superuser is designated yet (members created before the role existed). Pick who should hold the superuser role \\u2014 they gain member-account administration.<\/p>';\n    wrap.querySelectorAll(\"[data-su]\").forEach(b => b.onclick = () => {\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[b.dataset.su]){ st2.members[b.dataset.su].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.su + \" designated as superuser\", \"ok\"); renderSuper(); }\n    });\n    return;\n  }\n  wrap.innerHTML = names.map(u => {\n    const m = members[u];\n    const isSu = !!m.super;\n    const active = u === session;\n    const recSt = m.recovery ? \"\\uD83D\\uDD11 code on file\" : \"\\u26A0 no recovery code\";\n    return `<div class=\"titem\"><span>\ud83d\udc64 <b>${u.replace(/<\/g,\"&lt;\")}<\/b>${isSu ? \" \ud83d\udee1\" : \"\"}${active ? \" <span class=\\\"tag ok\\\">active session<\/span>\" : \"\"}\n      <span style=\"color:var(--dim)\"> \u00b7 created ${new Date(m.created || Date.now()).toLocaleDateString()} \u00b7 ${recSt}<\/span><\/span>\n      <span style=\"display:flex;gap:6px\">\n        <button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-open=\"${u.replace(/\"/g,\"\")}\" ${active ? \"disabled\" : \"\"}>Open workspace<\/button>\n        <button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-rc=\"${u.replace(/\"/g,\"\")}\" title=\"Issue a new recovery code (shown once)\">\ud83d\udd11 Issue code<\/button>\n        ${!isSu ? `<button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-promo=\"${u.replace(/\"/g,\"\")}\">Promote<\/button>` : \"\"}\n      <\/span><\/div>`;\n  }).join(\"\") + `<p class=\"desc\" style=\"margin-top:8px\">Superuser ${superName} can open any member's workspace, issue recovery codes and moderate the community repository. Device-local role.<\/p>`;\n  wrap.querySelectorAll(\"[data-open]\").forEach(b => b.onclick = () => {\n    localStorage.setItem(\"aura.currentMember\", JSON.stringify(b.dataset.open));\n    log(\"Switched studio workspace to member \" + b.dataset.open, \"ok\");\n    try { window.parent.location.reload(); } catch(e){ try { window.top.location.reload(); } catch(e2){ alert(\"Reload the studio to switch member.\"); } }\n  });\n  wrap.querySelectorAll(\"[data-rc]\").forEach(b => b.onclick = async () => { await issueRecCode(b.dataset.rc); });\n  wrap.querySelectorAll(\"[data-promo]\").forEach(b => b.onclick = () => {\n    const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n    if (st2.members[b.dataset.promo]){ st2.members[b.dataset.promo].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.promo + \" promoted to superuser\", \"ok\"); renderSuper(); }\n  });\n}\n\nfunction init(){\n  if (typeof S3_LOGO_DATAURL !== \"undefined\"){\n    const dot = document.querySelector(\".dot\");\n    if (dot) dot.innerHTML = `<img src=\"${S3_LOGO_DATAURL}\" alt=\"S3\" style=\"width:100%;height:100%;object-fit:contain;background:#fff;border-radius:9px\">`;\n  }\n  renderSuper();\n  const appVer = localStorage.getItem(LS.appVer) || \"2.4.0\";\n  $(\"#stVer\").textContent = appVer;\n  $(\"#stBuiltin\").textContent = \"55 templates (10 categories)\";\n  $(\"#stSource\").textContent = localStorage.getItem(LS.updateUrl) || \"local file (aura-update.json)\";\n  $(\"#updateUrl\").value = localStorage.getItem(LS.updateUrl) || \"\";\n  refresh();\n  log(`Admin agent started. App version ${appVer}.`, \"ok\");\n}\n\nfunction refresh(){\n  const c = getCustom();\n  $(\"#stCustom\").textContent = c.length;\n  $(\"#tplCount\").textContent = c.length + \" custom\";\n  $(\"#stAutosave\").textContent = localStorage.getItem(LS.autosave) ? \"Yes\" : \"No\";\n  const list = $(\"#tplList\");\n  list.innerHTML = c.length ? \"\" : `<div class=\"titem\" style=\"color:var(--dim)\">No custom templates yet \u2014 import a pack or an upgrade package.<\/div>`;\n  c.forEach((t,i)=>{\n    const d = document.createElement(\"div\"); d.className = \"titem\";\n    d.innerHTML = `<span>\ud83c\udfa8 <b>${(t.name||\"unnamed\").replace(/<\/g,\"&lt;\")}<\/b> &nbsp;<span style=\"color:var(--dim)\">${t.w}\u00d7${t.h} \u00b7 ${(t.pages||[]).length} page(s) \u00b7 cat: ${t.cat||\"custom\"}<\/span><\/span>`;\n    const x = document.createElement(\"button\"); x.className=\"x\"; x.textContent=\"\u2715\"; x.title=\"Delete\";\n    x.onclick = ()=>{ const arr=getCustom(); arr.splice(i,1); setCustom(arr); log(`Deleted custom template \u201c${t.name}\u201d`,\"warn\"); refresh(); };\n    d.appendChild(x); list.appendChild(d);\n  });\n}\n\n/* ---------- update checking ---------- */\nasync function fetchManifest(url){\n  const r = await fetch(url, {cache:\"no-store\"});\n  if (!r.ok) throw new Error(\"HTTP \" + r.status);\n  return r.json();\n}\nfunction showUpdate(m){\n  const cur = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  const isNewer = compare(m.version, cur) > 0;\n  $(\"#stLatest\").textContent = m.version + (isNewer ? \"  \u2b06\" : \"\");\n  const el = $(\"#updateResult\");\n  el.innerHTML = `\n    <div style=\"margin-top:10px;padding:12px;background:var(--bg2);border:1px solid ${isNewer?\"var(--warn)\":\"var(--line)\"};border-radius:10px;font-size:13px\">\n      <b>${m.version}<\/b> ${isNewer?'<span class=\"tag new\">upgrade available<\/span>':'<span class=\"tag ok\">up to date<\/span>'}\n      ${m.notes?`<div style=\"color:var(--dim);margin-top:6px;line-height:1.6\">${String(m.notes).replace(/<\/g,\"&lt;\").replace(/\\n/g,\"<br>\")}<\/div>`:\"\"}\n      ${m.templates?`<div style=\"margin-top:6px\">Includes <b>${m.templates.length}<\/b> template(s).<\/div>`:\"\"}\n      ${isNewer?`<button class=\"btn primary\" id=\"btnApply\" style=\"margin-top:10px\">\u2b06 Apply update ${m.version}<\/button>`:\"\"}\n    <\/div>`;\n  const btn = $(\"#btnApply\");\n  if (btn) btn.onclick = ()=> applyUpdate(m);\n}\nfunction applyUpdate(m){\n  if (m.templates && m.templates.length){\n    const cur = getCustom();\n    let added = 0;\n    for (const t of m.templates){\n      if (!t || !t.pages || !t.name) continue;\n      t.custom = true;\n      const idx = cur.findIndex(x => x.name === t.name);\n      if (idx >= 0) cur[idx] = t; else { cur.push(t); added++; }\n    }\n    setCustom(cur);\n    log(`Applied update ${m.version}: ${added} template(s) installed, ${m.templates.length-added} refreshed.`, \"ok\");\n  } else log(`Applied update ${m.version} (manifest only).`, \"ok\");\n  localStorage.setItem(LS.appVer, m.version);\n  localStorage.setItem(LS.seenVersion, m.version);\n  $(\"#stVer\").textContent = m.version;\n  showUpdate(m);\n  refresh();\n}\nfunction compare(a,b){\n  const pa = String(a).split(\".\").map(Number), pb = String(b).split(\".\").map(Number);\n  for (let i=0;i<3;i++){ if ((pa[i]||0) > (pb[i]||0)) return 1; if ((pa[i]||0) < (pb[i]||0)) return -1; }\n  return 0;\n}\n\n$(\"#btnCheckLocal\").onclick = async ()=>{\n  log(\"Checking for local update file aura-update.json\u2026\");\n  try {\n    const m = await fetchManifest(\"aura-update.json\");\n    log(\"Found update manifest v\" + m.version, \"ok\");\n    showUpdate(m);\n  } catch(e){\n    log(\"No local aura-update.json found (\" + e.message + \"). Drop the file next to index.html and retry.\", \"warn\");\n    $(\"#updateResult\").innerHTML = `<div style=\"margin-top:10px;color:var(--warn);font-size:12.5px\">No aura-update.json next to the app files. Note: on <code>file://<\/code> some browsers block local fetches \u2014 use \u201cImport update package\u201d instead, it always works.<\/div>`;\n  }\n};\n$(\"#btnCheckUrl\").onclick = async ()=>{\n  const url = $(\"#updateUrl\").value.trim();\n  if (!url){ log(\"No update URL provided.\", \"warn\"); return; }\n  localStorage.setItem(LS.updateUrl, url);\n  $(\"#stSource\").textContent = url;\n  log(\"Checking \" + url + \"\u2026\");\n  try { const m = await fetchManifest(url); log(\"Fetched manifest v\" + m.version, \"ok\"); showUpdate(m); }\n  catch(e){ log(\"Update check failed: \" + e.message, \"err\"); }\n};\n$(\"#btnImportUpdate\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const m = JSON.parse(txt);\n      if (!m.version){ throw new Error(\"manifest missing 'version'\"); }\n      log(\"Imported update package v\" + m.version, \"ok\");\n      showUpdate(m);\n    } catch(e){ log(\"Invalid update package: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- template packs ---------- */\n$(\"#btnExportTpl\").onclick = ()=>{\n  const c = getCustom();\n  if (!c.length){ log(\"Nothing to export \u2014 no custom templates.\", \"warn\"); return; }\n  download(JSON.stringify({type:\"aura-template-pack\",version:1,templates:c},null,2), \"aura-template-pack.json\");\n  log(`Exported ${c.length} custom template(s).`, \"ok\");\n};\n$(\"#btnImportTpl\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const p = JSON.parse(txt);\n      const arr = p.templates || (Array.isArray(p) ? p : null);\n      if (!arr) throw new Error(\"no 'templates' array\");\n      const cur = getCustom(); let n = 0;\n      for (const t of arr){ if (t && t.pages && t.name){ t.custom = true; cur.push(t); n++; } }\n      setCustom(cur); refresh();\n      log(`Imported ${n} template(s) from pack.`, \"ok\");\n    } catch(e){ log(\"Invalid template pack: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- maintenance ---------- */\n$(\"#btnClearAutosave\").onclick = ()=>{ localStorage.removeItem(LS.autosave); log(\"Working autosave cleared.\", \"warn\"); refresh(); };\n$(\"#btnResetTpl\").onclick = ()=>{ if(confirm(\"Remove ALL custom templates?\")){ setCustom([]); log(\"All custom templates removed.\", \"err\"); refresh(); } };\n$(\"#btnFactory\").onclick = ()=>{\n  if (confirm(\"Factory reset: clears autosave, custom templates and version memory. Continue?\")){\n    Object.values(LS).forEach(k=>localStorage.removeItem(k));\n    log(\"Factory reset complete. Built-in templates untouched.\", \"err\");\n    init();\n  }\n};\n\n/* ---------- utils ---------- */\nfunction pick(accept, cb){\n  const i = document.createElement(\"input\"); i.type = \"file\"; i.accept = accept;\n  i.onchange = ()=>{ const f = i.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>cb(r.result); r.readAsText(f); };\n  i.click();\n}\nfunction download(text, name){\n  const a = document.createElement(\"a\");\n  a.href = URL.createObjectURL(new Blob([text], {type:\"application/json\"}));\n  a.download = name; a.click();\n}\ninit();\n<\/script>\n<\/body>\n<\/html>\n";
+  const ADMIN_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Aura Studio \u2014 Admin Agent<\/title>\n<style>\n:root{--bg:#0f1222;--bg2:#171b31;--bg3:#1f2444;--panel:#141831;--line:#2a2f55;--ink:#eef0ff;--dim:#9aa0c7;--accent:#7c5cff;--ok:#4ad48a;--warn:#ffd479;--err:#ff7b7b}\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:24px}\n.wrap{max-width:960px;margin:0 auto}\nheader{display:flex;align-items:center;gap:12px;margin-bottom:6px}\n.dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#7c5cff,#ff5c8a);display:flex;align-items:center;justify-content:center;font-weight:800}\nh1{font-size:20px} .sub{color:var(--dim);font-size:13px;margin-bottom:22px}\n.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}\n.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}\n.card h2{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}\n.card p.desc{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:12px}\n.btn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;width:100%;text-align:left;margin-bottom:8px}\n.btn:hover{background:var(--bg3);border-color:var(--accent)}\n.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;text-align:center}\n.btn.danger:hover{border-color:var(--err);color:var(--err)}\n.row{display:flex;gap:8px;margin-bottom:8px}\n.row .btn{margin-bottom:0}\ninput[type=text],input[type=url]{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;outline:none}\ninput:focus{border-color:var(--accent)}\n.stat{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}\n.stat:last-child{border-bottom:none}\n.stat .v{font-weight:700}\n.tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}\n.tag.ok{color:var(--ok);border-color:var(--ok)}\n.tag.new{color:var(--warn);border-color:var(--warn)}\n#log{background:#0b0d1a;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:'Cascadia Code','Courier New',monospace;font-size:12px;height:190px;overflow-y:auto;line-height:1.7}\n#log .t{color:#556} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}\n.tlist{max-height:230px;overflow-y:auto;margin-top:8px}\n.titem{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg2);border-radius:8px;margin-bottom:6px;font-size:12.5px}\n.titem .x{color:var(--err);cursor:pointer;font-weight:700;background:none;border:none}\n.full{grid-column:1 / -1}\na{color:#a78bff}\nfooter{color:#55608c;font-size:11px;margin-top:24px;text-align:center}\n@media(max-width:760px){.grid{grid-template-columns:1fr}}\n<\/style>\n<\/head>\n<body>\n<div class=\"wrap\">\n  <header><div class=\"dot\">A<\/div><div><h1>Aura Studio \u2014 Admin Agent<\/h1><div class=\"sub\">Local template management \u00b7 updates \u00b7 upgrades \u00b7 maintenance<\/div><\/div><\/header>\n\n  <div class=\"grid\">\n    <div class=\"card\">\n      <h2>\ud83d\udccb Status<\/h2>\n      <div class=\"stat\"><span>App version<\/span><span class=\"v\" id=\"stVer\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Latest known version<\/span><span class=\"v\" id=\"stLatest\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Built-in templates<\/span><span class=\"v\" id=\"stBuiltin\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Custom templates<\/span><span class=\"v\" id=\"stCustom\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Update source<\/span><span class=\"v\" id=\"stSource\">\u2014<\/span><\/div>\n      <div class=\"stat\"><span>Autosave present<\/span><span class=\"v\" id=\"stAutosave\">\u2014<\/span><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udee1 Member accounts <span class=\"tag\" id=\"suTag\">superuser<\/span><\/h2>\n      <div id=\"superPanel\"><p class=\"desc\">Loading\u2026<\/p><\/div>\n    <\/div>\n\n    <div class=\"card\">\n      <h2>\ud83d\udd04 Updates & upgrades<\/h2>\n      <p class=\"desc\">The agent checks a manifest for newer versions. On <code>file://<\/code>, place <b>aura-update.json<\/b> next to the app files and press \u201cCheck locally\u201d, or point to any URL below (run via a local server or the web).<\/p>\n      <div class=\"row\"><input type=\"url\" id=\"updateUrl\" placeholder=\"https://example.com/aura-update.json (optional)\"><button class=\"btn\" style=\"width:auto\" id=\"btnCheckUrl\">Check URL<\/button><\/div>\n      <button class=\"btn\" id=\"btnCheckLocal\">\ud83d\udcc2 Check for local update file (aura-update.json)<\/button>\n      <button class=\"btn\" id=\"btnImportUpdate\">\u2b06 Import update / upgrade package (.json)<\/button>\n      <div id=\"updateResult\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83c\udfa8 Template manager <span class=\"tag\" id=\"tplCount\"><\/span><\/h2>\n      <p class=\"desc\">Custom templates appear in the main gallery immediately. Distribute template packs as JSON \u2014 colleagues or future-you can import them below.<\/p>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnExportTpl\">\u2b07 Export custom templates (pack)<\/button>\n        <button class=\"btn\" id=\"btnImportTpl\">\u2b06 Import template pack (.json)<\/button>\n      <\/div>\n      <div class=\"tlist\" id=\"tplList\"><\/div>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udee0 Maintenance<\/h2>\n      <div class=\"row\">\n        <button class=\"btn\" id=\"btnClearAutosave\">Clear working autosave<\/button>\n        <button class=\"btn danger\" id=\"btnResetTpl\">Remove ALL custom templates<\/button>\n        <button class=\"btn danger\" id=\"btnFactory\">\u26a0 Factory reset (everything)<\/button>\n      <\/div>\n      <p class=\"desc\" style=\"margin-top:6px\">Factory reset clears autosave, custom templates and remembered version \u2014 built-in templates are never touched.<\/p>\n    <\/div>\n\n    <div class=\"card full\">\n      <h2>\ud83d\udda5 Agent log<\/h2>\n      <div id=\"log\"><\/div>\n    <\/div>\n  <\/div>\n  <footer>Aura Studio Admin Agent \u00b7 runs fully offline \u00b7 data stays in this browser's localStorage<\/footer>\n<\/div>\n\n<script src=\"community-templates.js\"><\/script>\n<script src=\"assets-s3-logo.js\"><\/script>\n<script>\n\"use strict\";\nconst LS = {\n  customTpl: \"aura.templates.custom\",\n  autosave: \"aura.autosave\",\n  seenVersion: \"aura.seenVersion\",\n  updateUrl: \"aura.updateUrl\",\n  appVer: \"aura.appVersion\",\n};\n// member-aware custom-template storage (mirrors the main app's mkey scoping)\nfunction currentMember(){ try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } }\nfunction mkeyAdmin(base){ const u = currentMember(); return u ? \"aura.m.\" + u + \".\" + base : base; }\nfunction getCustom(){\n  const k = mkeyAdmin(LS.customTpl);\n  let raw = localStorage.getItem(k);\n  if (raw == null) raw = localStorage.getItem(LS.customTpl);   // legacy fallback\n  try { const v = JSON.parse(raw || \"[]\"); return Array.isArray(v) ? v : []; } catch(e){ return []; }\n}\nfunction setCustom(arr){ localStorage.setItem(mkeyAdmin(LS.customTpl), JSON.stringify(arr)); }\nfunction log(msg, cls){\n  const l = document.getElementById(\"log\");\n  const t = new Date().toLocaleTimeString();\n  l.innerHTML = `<div><span class=\"t\">[${t}]<\/span> <span class=\"${cls||\"\"}\">${msg}<\/span><\/div>` + l.innerHTML;\n}\nfunction $(s){ return document.querySelector(s); }\n\n// Superuser: member-account administration (device-local role \u2014 the first\n// member created on a device holds it). Lists every member, allows opening\n// their workspace or removing them. Requires same-origin iframe context.\n// recovery-code helpers (mirror the app's hashing: SHA-256 of \"salt:secret\")\nasync function sha256Hex(s){\n  try {\n    const b = await crypto.subtle.digest(\"SHA-256\", new TextEncoder().encode(s));\n    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, \"0\")).join(\"\");\n  } catch(e){\n    let h = 0x811c9dc5; const str = s;\n    for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }\n    return \"fnv:\" + h.toString(16);\n  }\n}\nfunction genRecCode(){\n  const ch = \"ABCDEFGHJKMNPQRSTUVWXYZ23456789\"; let o = \"\";\n  try { const a = new Uint8Array(8); crypto.getRandomValues(a); for (let i = 0; i < 8; i++) o += ch[a[i] % ch.length]; }\n  catch(e){ for (let i = 0; i < 8; i++) o += ch[Math.floor(Math.random() * ch.length)]; }\n  return o.slice(0, 4) + \"-\" + o.slice(4);\n}\nfunction normCode(c){ return String(c || \"\").replace(/[\\s-]/g, \"\").toUpperCase(); }\nasync function issueRecCode(u){\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = { members:{} }; }\n  const rec = st.members[u]; if (!rec) return;\n  const code = genRecCode();\n  rec.recovery = { hash: await sha256Hex(\"rc:\" + u + \":\" + normCode(code)), created: Date.now() };\n  localStorage.setItem(\"aura.members\", JSON.stringify(st));\n  log(\"Recovery code issued for \" + u + \" \\u2014 shown once below\", \"warn\");\n  alert(\"Recovery code for \" + u + \":\\n\\n\" + code + \"\\n\\nGive it to the member now. It is not stored anywhere \\u2014 only its hash is.\");\n  renderSuper();\n}\nfunction memberUsage(u){\n  let keys = 0, bytes = 0;\n  const pfx = \"aura.m.\" + u + \".\";\n  for (let i = 0; i < localStorage.length; i++){\n    const k = localStorage.key(i);\n    if (k && k.indexOf(pfx) === 0){ keys++; bytes += (localStorage.getItem(k) || \"\").length; }\n  }\n  return { keys: keys, kb: Math.round(bytes / 1024) };\n}\nfunction commCountBy(u){\n  try { return (JSON.parse(localStorage.getItem(\"aura.community\") || \"[]\") || []).filter(m => m.by === u).length; }\n  catch(e){ return 0; }\n}\nlet memberView = { q: \"\", filter: \"all\", sort: \"created\" };\n\nfunction seedCommunity(){\n  if (typeof AURA_SUITE_TEMPLATES === \"undefined\"){ log(\"Bundled suite not loaded\", \"err\"); return; }\n  let comm = []; try { comm = JSON.parse(localStorage.getItem(\"aura.community\") || \"[]\"); } catch(e){}\n  const have = new Set(comm.filter(m => m.kind === \"template\").map(m => m.name));\n  let n = 0, i = 0;\n  AURA_SUITE_TEMPLATES.forEach(t => {\n    if (!have.has(t.name)){\n      comm.unshift({ id: \"cm\" + Date.now() + \"-\" + (i++), kind: \"template\", name: t.name,\n        by: superName || \"superuser\", added: Date.now(), tpl: JSON.parse(JSON.stringify(t)) });\n      n++;\n    }\n  });\n  localStorage.setItem(\"aura.community\", JSON.stringify(comm.slice(0, 500)));\n  log(\"Seeded \" + n + \" community templates (created by \" + (superName || \"superuser\") + \")\", \"ok\");\n  renderSuper();\n}\nfunction renderSuper(){\n  const wrap = document.getElementById(\"superPanel\");\n  if (!wrap) return;\n  let st; try { st = JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ st = {}; }\n  const members = st.members || {};\n  const names = Object.keys(members);\n  const superName = names.find(u => members[u] && members[u].super);\n  const session = (() => { try { return JSON.parse(localStorage.getItem(\"aura.currentMember\") || \"null\"); } catch(e){ return null; } })();\n  const tag = document.getElementById(\"suTag\");\n  if (tag) tag.className = \"tag\" + (superName ? \" ok\" : \"\");\n\n  if (!names.length){ wrap.innerHTML = '<p class=\"desc\">No members exist yet on this device. Create one in the studio \u2014 the first member becomes the superuser.<\/p>'; return; }\n  if (!superName){\n    wrap.innerHTML = names.map(u =>\n      '<div class=\"titem\"><span>\\\\uD83D\\\\uDC64 <b>' + u.replace(/<\/g, \"&lt;\") + '<\/b><\/span>' +\n      '<span><button class=\"btn\" style=\"width:auto;padding:5px 10px\" data-su=\"' + u.replace(/\"/g, \"\") + '\">\\\\uD83D\\\\uDEE1 Designate as superuser<\/button><\/span><\/div>'\n    ).join(\"\") + '<p class=\"desc\">No superuser is designated yet. Pick who should hold the superuser role.<\/p>';\n    wrap.querySelectorAll(\"[data-su]\").forEach(b => b.onclick = () => {\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[b.dataset.su]){ st2.members[b.dataset.su].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.su + \" designated as superuser\", \"ok\"); renderSuper(); }\n    });\n    return;\n  }\n\n  const rows = names.map(u => {\n    const m = members[u];\n    const usage = memberUsage(u);\n    return { u: u, m: m, usage: usage,\n      comm: commCountBy(u),\n      active: u === session,\n      isSu: !!m.super,\n      created: m.created || 0 };\n  });\n\n  const controls = '<div class=\"row\" style=\"flex-wrap:wrap\">' +\n    '<input type=\"text\" id=\"suQ\" placeholder=\"Filter by member ID\\u2026\" style=\"flex:2;min-width:140px\" value=\"' + memberView.q.replace(/\"/g, \"&quot;\") + '\">' +\n    '<select id=\"suF\" class=\"btn\" style=\"width:auto;padding:7px 8px\">' +\n      '<option value=\"all\"' + (memberView.filter === \"all\" ? \" selected\" : \"\") + '>All members<\/option>' +\n      '<option value=\"super\"' + (memberView.filter === \"super\" ? \" selected\" : \"\") + '>Superusers<\/option>' +\n      '<option value=\"active\"' + (memberView.filter === \"active\" ? \" selected\" : \"\") + '>Active session<\/option>' +\n      '<option value=\"norecov\"' + (memberView.filter === \"norecov\" ? \" selected\" : \"\") + '>No recovery code<\/option>' +\n    '<\/select>' +\n    '<select id=\"suS\" class=\"btn\" style=\"width:auto;padding:7px 8px\">' +\n      '<option value=\"created\"' + (memberView.sort === \"created\" ? \" selected\" : \"\") + '>Newest first<\/option>' +\n      '<option value=\"name\"' + (memberView.sort === \"name\" ? \" selected\" : \"\") + '>Name A\\u2013Z<\/option>' +\n      '<option value=\"usage\"' + (memberView.sort === \"usage\" ? \" selected\" : \"\") + '>Most storage<\/option>' +\n    '<\/select>' +\n    '<button id=\"suSeed\" class=\"btn\" style=\"width:auto;padding:7px 10px\">\\U0001F331 Seed bundled suite (21)<\/button><\/div>' +\n    '<p class=\"desc\" style=\"margin:6px 0\"><b id=\"suCount\"><\/b><\/p>' +\n    '<div id=\"suRows\"><\/div>' +\n    '<p class=\"desc\" style=\"margin-top:8px\">Superuser ' + superName + ' can open any member\\u2019s workspace, issue recovery codes, promote and remove members. Device-local role.<\/p>';\n\n  wrap.innerHTML = controls;\n\n  function apply(){\n    let list = rows.slice();\n    const q = memberView.q.toLowerCase();\n    if (q) list = list.filter(r => r.u.toLowerCase().indexOf(q) >= 0);\n    if (memberView.filter === \"super\") list = list.filter(r => r.isSu);\n    if (memberView.filter === \"active\") list = list.filter(r => r.active);\n    if (memberView.filter === \"norecov\") list = list.filter(r => !r.m.recovery);\n    if (memberView.sort === \"name\") list.sort((a, b) => a.u.localeCompare(b.u));\n    else if (memberView.sort === \"usage\") list.sort((a, b) => b.usage.bytes - a.usage.bytes);\n    else list.sort((a, b) => b.created - a.created);\n\n    const cnt = document.getElementById(\"suCount\");\n    if (cnt) cnt.textContent = list.length + \" of \" + rows.length + \" member(s)\";\n    const box = document.getElementById(\"suRows\");\n    if (!box) return;\n    box.innerHTML = list.length ? list.map(r =>\n      '<div class=\"titem\"><span>\\\\uD83D\\\\uDC64 <b>' + r.u.replace(/<\/g, \"&lt;\") + '<\/b>' + (r.isSu ? \" \\\\uD83D\\\\uDEE1\" : \"\") +\n      (r.active ? ' <span class=\"tag ok\">active<\/span>' : '') +\n      '<br><span style=\"color:var(--dim);font-size:11px\">created ' + (r.created ? new Date(r.created).toLocaleDateString() : \"?\") +\n      ' \\u00b7 ' + r.usage.keys + ' keys / ~' + r.usage.kb + ' KB \\u00b7 community: ' + r.comm + '<\/span><\/span>' +\n      '<span style=\"display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end\">' +\n      '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-open=\"' + r.u.replace(/\"/g, \"\") + '\"' + (r.active ? \" disabled\" : \"\") + '>Open<\/button>' +\n      '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-rc=\"' + r.u.replace(/\"/g, \"\") + '\">Code<\/button>' +\n      (r.isSu ? '' : '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-promo=\"' + r.u.replace(/\"/g, \"\") + '\">Promote<\/button>') +\n      '<button class=\"btn\" style=\"width:auto;padding:5px 8px\" data-del=\"' + r.u.replace(/\"/g, \"\") + '\">Remove<\/button>' +\n      '<\/span><\/div>').join(\"\")\n      : '<p class=\"desc\">No members match the current filter.<\/p>';\n\n    box.querySelectorAll(\"[data-open]\").forEach(b => b.onclick = () => {\n      localStorage.setItem(\"aura.currentMember\", JSON.stringify(b.dataset.open));\n      log(\"Switched studio workspace to member \" + b.dataset.open, \"ok\");\n      try { window.parent.location.reload(); } catch(e){ try { window.top.location.reload(); } catch(e2){ alert(\"Reload the studio to switch member.\"); } }\n    });\n    box.querySelectorAll(\"[data-rc]\").forEach(b => b.onclick = async () => { await issueRecCode(b.dataset.rc); renderSuper(); });\n    box.querySelectorAll(\"[data-promo]\").forEach(b => b.onclick = () => {\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[b.dataset.promo]){ st2.members[b.dataset.promo].super = true; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); log(b.dataset.promo + \" promoted to superuser\", \"ok\"); renderSuper(); }\n    });\n    box.querySelectorAll(\"[data-del]\").forEach(b => b.onclick = () => {\n      const u = b.dataset.del;\n      if (u === superName){ alert(\"The superuser cannot be removed from this screen.\"); return; }\n      if (!confirm(\"Remove member \\u201c\" + u + \"\\u201d and all their local data? This cannot be undone.\")) return;\n      const st2 = (() => { try { return JSON.parse(localStorage.getItem(\"aura.members\") || \"{}\"); } catch(e){ return { members:{} }; } })();\n      if (st2.members[u]){ delete st2.members[u]; localStorage.setItem(\"aura.members\", JSON.stringify(st2)); }\n      Object.keys(localStorage).filter(k => k.indexOf(\"aura.m.\" + u + \".\") === 0).forEach(k => localStorage.removeItem(k));\n      log(\"Member \" + u + \" removed (with scoped data)\", \"warn\");\n      memberView.q = \"\"; renderSuper();\n    });\n  }\n\n  apply();\n  const q = document.getElementById(\"suQ\"), f = document.getElementById(\"suF\"), so = document.getElementById(\"suS\");\n  if (q) q.addEventListener(\"input\", () => { memberView.q = q.value; apply(); });\n  if (f) f.addEventListener(\"change\", () => { memberView.filter = f.value; apply(); });\n  if (so) so.addEventListener(\"change\", () => { memberView.sort = so.value; apply(); });\n}\n\nfunction init(){\n  if (typeof S3_LOGO_DATAURL !== \"undefined\"){\n    const dot = document.querySelector(\".dot\");\n    if (dot) dot.innerHTML = `<img src=\"${S3_LOGO_DATAURL}\" alt=\"S3\" style=\"width:100%;height:100%;object-fit:contain;background:#fff;border-radius:9px\">`;\n  }\n  renderSuper();\n  const appVer = localStorage.getItem(LS.appVer) || \"2.4.0\";\n  $(\"#stVer\").textContent = appVer;\n  $(\"#stBuiltin\").textContent = \"55 templates (10 categories)\";\n  $(\"#stSource\").textContent = localStorage.getItem(LS.updateUrl) || \"local file (aura-update.json)\";\n  $(\"#updateUrl\").value = localStorage.getItem(LS.updateUrl) || \"\";\n  refresh();\n  log(`Admin agent started. App version ${appVer}.`, \"ok\");\n}\n\nfunction refresh(){\n  const c = getCustom();\n  $(\"#stCustom\").textContent = c.length;\n  $(\"#tplCount\").textContent = c.length + \" custom\";\n  $(\"#stAutosave\").textContent = localStorage.getItem(LS.autosave) ? \"Yes\" : \"No\";\n  const list = $(\"#tplList\");\n  list.innerHTML = c.length ? \"\" : `<div class=\"titem\" style=\"color:var(--dim)\">No custom templates yet \u2014 import a pack or an upgrade package.<\/div>`;\n  c.forEach((t,i)=>{\n    const d = document.createElement(\"div\"); d.className = \"titem\";\n    d.innerHTML = `<span>\ud83c\udfa8 <b>${(t.name||\"unnamed\").replace(/<\/g,\"&lt;\")}<\/b> &nbsp;<span style=\"color:var(--dim)\">${t.w}\u00d7${t.h} \u00b7 ${(t.pages||[]).length} page(s) \u00b7 cat: ${t.cat||\"custom\"}<\/span><\/span>`;\n    const x = document.createElement(\"button\"); x.className=\"x\"; x.textContent=\"\u2715\"; x.title=\"Delete\";\n    x.onclick = ()=>{ const arr=getCustom(); arr.splice(i,1); setCustom(arr); log(`Deleted custom template \u201c${t.name}\u201d`,\"warn\"); refresh(); };\n    d.appendChild(x); list.appendChild(d);\n  });\n}\n\n/* ---------- update checking ---------- */\nasync function fetchManifest(url){\n  const r = await fetch(url, {cache:\"no-store\"});\n  if (!r.ok) throw new Error(\"HTTP \" + r.status);\n  return r.json();\n}\nfunction showUpdate(m){\n  const cur = localStorage.getItem(LS.appVer) || \"1.0.0\";\n  const isNewer = compare(m.version, cur) > 0;\n  $(\"#stLatest\").textContent = m.version + (isNewer ? \"  \u2b06\" : \"\");\n  const el = $(\"#updateResult\");\n  el.innerHTML = `\n    <div style=\"margin-top:10px;padding:12px;background:var(--bg2);border:1px solid ${isNewer?\"var(--warn)\":\"var(--line)\"};border-radius:10px;font-size:13px\">\n      <b>${m.version}<\/b> ${isNewer?'<span class=\"tag new\">upgrade available<\/span>':'<span class=\"tag ok\">up to date<\/span>'}\n      ${m.notes?`<div style=\"color:var(--dim);margin-top:6px;line-height:1.6\">${String(m.notes).replace(/<\/g,\"&lt;\").replace(/\\n/g,\"<br>\")}<\/div>`:\"\"}\n      ${m.templates?`<div style=\"margin-top:6px\">Includes <b>${m.templates.length}<\/b> template(s).<\/div>`:\"\"}\n      ${isNewer?`<button class=\"btn primary\" id=\"btnApply\" style=\"margin-top:10px\">\u2b06 Apply update ${m.version}<\/button>`:\"\"}\n    <\/div>`;\n  const btn = $(\"#btnApply\");\n  if (btn) btn.onclick = ()=> applyUpdate(m);\n}\nfunction applyUpdate(m){\n  if (m.templates && m.templates.length){\n    const cur = getCustom();\n    let added = 0;\n    for (const t of m.templates){\n      if (!t || !t.pages || !t.name) continue;\n      t.custom = true;\n      const idx = cur.findIndex(x => x.name === t.name);\n      if (idx >= 0) cur[idx] = t; else { cur.push(t); added++; }\n    }\n    setCustom(cur);\n    log(`Applied update ${m.version}: ${added} template(s) installed, ${m.templates.length-added} refreshed.`, \"ok\");\n  } else log(`Applied update ${m.version} (manifest only).`, \"ok\");\n  localStorage.setItem(LS.appVer, m.version);\n  localStorage.setItem(LS.seenVersion, m.version);\n  $(\"#stVer\").textContent = m.version;\n  showUpdate(m);\n  refresh();\n}\nfunction compare(a,b){\n  const pa = String(a).split(\".\").map(Number), pb = String(b).split(\".\").map(Number);\n  for (let i=0;i<3;i++){ if ((pa[i]||0) > (pb[i]||0)) return 1; if ((pa[i]||0) < (pb[i]||0)) return -1; }\n  return 0;\n}\n\n$(\"#btnCheckLocal\").onclick = async ()=>{\n  log(\"Checking for local update file aura-update.json\u2026\");\n  try {\n    const m = await fetchManifest(\"aura-update.json\");\n    log(\"Found update manifest v\" + m.version, \"ok\");\n    showUpdate(m);\n  } catch(e){\n    log(\"No local aura-update.json found (\" + e.message + \"). Drop the file next to index.html and retry.\", \"warn\");\n    $(\"#updateResult\").innerHTML = `<div style=\"margin-top:10px;color:var(--warn);font-size:12.5px\">No aura-update.json next to the app files. Note: on <code>file://<\/code> some browsers block local fetches \u2014 use \u201cImport update package\u201d instead, it always works.<\/div>`;\n  }\n};\n$(\"#btnCheckUrl\").onclick = async ()=>{\n  const url = $(\"#updateUrl\").value.trim();\n  if (!url){ log(\"No update URL provided.\", \"warn\"); return; }\n  localStorage.setItem(LS.updateUrl, url);\n  $(\"#stSource\").textContent = url;\n  log(\"Checking \" + url + \"\u2026\");\n  try { const m = await fetchManifest(url); log(\"Fetched manifest v\" + m.version, \"ok\"); showUpdate(m); }\n  catch(e){ log(\"Update check failed: \" + e.message, \"err\"); }\n};\n$(\"#btnImportUpdate\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const m = JSON.parse(txt);\n      if (!m.version){ throw new Error(\"manifest missing 'version'\"); }\n      log(\"Imported update package v\" + m.version, \"ok\");\n      showUpdate(m);\n    } catch(e){ log(\"Invalid update package: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- template packs ---------- */\n$(\"#btnExportTpl\").onclick = ()=>{\n  const c = getCustom();\n  if (!c.length){ log(\"Nothing to export \u2014 no custom templates.\", \"warn\"); return; }\n  download(JSON.stringify({type:\"aura-template-pack\",version:1,templates:c},null,2), \"aura-template-pack.json\");\n  log(`Exported ${c.length} custom template(s).`, \"ok\");\n};\n$(\"#btnImportTpl\").onclick = ()=>{\n  pick(\".json\", (txt)=>{\n    try {\n      const p = JSON.parse(txt);\n      const arr = p.templates || (Array.isArray(p) ? p : null);\n      if (!arr) throw new Error(\"no 'templates' array\");\n      const cur = getCustom(); let n = 0;\n      for (const t of arr){ if (t && t.pages && t.name){ t.custom = true; cur.push(t); n++; } }\n      setCustom(cur); refresh();\n      log(`Imported ${n} template(s) from pack.`, \"ok\");\n    } catch(e){ log(\"Invalid template pack: \" + e.message, \"err\"); }\n  });\n};\n\n/* ---------- maintenance ---------- */\n$(\"#btnClearAutosave\").onclick = ()=>{ localStorage.removeItem(LS.autosave); log(\"Working autosave cleared.\", \"warn\"); refresh(); };\n$(\"#btnResetTpl\").onclick = ()=>{ if(confirm(\"Remove ALL custom templates?\")){ setCustom([]); log(\"All custom templates removed.\", \"err\"); refresh(); } };\n$(\"#btnFactory\").onclick = ()=>{\n  if (confirm(\"Factory reset: clears autosave, custom templates and version memory. Continue?\")){\n    Object.values(LS).forEach(k=>localStorage.removeItem(k));\n    log(\"Factory reset complete. Built-in templates untouched.\", \"err\");\n    init();\n  }\n};\n\n/* ---------- utils ---------- */\nfunction pick(accept, cb){\n  const i = document.createElement(\"input\"); i.type = \"file\"; i.accept = accept;\n  i.onchange = ()=>{ const f = i.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>cb(r.result); r.readAsText(f); };\n  i.click();\n}\nfunction download(text, name){\n  const a = document.createElement(\"a\");\n  a.href = URL.createObjectURL(new Blob([text], {type:\"application/json\"}));\n  a.download = name; a.click();\n}\ninit();\n<\/script>\n<\/body>\n<\/html>\n";
   const btn = document.getElementById("btnAdmin");
   btn.onclick = function(){
     // Phase II change (v1.6.2): popup-free. Renders the Admin Agent inside an
