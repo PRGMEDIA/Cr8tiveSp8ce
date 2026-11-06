@@ -1,4 +1,4 @@
-FROM nginx:alpine
+FROM public.ecr.aws/nginx/nginx:alpine
 COPY index.html /usr/share/nginx/html/
 COPY styles.css /usr/share/nginx/html/
 COPY assets-s3-logo.js /usr/share/nginx/html/
