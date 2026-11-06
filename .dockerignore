@@ -1,0 +1,8 @@
+# Build context exclusions
+.git
+.github
+node_modules
+*.md
+tools
+dist
+suite_out.txt

@@ -97,6 +97,7 @@ footer{color:#55608c;font-size:11px;margin-top:24px;text-align:center}
   <footer>Aura Studio Admin Agent · runs fully offline · data stays in this browser's localStorage</footer>
 </div>
 
+<script src="community-templates.js"></script>
 <script src="assets-s3-logo.js"></script>
 <script>
 "use strict";
@@ -155,6 +156,37 @@ async function issueRecCode(u){
   alert("Recovery code for " + u + ":\n\n" + code + "\n\nGive it to the member now. It is not stored anywhere \u2014 only its hash is.");
   renderSuper();
 }
+function memberUsage(u){
+  let keys = 0, bytes = 0;
+  const pfx = "aura.m." + u + ".";
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (k && k.indexOf(pfx) === 0){ keys++; bytes += (localStorage.getItem(k) || "").length; }
+  }
+  return { keys: keys, kb: Math.round(bytes / 1024) };
+}
+function commCountBy(u){
+  try { return (JSON.parse(localStorage.getItem("aura.community") || "[]") || []).filter(m => m.by === u).length; }
+  catch(e){ return 0; }
+}
+let memberView = { q: "", filter: "all", sort: "created" };
+
+function seedCommunity(){
+  if (typeof AURA_SUITE_TEMPLATES === "undefined"){ log("Bundled suite not loaded", "err"); return; }
+  let comm = []; try { comm = JSON.parse(localStorage.getItem("aura.community") || "[]"); } catch(e){}
+  const have = new Set(comm.filter(m => m.kind === "template").map(m => m.name));
+  let n = 0, i = 0;
+  AURA_SUITE_TEMPLATES.forEach(t => {
+    if (!have.has(t.name)){
+      comm.unshift({ id: "cm" + Date.now() + "-" + (i++), kind: "template", name: t.name,
+        by: superName || "superuser", added: Date.now(), tpl: JSON.parse(JSON.stringify(t)) });
+      n++;
+    }
+  });
+  localStorage.setItem("aura.community", JSON.stringify(comm.slice(0, 500)));
+  log("Seeded " + n + " community templates (created by " + (superName || "superuser") + ")", "ok");
+  renderSuper();
+}
 function renderSuper(){
   const wrap = document.getElementById("superPanel");
   if (!wrap) return;
@@ -165,43 +197,105 @@ function renderSuper(){
   const session = (() => { try { return JSON.parse(localStorage.getItem("aura.currentMember") || "null"); } catch(e){ return null; } })();
   const tag = document.getElementById("suTag");
   if (tag) tag.className = "tag" + (superName ? " ok" : "");
+
   if (!names.length){ wrap.innerHTML = '<p class="desc">No members exist yet on this device. Create one in the studio — the first member becomes the superuser.</p>'; return; }
   if (!superName){
-    // recovery: members created before the role existed have no superuser —
-    // allow designating one so member administration is never locked out
     wrap.innerHTML = names.map(u =>
-      `<div class="titem"><span>\uD83D\uDC64 <b>${u.replace(/</g, "&lt;")}</b></span>` +
-      `<span><button class="btn" style="width:auto;padding:5px 10px" data-su="${u.replace(/"/g, "")}">\uD83D\uDEE1 Designate as superuser</button></span></div>`
-    ).join("") + '<p class="desc">No superuser is designated yet (members created before the role existed). Pick who should hold the superuser role \u2014 they gain member-account administration.</p>';
+      '<div class="titem"><span>\\uD83D\\uDC64 <b>' + u.replace(/</g, "&lt;") + '</b></span>' +
+      '<span><button class="btn" style="width:auto;padding:5px 10px" data-su="' + u.replace(/"/g, "") + '">\\uD83D\\uDEE1 Designate as superuser</button></span></div>'
+    ).join("") + '<p class="desc">No superuser is designated yet. Pick who should hold the superuser role.</p>';
     wrap.querySelectorAll("[data-su]").forEach(b => b.onclick = () => {
       const st2 = (() => { try { return JSON.parse(localStorage.getItem("aura.members") || "{}"); } catch(e){ return { members:{} }; } })();
       if (st2.members[b.dataset.su]){ st2.members[b.dataset.su].super = true; localStorage.setItem("aura.members", JSON.stringify(st2)); log(b.dataset.su + " designated as superuser", "ok"); renderSuper(); }
     });
     return;
   }
-  wrap.innerHTML = names.map(u => {
+
+  const rows = names.map(u => {
     const m = members[u];
-    const isSu = !!m.super;
-    const active = u === session;
-    const recSt = m.recovery ? "\uD83D\uDD11 code on file" : "\u26A0 no recovery code";
-    return `<div class="titem"><span>👤 <b>${u.replace(/</g,"&lt;")}</b>${isSu ? " 🛡" : ""}${active ? " <span class=\"tag ok\">active session</span>" : ""}
-      <span style="color:var(--dim)"> · created ${new Date(m.created || Date.now()).toLocaleDateString()} · ${recSt}</span></span>
-      <span style="display:flex;gap:6px">
-        <button class="btn" style="width:auto;padding:5px 10px" data-open="${u.replace(/"/g,"")}" ${active ? "disabled" : ""}>Open workspace</button>
-        <button class="btn" style="width:auto;padding:5px 10px" data-rc="${u.replace(/"/g,"")}" title="Issue a new recovery code (shown once)">🔑 Issue code</button>
-        ${!isSu ? `<button class="btn" style="width:auto;padding:5px 10px" data-promo="${u.replace(/"/g,"")}">Promote</button>` : ""}
-      </span></div>`;
-  }).join("") + `<p class="desc" style="margin-top:8px">Superuser ${superName} can open any member's workspace, issue recovery codes and moderate the community repository. Device-local role.</p>`;
-  wrap.querySelectorAll("[data-open]").forEach(b => b.onclick = () => {
-    localStorage.setItem("aura.currentMember", JSON.stringify(b.dataset.open));
-    log("Switched studio workspace to member " + b.dataset.open, "ok");
-    try { window.parent.location.reload(); } catch(e){ try { window.top.location.reload(); } catch(e2){ alert("Reload the studio to switch member."); } }
+    const usage = memberUsage(u);
+    return { u: u, m: m, usage: usage,
+      comm: commCountBy(u),
+      active: u === session,
+      isSu: !!m.super,
+      created: m.created || 0 };
   });
-  wrap.querySelectorAll("[data-rc]").forEach(b => b.onclick = async () => { await issueRecCode(b.dataset.rc); });
-  wrap.querySelectorAll("[data-promo]").forEach(b => b.onclick = () => {
-    const st2 = (() => { try { return JSON.parse(localStorage.getItem("aura.members") || "{}"); } catch(e){ return { members:{} }; } })();
-    if (st2.members[b.dataset.promo]){ st2.members[b.dataset.promo].super = true; localStorage.setItem("aura.members", JSON.stringify(st2)); log(b.dataset.promo + " promoted to superuser", "ok"); renderSuper(); }
-  });
+
+  const controls = '<div class="row" style="flex-wrap:wrap">' +
+    '<input type="text" id="suQ" placeholder="Filter by member ID\u2026" style="flex:2;min-width:140px" value="' + memberView.q.replace(/"/g, "&quot;") + '">' +
+    '<select id="suF" class="btn" style="width:auto;padding:7px 8px">' +
+      '<option value="all"' + (memberView.filter === "all" ? " selected" : "") + '>All members</option>' +
+      '<option value="super"' + (memberView.filter === "super" ? " selected" : "") + '>Superusers</option>' +
+      '<option value="active"' + (memberView.filter === "active" ? " selected" : "") + '>Active session</option>' +
+      '<option value="norecov"' + (memberView.filter === "norecov" ? " selected" : "") + '>No recovery code</option>' +
+    '</select>' +
+    '<select id="suS" class="btn" style="width:auto;padding:7px 8px">' +
+      '<option value="created"' + (memberView.sort === "created" ? " selected" : "") + '>Newest first</option>' +
+      '<option value="name"' + (memberView.sort === "name" ? " selected" : "") + '>Name A\u2013Z</option>' +
+      '<option value="usage"' + (memberView.sort === "usage" ? " selected" : "") + '>Most storage</option>' +
+    '</select>' +
+    '<button id="suSeed" class="btn" style="width:auto;padding:7px 10px">\U0001F331 Seed bundled suite (21)</button></div>' +
+    '<p class="desc" style="margin:6px 0"><b id="suCount"></b></p>' +
+    '<div id="suRows"></div>' +
+    '<p class="desc" style="margin-top:8px">Superuser ' + superName + ' can open any member\u2019s workspace, issue recovery codes, promote and remove members. Device-local role.</p>';
+
+  wrap.innerHTML = controls;
+
+  function apply(){
+    let list = rows.slice();
+    const q = memberView.q.toLowerCase();
+    if (q) list = list.filter(r => r.u.toLowerCase().indexOf(q) >= 0);
+    if (memberView.filter === "super") list = list.filter(r => r.isSu);
+    if (memberView.filter === "active") list = list.filter(r => r.active);
+    if (memberView.filter === "norecov") list = list.filter(r => !r.m.recovery);
+    if (memberView.sort === "name") list.sort((a, b) => a.u.localeCompare(b.u));
+    else if (memberView.sort === "usage") list.sort((a, b) => b.usage.bytes - a.usage.bytes);
+    else list.sort((a, b) => b.created - a.created);
+
+    const cnt = document.getElementById("suCount");
+    if (cnt) cnt.textContent = list.length + " of " + rows.length + " member(s)";
+    const box = document.getElementById("suRows");
+    if (!box) return;
+    box.innerHTML = list.length ? list.map(r =>
+      '<div class="titem"><span>\\uD83D\\uDC64 <b>' + r.u.replace(/</g, "&lt;") + '</b>' + (r.isSu ? " \\uD83D\\uDEE1" : "") +
+      (r.active ? ' <span class="tag ok">active</span>' : '') +
+      '<br><span style="color:var(--dim);font-size:11px">created ' + (r.created ? new Date(r.created).toLocaleDateString() : "?") +
+      ' \u00b7 ' + r.usage.keys + ' keys / ~' + r.usage.kb + ' KB \u00b7 community: ' + r.comm + '</span></span>' +
+      '<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' +
+      '<button class="btn" style="width:auto;padding:5px 8px" data-open="' + r.u.replace(/"/g, "") + '"' + (r.active ? " disabled" : "") + '>Open</button>' +
+      '<button class="btn" style="width:auto;padding:5px 8px" data-rc="' + r.u.replace(/"/g, "") + '">Code</button>' +
+      (r.isSu ? '' : '<button class="btn" style="width:auto;padding:5px 8px" data-promo="' + r.u.replace(/"/g, "") + '">Promote</button>') +
+      '<button class="btn" style="width:auto;padding:5px 8px" data-del="' + r.u.replace(/"/g, "") + '">Remove</button>' +
+      '</span></div>').join("")
+      : '<p class="desc">No members match the current filter.</p>';
+
+    box.querySelectorAll("[data-open]").forEach(b => b.onclick = () => {
+      localStorage.setItem("aura.currentMember", JSON.stringify(b.dataset.open));
+      log("Switched studio workspace to member " + b.dataset.open, "ok");
+      try { window.parent.location.reload(); } catch(e){ try { window.top.location.reload(); } catch(e2){ alert("Reload the studio to switch member."); } }
+    });
+    box.querySelectorAll("[data-rc]").forEach(b => b.onclick = async () => { await issueRecCode(b.dataset.rc); renderSuper(); });
+    box.querySelectorAll("[data-promo]").forEach(b => b.onclick = () => {
+      const st2 = (() => { try { return JSON.parse(localStorage.getItem("aura.members") || "{}"); } catch(e){ return { members:{} }; } })();
+      if (st2.members[b.dataset.promo]){ st2.members[b.dataset.promo].super = true; localStorage.setItem("aura.members", JSON.stringify(st2)); log(b.dataset.promo + " promoted to superuser", "ok"); renderSuper(); }
+    });
+    box.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+      const u = b.dataset.del;
+      if (u === superName){ alert("The superuser cannot be removed from this screen."); return; }
+      if (!confirm("Remove member \u201c" + u + "\u201d and all their local data? This cannot be undone.")) return;
+      const st2 = (() => { try { return JSON.parse(localStorage.getItem("aura.members") || "{}"); } catch(e){ return { members:{} }; } })();
+      if (st2.members[u]){ delete st2.members[u]; localStorage.setItem("aura.members", JSON.stringify(st2)); }
+      Object.keys(localStorage).filter(k => k.indexOf("aura.m." + u + ".") === 0).forEach(k => localStorage.removeItem(k));
+      log("Member " + u + " removed (with scoped data)", "warn");
+      memberView.q = ""; renderSuper();
+    });
+  }
+
+  apply();
+  const q = document.getElementById("suQ"), f = document.getElementById("suF"), so = document.getElementById("suS");
+  if (q) q.addEventListener("input", () => { memberView.q = q.value; apply(); });
+  if (f) f.addEventListener("change", () => { memberView.filter = f.value; apply(); });
+  if (so) so.addEventListener("change", () => { memberView.sort = so.value; apply(); });
 }
 
 function init(){
