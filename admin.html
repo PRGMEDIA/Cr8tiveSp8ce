@@ -138,7 +138,19 @@ function renderSuper(){
   const tag = document.getElementById("suTag");
   if (tag) tag.className = "tag" + (superName ? " ok" : "");
   if (!names.length){ wrap.innerHTML = '<p class="desc">No members exist yet on this device. Create one in the studio — the first member becomes the superuser.</p>'; return; }
-  if (!superName){ wrap.innerHTML = '<p class="desc">No superuser is designated. The superuser role is assigned to the first member created in the studio.</p>'; return; }
+  if (!superName){
+    // recovery: members created before the role existed have no superuser —
+    // allow designating one so member administration is never locked out
+    wrap.innerHTML = names.map(u =>
+      `<div class="titem"><span>\uD83D\uDC64 <b>${u.replace(/</g, "&lt;")}</b></span>` +
+      `<span><button class="btn" style="width:auto;padding:5px 10px" data-su="${u.replace(/"/g, "")}">\uD83D\uDEE1 Designate as superuser</button></span></div>`
+    ).join("") + '<p class="desc">No superuser is designated yet (members created before the role existed). Pick who should hold the superuser role \u2014 they gain member-account administration.</p>';
+    wrap.querySelectorAll("[data-su]").forEach(b => b.onclick = () => {
+      const st2 = (() => { try { return JSON.parse(localStorage.getItem("aura.members") || "{}"); } catch(e){ return { members:{} }; } })();
+      if (st2.members[b.dataset.su]){ st2.members[b.dataset.su].super = true; localStorage.setItem("aura.members", JSON.stringify(st2)); log(b.dataset.su + " designated as superuser", "ok"); renderSuper(); }
+    });
+    return;
+  }
   wrap.innerHTML = names.map(u => {
     const m = members[u];
     const isSu = !!m.super;
