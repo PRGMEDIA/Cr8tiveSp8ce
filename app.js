@@ -203,6 +203,7 @@ function showMemberGate(after){
     ${names.map(n => `<button class="prop-btn" data-member="${esc(n)}">\uD83D\uDC64 ${esc(n)}</button>`).join("")}
     <div class="m-row"><input id="mUser" placeholder="member ID" autocomplete="off" spellcheck="false"></div>
     <div class="m-row"><input id="mPass" type="password" placeholder="password"></div>
+    <div class="m-row"><input id="mPhone" placeholder="Phone (optional — for new members)" autocomplete="tel"></div>
     <div class="m-actions" style="flex-wrap:wrap">
       <button class="abtn ghost" id="mNew" style="margin-right:auto">\u2795 Create member</button>
       <button class="abtn ghost" id="mGuest">Continue as guest</button>
@@ -215,8 +216,11 @@ function showMemberGate(after){
   // members created after the modal opened)
   const signIn = async () => {
     const u = ($("#mUser").value || "").trim(), pw = $("#mPass").value || "";
-    const rec = getMembers().members[u];
-    if (!rec){ toast("Unknown member ID \u2014 create one first"); return; }
+    const store = getMembers();
+    // case-insensitive lookup so "Villa" and "villa" resolve to the same member
+    const actual = Object.keys(store.members).find(x => x.toLowerCase() === u.toLowerCase());
+    if (!actual){ toast("Unknown member ID \u2014 create one first"); return; }
+    const rec = store.members[actual];
     const h = await hashPassword(rec.salt, pw);
     if (h !== rec.hash){ toast("Wrong password"); return; }
     done(actual);
@@ -230,10 +234,14 @@ function showMemberGate(after){
     if (!/^\S{2,24}$/.test(u)){ toast("Member ID: 2\u201324 characters, no spaces \u2014 special characters allowed"); return; }
     if (pw.length < 4){ toast("Password: at least 4 characters"); return; }
     const st = getMembers();
-    if (st.members[u]){ toast("That member ID already exists"); return; }
+    const ph = (($("#mPhone") || {}).value || "");
+    // case-insensitive duplicate check — "Villa" vs "villa" is the same member
+    if (Object.keys(st.members).find(x => x.toLowerCase() === u.toLowerCase())){ toast("That member ID already exists"); return; }
     const salt = uid() + uid();
     // the first member created on a device becomes the superuser (admin role)
     st.members[u] = { salt, hash: await hashPassword(salt, pw), created: Date.now(), super: Object.keys(st.members).length === 0 };
+    // optional phone captured at creation (Phase III requirement)
+    if (ph.trim()) st.members[u].phone = ph.trim();
     // password recovery code (shown ONCE, stored hashed) — Phase III item I-021
     const rc = genRecoveryCode();
     st.members[u].recovery = { hash: await hashPassword("rc:" + u, normCode(rc)), created: Date.now() };
