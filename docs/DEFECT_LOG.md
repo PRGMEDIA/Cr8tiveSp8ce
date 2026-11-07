@@ -206,3 +206,32 @@
 - **Mean time to fix (Phase 3):** same-session for I-021/I-022/I-023
 - **Regression suite at audit close:** 40+ checks (sync + async behavioral), all green locally; CI green on last verified push
 - **Recurrence rate:** 0 — no defect has recurred after its prevention gate was added
+
+---
+
+## Phase III continued — session 2026-11-07
+
+### I-027 · Member sign-in crashed on every attempt (ReferenceError) — ESCAPED
+- **Date/Phase:** 2026-11-07 · Phase 3 · **Severity:** Critical
+- **Description:** A partial edit to the `signIn` handler referenced a variable `actual` that was no longer in scope (the defining lookup had been reverted by ENV-1). Every sign-in attempt threw `ReferenceError: actual is not defined`, blocking all member access.
+- **Root cause:** Partial-edit + external-revert race (ENV-1): the lookup defining `actual` was reverted while the lines consuming it survived.
+- **Resolution:** Lookup restored (case-insensitive, so `Villa`/`villa` resolve to one member) and committed as `a4dee3b` with a syntax gate already in CI (prevention from I-003) plus behavioral member checks in the regression suite.
+- **Status:** CLOSED.
+
+### I-028 · Phone field displayed but never stored
+- **Date/Phase:** 2026-11-07 · Phase 3 · **Severity:** Medium
+- **Description:** The Phase III "optional phone at member sign-in" change shipped the `#mPhone` input in the gate modal, but the create-member handler never read it — the field was dead UI and no member record carried a phone.
+- **Root cause:** HTML added without wiring the handler (incomplete change, same session as I-027).
+- **Resolution:** `mNew` now reads `#mPhone` and stores `phone` on the member record when non-empty. Committed with I-027.
+- **Status:** CLOSED.
+
+### I-029 · Duplicate-member check was case-sensitive
+- **Date/Phase:** 2026-11-07 · Phase 3 · **Severity:** Low
+- **Description:** Creating `villa` when `Villa` existed succeeded, producing two keys that the case-insensitive sign-in lookup would then resolve ambiguously.
+- **Resolution:** Duplicate check is now case-insensitive, consistent with sign-in. Committed with I-027.
+- **Status:** CLOSED.
+
+### Metrics update (2026-11-07)
+- **Defects total:** 20 code defects + 2 infra incidents + 1 environment hazard
+- **Escaped to production:** 3 (I-003, I-018, I-027) — all static/scope-analysis or edit-race gaps; CI syntax gate + behavioral member suite now cover all three classes
+- **Regression suite:** 45/45 PASS at commit `a4dee3b`
