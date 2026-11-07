@@ -304,7 +304,7 @@ function init(){
     if (dot) dot.innerHTML = `<img src="${S3_LOGO_DATAURL}" alt="S3" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:9px">`;
   }
   renderSuper();
-  const appVer = localStorage.getItem(LS.appVer) || "2.4.0";
+  const appVer = localStorage.getItem(LS.appVer) || "3.1.1";
   $("#stVer").textContent = appVer;
   $("#stBuiltin").textContent = "55 templates (10 categories)";
   $("#stSource").textContent = localStorage.getItem(LS.updateUrl) || "local file (aura-update.json)";

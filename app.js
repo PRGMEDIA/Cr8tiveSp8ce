@@ -219,7 +219,8 @@ function showMemberGate(after){
     if (!rec){ toast("Unknown member ID \u2014 create one first"); return; }
     const h = await hashPassword(rec.salt, pw);
     if (h !== rec.hash){ toast("Wrong password"); return; }
-    done(u);
+    done(actual);
+    if (!rec.ipAcknowledged) showIpAcknowledgment(actual, after);
   };
   $("#mIn").onclick = signIn;
   ["mUser", "mPass"].forEach(id => $("#" + id).addEventListener("keydown", (e) => { if (e.key === "Enter") signIn(); }));
@@ -1832,7 +1833,7 @@ function showAiCloudSettings(){
 function applyAppBranding(){
   if (typeof S3_LOGO_DATAURL === "undefined") return;
   const dot = document.querySelector(".brand-dot");
-  if (dot) dot.innerHTML = `<img src="${S3_LOGO_DATAURL}" alt="S3 Production Publishing" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">`;
+  if (dot) dot.innerHTML = `<img src="${S3_LOGO_DATAURL}" alt="VMSB LLP" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">`;
   const fav = document.querySelector('link[rel="icon"]');
   if (fav) fav.href = S3_LOGO_DATAURL;
 }
@@ -2884,7 +2885,7 @@ function showCommunityRepo(){
       : tab === "animated" ? "No animated assets yet — generate one with Photo → Video."
       : "No images yet — publish from the Media Library (🌐 button).");
   showModal('<h3>🌐 Community repository — "created by u"</h3>' +
-    '<p>Shared by <b>all members</b> — every item credited to its maker. Shared assets are name-attributed and copyright-protected. Royalties accrue through the S³ Production Publishing house. Content stored on the Oracle database remains strictly your property.' +
+    '<p>Shared by <b>all members</b> — every item credited to its maker. Shared assets are name-attributed and copyright-protected. Royalties accrue through the VMSB LLP house. Content stored on the Oracle database remains strictly your property. *Rules and regulations apply.' +
     (su ? ' You have <b>superuser</b> moderation rights.' : '') + '</p>' +
     '<div class="pj-tabs">' +
     '<button data-folder="images" class="' + (tab === "images" ? "on" : "") + '">🖼 Images (' + groups.image.length + ')</button>' +
