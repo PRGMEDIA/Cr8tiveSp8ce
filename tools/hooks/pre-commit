@@ -1,0 +1,73 @@
+#!/bin/sh
+# ============================================================
+# pre-commit — blocks secrets & wallet files from being committed
+# Enforces SW-GIT-001, SW-GIT-002, SW-GIT-003 of
+# docs/SECRET_WALLET_SECURITY_REQUIREMENTS.md
+#
+# Installed via:  git config core.hooksPath tools/hooks
+# Bypass (emergency only): git commit --no-verify
+# ============================================================
+
+fail=0
+
+# --- 1. Wallet files must never be committed (SW-GIT-001/002) ---
+for f in $(git diff --cached --name-only); do
+  case "$f" in
+    oracle-wallet/*)
+      case "$f" in
+        oracle-wallet/.gitignore|oracle-wallet/.htaccess) ;;
+        *)
+          echo "BLOCKED (SW-GIT-001): wallet file staged: $f" >&2
+          fail=1 ;;
+      esac ;;
+    *cwallet.sso|*ewallet.pem|*keystore.jks|*tnsnames.ora|*sqlnet.ora|*ojdbc.properties)
+      echo "BLOCKED (SW-GIT-002): wallet-related file staged: $f" >&2
+      fail=1 ;;
+    */.submissions-remote|.submissions-remote)
+      echo "BLOCKED (SW-GIT-002): GitHub token file staged: $f" >&2
+      fail=1 ;;
+    */oracle-failure-log.jsonl|oracle-failure-log.jsonl)
+      echo "BLOCKED (SW-GIT-003): local Oracle failure queue staged: $f" >&2
+      fail=1 ;;
+  esac
+done
+
+# --- 2. GitHub token patterns anywhere in staged content (SW-GIT-002) ---
+if git diff --cached -U0 | grep -InE 'gh[pousr]_[A-Za-z0-9]{30,60}' >/dev/null 2>&1; then
+  echo "BLOCKED (SW-GIT-002): GitHub token pattern found in staged changes:" >&2
+  git diff --cached -U0 | grep -InE 'gh[pousr]_[A-Za-z0-9]{30,60}' | sed 's/gh[pousr]_[A-Za-z0-9]\{30,60\}/gh****REDACTED/' >&2
+  fail=1
+fi
+
+# --- 3. Real passwords in shared config files (SW-GIT-003) ---
+check_no_real_secret () {
+  file="$1"; const="$2"
+  if git diff --cached --name-only | grep -qE "(^|/)$file\$"; then
+    if git show ":$file" 2>/dev/null | grep -E "const $const *=" | grep -vq 'CHANGE_ME'; then
+      echo "BLOCKED (SW-GIT-003): real value staged for $const in $file" >&2
+      echo "         Keep the placeholder in git; put the real value only on the server." >&2
+      fail=1
+    fi
+  fi
+}
+check_no_real_secret "mail-config.php"  "SMTP_PASS"
+check_no_real_secret "oracle-config.php" "ORACLE_PASS"
+
+# --- 4. Generically catch password-looking constants in any staged php file ---
+if git diff --cached -U0 | grep -InE "^\+.*(PASS|PASSWORD|TOKEN|SECRET)['\"]?\s*(=|=>)\s*['\"][^'\"]{8,}" \
+   | grep -viE "CHANGE_ME|placeholder|example|password_hash|password_verify|password_needs_rehash|oci_pass|\\\$|PASSWD_FILE" \
+   >/dev/null 2>&1; then
+  echo "BLOCKED (SW-GIT-002): possible hardcoded secret in staged PHP changes:" >&2
+  git diff --cached -U0 | grep -InE "^\+.*(PASS|PASSWORD|TOKEN|SECRET)['\"]?\s*(=|=>)\s*['\"][^'\"]{8,}" \
+    | grep -viE "CHANGE_ME|placeholder|example|password_hash|password_verify|password_needs_rehash|oci_pass|\\\$" \
+    | sed -E "s#['\"][^'\"]{8,}['\"]#'***REDACTED***'#g" >&2
+  fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "" >&2
+  echo "Commit rejected by secret-scan pre-commit hook (docs/SECRET_WALLET_SECURITY_REQUIREMENTS.md)." >&2
+  echo "Remove the offending content or stage the file with the placeholder value instead." >&2
+fi
+
+exit $fail
