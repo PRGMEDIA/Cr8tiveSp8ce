@@ -1875,7 +1875,7 @@ function showWatermarkModal(){
       <input id="wmText" value="${esc(wm.text || "")}" placeholder="CONFIDENTIAL"></div>
     <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Logo</span>
       <select id="wmLogo" class="prop-select">
-        <option value="s3" ${wm.logo==="s3"?"selected":""}>S\u00b3 Production Publishing logo (built-in)</option>
+        <option value="s3" ${wm.logo==="s3"?"selected":""}>S3 PRGDUCTION & PUBLISHING HOUSE logo (built-in)</option>
         ${b.logo?`<option value="brand" ${wm.logo==="brand"?"selected":""}>Brand Kit logo</option>`:""}
         <option value="none" ${(!wm.logo || wm.logo==="none")?"selected":""}>Text only</option>
       </select></div>
@@ -2885,7 +2885,7 @@ function showCommunityRepo(){
       : tab === "animated" ? "No animated assets yet — generate one with Photo → Video."
       : "No images yet — publish from the Media Library (🌐 button).");
   showModal('<h3>🌐 Community repository — "created by u"</h3>' +
-    '<p>Shared by <b>all members</b> — every item credited to its maker. Shared assets are name-attributed and copyright-protected. Royalties accrue through the VMSB LLP house. Content stored on the Oracle database remains strictly your property. *Rules and regulations apply.' +
+    '<p>Shared by <b>all members</b> — every item credited to its maker. Shared assets are name-attributed and copyright-protected. Royalties accrue through VMSB LLP. Content stored on the Oracle database remains strictly your property. *Rules and regulations apply.' +
     (su ? ' You have <b>superuser</b> moderation rights.' : '') + '</p>' +
     '<div class="pj-tabs">' +
     '<button data-folder="images" class="' + (tab === "images" ? "on" : "") + '">🖼 Images (' + groups.image.length + ')</button>' +
