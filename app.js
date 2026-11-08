@@ -4,7 +4,7 @@
    ============================================================ */
 "use strict";
 
-const APP_VERSION = "3.1.1";
+const APP_VERSION = "3.3.0";
 const LS = {
   autosave: "aura.autosave",
   customTpl: "aura.templates.custom",

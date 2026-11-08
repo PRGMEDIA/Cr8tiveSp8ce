@@ -35,6 +35,7 @@ on:
       - "email-submittal/**"
       - "Dockerfile"
       - "nginx.conf"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch: {}   # manual "Run workflow" button in the Actions tab
 
 concurrency:
