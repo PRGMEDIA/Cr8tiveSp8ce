@@ -1,13 +1,14 @@
 # Aura Studio — build & publish container image to GitHub Container Registry (ghcr.io)
 #
 # ZERO extra secrets needed — the built-in GITHUB_TOKEN handles authentication.
-# The image lands at: ghcr.io/prgmedia/aura-studio
+# The image name is derived from github.repository, lowercased at runtime, so
+# repository renames never break the tag again (I-031: docker requires lowercase).
 #
 # To pull locally:
-#   docker pull ghcr.io/prgmedia/aura-studio:latest
+#   docker pull ghcr.io/prgmedia/cr8tivesp8ce:latest
 #
 # To run:
-#   docker run -p 8080:80 ghcr.io/prgmedia/aura-studio:latest
+#   docker run -p 8080:80 ghcr.io/prgmedia/cr8tivesp8ce:latest
 
 name: Build & publish container (GHCR)
 
@@ -26,19 +27,27 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Compute lowercase image name (rename-safe)
+        id: img
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Build image
+      - name: Build image (clean build, no cache)
         run: |
-          docker build -t ghcr.io/prgmedia/aura-studio:${{ github.sha }} .
-          docker tag ghcr.io/prgmedia/aura-studio:${{ github.sha }} \
-                     ghcr.io/prgmedia/aura-studio:latest
+          IMAGE=${{ steps.img.outputs.name }}
+          docker build --no-cache -t ${IMAGE}:${{ github.sha }} .
+          docker tag ${IMAGE}:${{ github.sha }} ${IMAGE}:latest
+          docker tag ${IMAGE}:${{ github.sha }} ${IMAGE}:v3.3.0
+          echo "Built ${IMAGE}"
 
       - name: Push image
         run: |
-          docker push ghcr.io/prgmedia/aura-studio:${{ github.sha }}
-          docker push ghcr.io/prgmedia/aura-studio:latest
+          IMAGE=${{ steps.img.outputs.name }}
+          docker push ${IMAGE}:${{ github.sha }}
+          docker push ${IMAGE}:latest
+          docker push ${IMAGE}:v3.3.0
 
       - name: Deploy to VPS (optional — requires VPS secrets)
         if: vars.VPS_DEPLOY_ENABLED == 'true'
