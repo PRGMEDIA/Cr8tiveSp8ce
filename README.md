@@ -2,6 +2,8 @@
 
 A Canva-style design studio that runs **entirely in your browser** — no server, no install, no internet required. Just open `index.html`.
 
+> Internal documentation (design docs, defect log, deployment records) lives in the private repository **`Cr8tiveSp8ce-Private`**.
+
 ## Starting the app
 - Double-click **`index.html`** (or open it in Chrome / Edge / Firefox).
 - Everything runs locally. Designs autosave to your browser.
