@@ -31,6 +31,10 @@ on:
       - "templates.js"
       - "docker-compose*.yml"
       - "docs/migrations/**"
+      - "sanctuary/**"
+      - "email-submittal/**"
+      - "Dockerfile"
+      - "nginx.conf"
   workflow_dispatch: {}   # manual "Run workflow" button in the Actions tab
 
 concurrency:
