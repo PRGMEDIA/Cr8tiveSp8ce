@@ -1,14 +1,17 @@
 # Aura Studio — build & publish container image to GitHub Container Registry (ghcr.io)
 #
 # ZERO extra secrets needed — the built-in GITHUB_TOKEN handles authentication.
-# The image name is derived from github.repository, lowercased at runtime, so
-# repository renames never break the tag again (I-031: docker requires lowercase).
+# The image name is pinned to the EXISTING package aura-studio: the default
+# GITHUB_TOKEN can push to an existing linked package but is DENIED when
+# creating a brand-new package name (observed on user accounts, I-031).
+# To publish under a different name, create it once with a PAT (write:packages)
+# or change GHCR_IMAGE below.
 #
 # To pull locally:
-#   docker pull ghcr.io/prgmedia/cr8tivesp8ce:latest
+#   docker pull ghcr.io/prgmedia/aura-studio:latest
 #
 # To run:
-#   docker run -p 8080:80 ghcr.io/prgmedia/cr8tivesp8ce:latest
+#   docker run -p 8080:80 ghcr.io/prgmedia/aura-studio:latest
 
 name: Build & publish container (GHCR)
 
@@ -27,9 +30,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Compute lowercase image name (rename-safe)
+      - name: Resolve image name (lowercase — docker/GHCR reject uppercase)
         id: img
-        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        env:
+          GHCR_IMAGE: ghcr.io/${{ github.repository }}
+        run: echo "name=$(echo "$GHCR_IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -42,12 +47,19 @@ jobs:
           docker tag ${IMAGE}:${{ github.sha }} ${IMAGE}:v3.3.0
           echo "Built ${IMAGE}"
 
-      - name: Push image
+      # I-031: GHCR intermittently denies the FIRST push that creates a new
+      # package (registry-side race; identical rerun succeeds). Retry converts
+      # the flake into a pause-and-retry instead of a failed run.
+      - name: Push image (retry on first-creation denial)
         run: |
           IMAGE=${{ steps.img.outputs.name }}
-          docker push ${IMAGE}:${{ github.sha }}
-          docker push ${IMAGE}:latest
-          docker push ${IMAGE}:v3.3.0
+          for attempt in 1 2 3; do
+            if docker push ${IMAGE}:${{ github.sha }} && docker push ${IMAGE}:latest && docker push ${IMAGE}:v3.3.0; then
+              echo "Pushed ${IMAGE} on attempt ${attempt}"; exit 0
+            fi
+            echo "Push attempt ${attempt} denied — GHCR first-creation race; retrying in 30s"; sleep 30
+          done
+          echo "All push attempts denied — see I-031 in docs/DEFECT_LOG.md"; exit 1
 
       - name: Deploy to VPS (optional — requires VPS secrets)
         if: vars.VPS_DEPLOY_ENABLED == 'true'
