@@ -1,0 +1,62 @@
+#!/bin/sh
+# pre-push safety guard (SW-GIT-003) — S3 PRGDUCTION & PUBLISHING HOUSE (VMSB LLP)
+#
+# Runs before every push (core.hooksPath=tools/hooks). Blocks:
+#   1. Pushes to remotes outside the allowlist (typos, stale push-URLs)
+#   2. History-rewriting (non-fast-forward) pushes to the PUBLIC repo
+#      — overrides require AURA_ALLOW_FORCE_PUBLIC=1 with intent
+#   3. Any push whose tree would (re)introduce docs/ into the PUBLIC repo
+#      (internal documentation lives in the private repo)
+#
+# Allowlist — update both entries together if a repo is ever renamed:
+#   public : https://github.com/PRGMEDIA/Cr8tiveSp8ce
+#   private: https://github.com/PRGMEDIA/Cr8tiveSp8ce-Private
+
+remote="$1"; url="$2"
+
+norm() { printf '%s' "$1" | sed -E 's#^git@github\.com:#https://github.com/#; s#^ssh://git@#https://#; s#\.git$##' | tr '[:upper:]' '[:lower:]'; }
+
+PUBLIC="https://github.com/prgmedia/cr8tivesp8ce"
+PRIVATE="https://github.com/prgmedia/cr8tivesp8ce-private"
+nurl=$(norm "$url")
+
+case "$nurl" in
+  "$PUBLIC"|"$PRIVATE") ;;                                  # allowlisted — continue
+  *)
+    echo "BLOCKED (SW-GIT-003): push target is not in the remote allowlist." >&2
+    echo "  target : $url" >&2
+    echo "  allowed: $PUBLIC" >&2
+    echo "  allowed: $PRIVATE" >&2
+    echo "  If this is a legitimate new remote, update tools/hooks/pre-push first." >&2
+    exit 1 ;;
+esac
+
+is_public=0; [ "$nurl" = "$PUBLIC" ] && is_public=1
+
+while read local_ref local_sha remote_ref remote_sha; do
+  [ "$local_ref" = "(delete)" ] && continue
+  [ -z "$local_sha" ] && continue
+
+  # 2) force-push policy
+  if [ "$remote_sha" != "0000000000000000000000000000000000000000" ] && [ -n "$remote_sha" ]; then
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+      if [ "$is_public" = "1" ] && [ -z "$AURA_ALLOW_FORCE_PUBLIC" ]; then
+        echo "BLOCKED (SW-GIT-003): history-rewriting push to the PUBLIC repo ($local_ref)." >&2
+        echo "  Rewrites belong in the private repo." >&2
+        echo "  If you truly intend to rewrite public history, re-run with AURA_ALLOW_FORCE_PUBLIC=1." >&2
+        exit 1
+      fi
+      [ "$is_public" = "1" ] && echo "SW-GIT-003: deliberate public history rewrite (AURA_ALLOW_FORCE_PUBLIC set) — permitted." >&2
+    fi
+  fi
+
+  # 3) docs/ path guard for the public repo
+  if [ "$is_public" = "1" ]; then
+    if git ls-tree -r --name-only "$local_sha" 2>/dev/null | grep -q '^docs/'; then
+      echo "BLOCKED (SW-GIT-003): tree of $local_ref contains docs/ — internal docs live in Cr8tiveSp8ce-Private." >&2
+      exit 1
+    fi
+  fi
+done
+
+exit 0
