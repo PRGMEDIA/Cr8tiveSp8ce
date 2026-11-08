@@ -3,8 +3,10 @@ oracle-config.php
 oracle-failure-log.php
 oracle-test.php
 oracle-wallet/
-sanctuary/
-email-submittal/
+sanctuary/**/mail-config.php
+sanctuary/**/oracle-config.php
+sanctuary/**/oracle-wallet/
+email-submittal/mail-config.php
 *.key
 *.pem
 .env

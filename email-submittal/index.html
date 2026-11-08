@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit a Manuscript — Villashurielle</title>
+<style>
+  :root {
+    --bg: #f5f2ee;
+    --card: #ffffff;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --accent: #7c3aed;
+    --accent-dark: #5b21b6;
+    --ok: #15803d;
+    --err: #b91c1c;
+    --border: #e5e1da;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    background: var(--card);
+    width: 100%;
+    max-width: 640px;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08);
+    padding: 36px;
+    border: 1px solid var(--border);
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 6px; }
+  p.sub { color: var(--muted); margin-bottom: 24px; font-size: .95rem; }
+  label { display: block; font-weight: 600; font-size: .9rem; margin: 16px 0 6px; }
+  input[type="text"], input[type="email"], select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: #fafaf8;
+    transition: border-color .15s;
+  }
+  select { cursor: pointer; appearance: auto; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { min-height: 180px; resize: vertical; }
+  .counter {
+    font-size: .8rem;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 4px;
+  }
+  .counter.warn { color: #b45309; }
+  .counter.max { color: var(--err); font-weight: 600; }
+  .file-drop {
+    margin-top: 6px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+    cursor: pointer;
+    background: #fafaf8;
+    transition: border-color .15s, background .15s;
+  }
+  .file-drop.dragover { border-color: var(--accent); background: #f3effc; }
+  .file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: .85rem;
+    background: #f3effc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: none;
+  }
+  .file-info .remove { color: var(--err); cursor: pointer; font-weight: 600; border: none; background: none; }
+  .btn {
+    display: block;
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn:hover { background: var(--accent-dark); }
+  .btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+  .msg { margin-top: 16px; padding: 12px 14px; border-radius: 8px; font-size: .92rem; display: none; }
+  .msg.ok { background: #ecfdf5; color: var(--ok); border: 1px solid #bbf7d0; display: block; }
+  .msg.err { background: #fef2f2; color: var(--err); border: 1px solid #fecaca; display: block; }
+  .field-err { color: var(--err); font-size: .8rem; margin-top: 4px; display: none; }
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 520px) { .card { padding: 24px 18px; } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Submit a Manuscript</h1>
+  <p class="sub">Tell us about your manuscript. You may include a synopsis or details up to 2,000 characters and/or attach one file (PDF, image, or document, max 10&nbsp;MB).</p>
+
+  <form id="manuscriptForm" action="send-mail.php" method="POST" enctype="multipart/form-data" novalidate>
+    <label for="name">Your Name *</label>
+    <input type="text" id="name" name="name" maxlength="100" required autocomplete="name">
+    <div class="field-err" id="nameErr">Please enter your name.</div>
+
+    <label for="email">Your Email *</label>
+    <input type="email" id="email" name="email" maxlength="150" required autocomplete="email">
+    <div class="field-err" id="emailErr">Please enter a valid email address.</div>
+
+    <label for="case_type">Manuscript Type *</label>
+    <select id="case_type" name="case_type" required>
+      <option value="">— Select one —</option>
+      <option value="Fiction">Fiction</option>
+      <option value="Non-Fiction">Non-Fiction</option>
+      <option value="Memoir / Biography">Memoir / Biography</option>
+      <option value="Poetry">Poetry</option>
+      <option value="Short Story Collection">Short Story Collection</option>
+      <option value="Screenplay / Stage Play">Screenplay / Stage Play</option>
+      <option value="Children's / Middle Grade">Children's / Middle Grade</option>
+      <option value="Young Adult">Young Adult</option>
+      <option value="Academic / Educational">Academic / Educational</option>
+      <option value="Devotional / Inspirational">Devotional / Inspirational</option>
+      <option value="Other">Other</option>
+    </select>
+    <div class="field-err" id="caseTypeErr">Please select your manuscript type.</div>
+
+    <label for="subject">Subject *</label>
+    <input type="text" id="subject" name="subject" maxlength="150" required placeholder="Title or brief summary of your manuscript">
+    <div class="field-err" id="subjectErr">Please enter a subject.</div>
+
+    <label for="message">Manuscript Details *</label>
+    <textarea id="message" name="message" maxlength="2000" required
+      placeholder="Describe your manuscript in detail (2,000 characters maximum)..."></textarea>
+    <div class="counter" id="counter">0 / 2000 characters</div>
+    <div class="field-err" id="messageErr">Please describe your manuscript (at least 10 characters).</div>
+
+    <label for="attachment">Attach a File (optional)</label>
+    <div class="file-drop" id="fileDrop" tabindex="0" role="button" aria-label="Choose or drop a file">
+      📎 Click to choose a file, or drag &amp; drop it here<br>
+      <small>PDF, DOC/DOCX, TXT, JPG, PNG, GIF &mdash; up to 10 MB</small>
+    </div>
+    <input type="file" id="attachment" name="attachment" hidden
+           accept=".pdf,.doc,.docx,.txt,.rtf,.jpg,.jpeg,.png,.gif">
+    <div class="file-info" id="fileInfo">
+      <span id="fileName"></span>
+      <button type="button" class="remove" id="removeFile">Remove</button>
+    </div>
+    <div class="field-err" id="fileErr">File must be 10 MB or smaller and an allowed type.</div>
+
+    <!-- Simple spam honeypot: bots fill hidden fields, humans don't see them -->
+    <input type="text" name="website_hp" id="website_hp" style="display:none" tabindex="-1" autocomplete="off">
+
+    <button type="submit" class="btn" id="submitBtn">Send Submission</button>
+    <div class="msg" id="formMsg" role="status" aria-live="polite"></div>
+  </form>
+
+  <p style="text-align:center;margin-top:18px;font-size:.88rem;color:#6b7280;">
+    Sanctuary Magazine member? <a href="../sanctuary/sanctuarymagazine/login.php" style="color:#5b21b6;font-weight:600;">Log in here</a>
+  </p>
+</div>
+
+<script>
+(function () {
+  var MAX_CHARS = 2000;
+  var MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+  var ALLOWED = ['pdf','doc','docx','txt','rtf','jpg','jpeg','png','gif'];
+
+  var form      = document.getElementById('manuscriptForm');
+  var message   = document.getElementById('message');
+  var counter   = document.getElementById('counter');
+  var fileInput = document.getElementById('attachment');
+  var dropZone  = document.getElementById('fileDrop');
+  var fileInfo  = document.getElementById('fileInfo');
+  var fileName  = document.getElementById('fileName');
+  var removeBtn = document.getElementById('removeFile');
+  var fileErr   = document.getElementById('fileErr');
+  var caseType = document.getElementById('case_type');
+  var formMsg   = document.getElementById('formMsg');
+  var submitBtn = document.getElementById('submitBtn');
+
+  /* ---- Character counter (2000 max) ---- */
+  function updateCounter() {
+    var len = message.value.length;
+    counter.textContent = len + ' / ' + MAX_CHARS + ' characters';
+    counter.className = 'counter' + (len >= MAX_CHARS ? ' max' : (len > MAX_CHARS * 0.9 ? ' warn' : ''));
+    if (len > MAX_CHARS) message.value = message.value.slice(0, MAX_CHARS);
+  }
+  message.addEventListener('input', updateCounter);
+  updateCounter();
+
+  /* ---- File attachment ---- */
+  function validateFile(file) {
+    if (!file) return null;
+    var ext = file.name.split('.').pop().toLowerCase();
+    if (ALLOWED.indexOf(ext) === -1) return 'File must be 10 MB or smaller and an allowed type.';
+    if (file.size > MAX_BYTES) return 'File must be 10 MB or smaller and an allowed type.';
+    return null;
+  }
+  function setFile(file) {
+    hideErr(fileErr);
+    var err = validateFile(file);
+    if (err) { showErr(fileErr); fileInput.value = ''; fileInfo.style.display = 'none'; return; }
+    fileInput.files = file ? createDataTransfer([file]).files : fileInput.files;
+    fileName.textContent = '📄 ' + file.name + ' (' + formatSize(file.size) + ')';
+    fileInfo.style.display = 'flex';
+  }
+  function createDataTransfer(files) {
+    var dt = new DataTransfer();
+    files.forEach(function (f) { dt.items.add(f); });
+    return dt;
+  }
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  dropZone.addEventListener('click', function () { fileInput.click(); });
+  dropZone.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+  dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('dragover'); });
+  dropZone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files.length) setFile(fileInput.files[0]);
+  });
+  removeBtn.addEventListener('click', function () {
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+  });
+
+  /* ---- Field validation helpers ---- */
+  function showErr(el) { el.style.display = 'block'; }
+  function hideErr(el) { el.style.display = 'none'; }
+  function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  function validate() {
+    var ok = true;
+    var name = document.getElementById('name');
+    var email = document.getElementById('email');
+    var subject = document.getElementById('subject');
+
+    hideErr(document.getElementById('nameErr'));
+    hideErr(document.getElementById('emailErr'));
+    hideErr(document.getElementById('caseTypeErr'));
+    hideErr(document.getElementById('subjectErr'));
+    hideErr(document.getElementById('messageErr'));
+
+    if (!name.value.trim()) { showErr(document.getElementById('nameErr')); ok = false; }
+    if (!caseType.value) { showErr(document.getElementById('caseTypeErr')); ok = false; }
+    if (!validEmail(email.value.trim())) { showErr(document.getElementById('emailErr')); ok = false; }
+    if (!subject.value.trim()) { showErr(document.getElementById('subjectErr')); ok = false; }
+    if (message.value.trim().length < 10 || message.value.length > MAX_CHARS) {
+      showErr(document.getElementById('messageErr')); ok = false;
+    }
+    return ok;
+  }
+
+  /* ---- Submit ---- */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    hideMsg();
+
+    if (!validate()) {
+      showMsg('Please fix the highlighted fields and try again.', 'err');
+      return;
+    }
+
+    var data = new FormData(form);
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span>Sending...';
+
+    fetch(form.action, { method: 'POST', body: data })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res.ok) {
+          form.reset();
+          updateCounter();
+          fileInfo.style.display = 'none';
+          counter.textContent = '0 / 2000 characters';
+          showMsg('✅ ' + (res.message || 'Your submission was sent. We will respond to your email shortly.'), 'ok');
+        } else {
+          showMsg('❌ ' + (res.message || 'Something went wrong. Please try again.'), 'err');
+        }
+      })
+      .catch(function () {
+        showMsg('❌ Could not reach the server. Please try again.', 'err');
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Submission';
+      });
+  });
+
+  function showMsg(text, cls) { formMsg.textContent = text; formMsg.className = 'msg ' + cls; }
+  function hideMsg() { formMsg.className = 'msg'; formMsg.textContent = ''; }
+})();
+</script>
+</body>
+</html>
