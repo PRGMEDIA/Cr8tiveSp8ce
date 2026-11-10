@@ -260,8 +260,8 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
       <div class="dropdown-menu" id="menuProject">
         <button data-act="save-local">💾 Save to browser</button>
         <button data-act="open-local">📂 Open saved design…</button>
-        <button data-act="export-json">⬇ Export project (.json)</button>
-        <button data-act="import-json">⬆ Import project (.json)</button>
+        <button data-act="export-json">💾 Export project file (.aura.json — reimportable, not a document)</button>
+        <button data-act="import-json">📂 Import project file (.aura.json)</button>
         <hr>
         <button data-act="new-blank">✨ New blank design</button>
         <button data-act="library">📁 Project library…</button>
@@ -2658,7 +2658,7 @@ function bindTopbar(){
     $$(".dropdown").forEach(d=>d.classList.remove("open"));
     if (act==="save-local"){ if(project){ saveAutosave(); toast("Saved to browser storage"); } }
     if (act==="open-local") showOpenSaved();
-    if (act==="export-json"){ downloadBlob(JSON.stringify(project,null,2), (project.name||"design")+".aura.json", "application/json"); }
+    if (act==="export-json"){ downloadBlob(JSON.stringify(project,null,2), baseName()+".aura.json", "application/json"); toast("Project file (.aura.json) saved — reopen it via Import project. It is not a document format."); }
     if (act==="import-json"){ $("#fileJson").onchange = ()=>{ const f=$("#fileJson").files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ try{ project = hydrate(JSON.parse(rd.result)); curPage=0; undoStack=[]; openEditor(); saveAutosave(); toast("Project imported"); }catch(err){ toast("Invalid project file"); } }; rd.readAsText(f); $("#fileJson").value=""; }; $("#fileJson").click(); }
     if (act==="new-blank"){ showModal(`<h3>New blank design</h3><div class="m-row"><select id="npPreset">
       <option value="1080x1080">Square — 1080×1080</option><option value="850x1100">Document — 850×1100</option>
@@ -2698,8 +2698,12 @@ function bindTopbar(){
           for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
           pages.push({ jpeg: u8, w: c.width, h: c.height });
         }
-        downloadBlob(new Blob([buildPdf(pages)], { type: "application/pdf" }), baseName() + ".pdf");
-        toast("PDF exported");
+        const pdfBlob = new Blob([buildPdf(pages)], { type: "application/pdf" });
+        // I-033: never hand off a file that is not really a PDF
+        const head = await pdfBlob.slice(0, 5).text();
+        if (!head.startsWith("%PDF")) throw new Error("PDF writer produced invalid output — export aborted");
+        downloadBlob(pdfBlob, baseName() + ".pdf");
+        toast("PDF exported — opens in Acrobat and any PDF reader");
       }
       if (act==="mp4"){
         const mime = pvRecorderMime();
@@ -2737,10 +2741,35 @@ function bindTopbar(){
 
 function baseName(){ return (project.name||"design").replace(/[^\w\- ]+/g,"").trim().replace(/ +/g,"-") || "design"; }
 function pageFile(ext){ return baseName() + "-p" + (curPage+1) + "." + ext; }
+/* I-033: every download must carry the extension that matches its ACTUAL
+   content type. A .json name must never ride on an image/PDF blob — that is
+   how a book-cover export opened as garbage in Acrobat. properName() strips
+   a wrong extension and appends the correct one for the MIME type. */
+function extForMime(mime){
+  const m = (mime || "").toLowerCase();
+  if (m.includes("pdf")) return "pdf";
+  if (m.startsWith("video/")) return m.includes("webm") ? "webm" : "mp4";
+  if (m.startsWith("audio/")) return m.includes("mpeg") ? "mp3" : "wav";
+  if (m.includes("svg")) return "svg";
+  if (m.includes("jpeg") || m.includes("jpg")) return "jpg";
+  if (m.includes("png")) return "png";
+  if (m.includes("gif")) return "gif";
+  if (m.includes("json")) return "aura.json";
+  if (m.includes("zip")) return "zip";
+  if (m.includes("opendocument") || m.includes("oasis")) return "odt";
+  return "";
+}
+function properName(name, mime){
+  const ext = extForMime(mime);
+  if (!ext) return name || "asset";
+  const base = (name || "asset").replace(/\.[A-Za-z0-9.]{1,10}$/u, "");
+  return base + "." + ext;
+}
 function downloadBlob(blob, name, type){
+  const mime = (blob instanceof Blob ? blob.type : type) || "";
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob instanceof Blob ? blob : new Blob([blob], {type}));
-  a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  a.download = properName(name, mime); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
 }
 
 function showOpenSaved(){
@@ -4583,10 +4612,21 @@ function showCommunityRepo(){
       curPageData().elements.push(el); select(el.id); renderBoard(); saveAutosave();
       toast("Inserted from community repository");
     };
+    // I-033: extension always matches the actual content type
     if (dl) dl.onclick = () => {
-      const a = document.createElement("a");
-      a.href = rec.blob ? URL.createObjectURL(rec.blob) : (rec.data || "");
-      a.download = rec.name || "asset"; a.click();
+      if (tab === "templates"){
+        downloadBlob(JSON.stringify(rec.tpl || rec, null, 2), (rec.name || "template") + ".aura.json", "application/json");
+        toast("Template project file (.aura.json) — reopen via Import project");
+        return;
+      }
+      const mime = rec.blob ? rec.blob.type : (((rec.data || "").match(/^data:([^;,]+)/) || [0, ""])[1]);
+      if (rec.blob){ downloadBlob(rec.blob, rec.name || "asset"); return; }
+      if ((rec.data || "").startsWith("data:")){
+        const a = document.createElement("a");            // dataURL: keep href path (a Blob of the string would corrupt the file)
+        a.href = rec.data; a.download = properName(rec.name || "asset", mime); a.click();
+        return;
+      }
+      downloadBlob(rec.data || "", rec.name || "asset", mime);
     };
     if (del) del.onclick = () => { commSave(commAll().filter(m => m.id !== id)); showCommunityRepo(); };
   });

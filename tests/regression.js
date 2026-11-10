@@ -588,6 +588,24 @@ check("23", "Watermark: editor, canvas & SVG renderers wired + embedded logo", (
   return "all three renderers wired; logo embedded (" + (LIB.S3_LOGO_DATAURL.length/1024).toFixed(1) + " KB)";
 });
 
+check("36", "I-033 export integrity: download names always match content type; PDF magic-byte self-check", () => {
+  for (const s of ["function extForMime", "function properName", "a.download = properName(name, mime)",
+                   "head.startsWith(\"%PDF\")", "PDF writer produced invalid output"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  // behavioral: run properName/extForMime in a sandbox
+  const sb = {}; new vm.Script(SRC.app.match(/\/\* I-033[\s\S]*?function downloadBlob[\s\S]*?\n\}/)[0] +
+    "\nthis.extForMime = extForMime; this.properName = properName;").runInNewContext(sb);
+  eq(sb.properName("V1_AURA_TESTCVR_MINDAUTH_PRG.json", "image/png"), "V1_AURA_TESTCVR_MINDAUTH_PRG.png", "json-named image must be renamed");
+  eq(sb.properName("cover.pdf", "application/pdf"), "cover.pdf", "correct pdf name unchanged");
+  eq(sb.properName("cover.aura.json", "application/json"), "cover.aura.json", "project file keeps .aura.json");
+  eq(sb.properName("clip", "video/mp4"), "clip.mp4", "extension appended when missing");
+  eq(sb.properName("song.json", "audio/wav"), "song.wav", "wrong ext replaced by content-type ext");
+  eq(sb.extForMime("application/vnd.oasis.opendocument.text"), "odt", "ODT mapped");
+  const idxHtml = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(idxHtml.includes('reimportable, not a document'), "index.html export-json label must warn it is not a document");
+  return "rename-on-mismatch verified; %PDF guard present; .aura.json labeled as project file";
+});
+
 /* ---------------- report (async-aware) ---------------- */
 const asyncChecks = [
   { id: "31", name: "Password recovery: code verify, wrong code rejected, reset works, old password gone",
