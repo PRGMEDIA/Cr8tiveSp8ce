@@ -201,12 +201,61 @@ tpl("books","Fantasy Book Cover","Ombre white-to-pink, silver glitter, grey drag
    T(60,1090,680,40,"A FANTASY NOVEL",{fs:15,ff:"Arial",c:"#b3557f",al:"center",ls:"3"})
  ]}],"fantasy book cover dragon unicorn ombre pink glitter silver magic");
 
-tpl("books","Chapter Opening Page","Book interior typography",850,1100,[
- {bg:"#fbf8f2",elements:[
-   T(80,110,690,70,"CHAPTER ONE",{fs:24,ff:"Arial",c:"#a89878",al:"center",ls:"8"}),
-   LN(360,220,490,220,{s:"#a89878",sw:1}),
-   T(80,260,690,90,"The Letter",{fs:44,ff:"Georgia, serif",c:"#222",al:"center"}),
-   T(120,420,610,520,"Margaret found the envelope where she always did — wedged between the milk bottles and the morning paper, as if the world were being deliberately ordinary about it.\n\nHer name was written in her father's hand. That was impossible. Her father had been dead for eleven years, and yet there it was, in the looping M she had watched him write a thousand times at this very table.",{fs:18,ff:"Georgia, serif",c:"#333",lh:1.8}),
+/* ---------- fantasy back / spine / full wrap ---------- */
+const FANTASY_FRONT = TEMPLATES[TEMPLATES.length - 1].pages[0].elements;
+
+function barcodeEls(x, y){
+  const els = [R(x, y, 240, 120, {f:"#ffffff"})];
+  let s = 42; const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  let cx = x + 14;
+  while (cx < x + 224){ const w = 1 + Math.floor(rnd()*4); els.push(R(cx, y+10, w, 82, {f:"#141414"})); cx += w + 2 + Math.floor(rnd()*4); }
+  els.push(T(x, y+94, 240, 20, "9 780000 00000 0", {fs:13, ff:"Arial", c:"#141414", al:"center"}));
+  return els;
+}
+
+const FANTASY_SPINE = [
+  {type:"image",x:0,y:0,w:150,h:1200,src:ombreSvg(150,1200,"#ffffff","#ff9fd0"),fit:"cover",radius:0,opacity:1},
+  {type:"image",x:0,y:0,w:150,h:1200,src:glitterSvg(150,1200,40),fit:"cover",radius:0,opacity:1},
+  GL(45,140,60,60,"\u2726",{fs:34,c:"#ffffff"}),
+  T(0,330,150,780,"THE SILVER HORN".split("").join("\n"),{fs:30,ff:"Georgia, serif",fw:"700",c:"#8e2f5d",al:"center",lh:1.0}),
+  GL(45,980,60,60,"\u2726",{fs:34,c:"#ffffff"}),
+  T(0,1120,150,30,"bY V$",{fs:14,ff:"Arial",c:"#b3557f",al:"center"})
+];
+
+const FANTASY_BACK = [
+  {type:"image",x:0,y:0,w:800,h:1200,src:ombreSvg(800,1200,"#ffffff","#ff9fd0"),fit:"cover",radius:0,opacity:1},
+  {type:"image",x:0,y:0,w:800,h:1200,src:glitterSvg(800,1200,110),fit:"cover",radius:0,opacity:1},
+  {type:"image",x:310,y:40,w:180,h:164,src:dragonSvg(),fit:"cover",radius:0,opacity:1},
+  T(80,230,640,110,"WHEN THE LAST DRAGON\nFORGETS ITS FIRE,",{fs:20,ff:"Georgia, serif",fw:"700",c:"#8e2f5d",al:"center",lh:1.4}),
+  T(80,370,640,200,"only the creature nobody believed in can remind the world what it once guarded. Eris, a hornkeeper's daughter, never asked to inherit the silver horn \u2014 the one relic that still hums with unicorn magic.",{fs:18,ff:"Georgia, serif",c:"#6d2a49",lh:1.55}),
+  T(80,585,640,160,"But when the grey dragon Ald\u00EDr lands on her roof, silent and wing-bruised, she learns the horn does not summon dragons. It remembers them.",{fs:18,ff:"Georgia, serif",c:"#6d2a49",lh:1.55}),
+  T(80,760,640,200,"To wake the songs sleeping inside the horn, Eris and Ald\u00EDr must cross the Pink Frostwilds \u2014 and discover why every unicorn vanished on the night the first star went out.",{fs:18,ff:"Georgia, serif",c:"#6d2a49",lh:1.55}),
+  T(80,975,640,40,"\u201CA shimmering debut.\u201D \u2014 The Frostwind Review",{fs:16,ff:"Georgia, serif",it:true,c:"#a34a75",al:"center"})
+].concat(barcodeEls(280, 1030), [
+  T(0,1162,800,28,"S3 PRGDUCTION & PUBLISHING HOUSE \u00B7 VMSB LLP",{fs:12,ff:"Arial",c:"#b3557f",al:"center",ls:"2"})
+]);
+
+function shiftEls(els, dx){ return els.map(e => Object.assign({}, e, {x: e.x + dx})); }
+const FANTASY_WRAP = [].concat(
+  shiftEls(FANTASY_FRONT, 0),
+  shiftEls(FANTASY_SPINE, 800),
+  shiftEls(FANTASY_BACK, 950),
+  [ LN(800,0,800,1200,{s:"#d9b8cd",sw:1}), LN(950,0,950,1200,{s:"#d9b8cd",sw:1}) ]
+);
+
+tpl("books","Fantasy Book Spine","Matching spine \u2014 stacked title, ombre and glitter",150,1200,[
+ {bg:"#ffffff",elements:FANTASY_SPINE}],"fantasy book spine ombre glitter silver stacked");
+tpl("books","Fantasy Book Back Cover","Matching back \u2014 blurb, barcode, publishing house imprint",800,1200,[
+ {bg:"#ffffff",elements:FANTASY_BACK}],"fantasy book back cover blurb barcode ombre glitter publishing");
+tpl("books","Fantasy Book Full Wrap","Front + spine + back, print-ready single sheet",1750,1200,[
+ {bg:"#ffffff",elements:FANTASY_WRAP}],"fantasy book full wrap print front spine back barcode");
+
+tpl("books","Chapter Opening Page","Book interior typography — The Silver Horn",850,1100,[
+ {bg:"#fdf7fb",elements:[
+   T(80,110,690,70,"CHAPTER ONE",{fs:24,ff:"Arial",c:"#c794b4",al:"center",ls:"8"}),
+   LN(360,220,490,220,{s:"#c794b4",sw:1}),
+   T(80,260,690,90,"The Hornkeeper's Daughter",{fs:42,ff:"Georgia, serif",c:"#8e2f5d",al:"center"}),
+   T(120,420,610,520,"Eris counted the horn's silver bands one last time before she covered the fire. Eleven bands, eleven winters, eleven years of her father saying the same thing at the door: do not answer it if the air tastes of starlight.\n\nThat night the air tasted of starlight.\n\nShe heard the dragon before she saw it \u2014 not the roar of the old stories but a long, tired breath on the roof slates, like something that had flown a very long way to be refused. When she opened the shutters, the grey shape folded its wings and lowered its head, and the horn on the mantel began, very softly, to hum.",{fs:18,ff:"Georgia, serif",c:"#3a3340",lh:1.8}),
    T(80,990,690,30,"1",{fs:16,ff:"Georgia, serif",c:"#999",al:"center"})
  ]}],"book interior chapter novel page");
 
