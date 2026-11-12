@@ -155,9 +155,9 @@ tpl("magazine","Fashion Lookbook Page","Product grid editorial",850,1100,[
 tpl("books","Thriller Book Cover","Dark dramatic front cover",800,1200,[
  {bg:"#0a0e1a",elements:[
    EL(100,140,600,600,{f:"#132038",op:.9}),
-   T(60,80,680,80,"A. J. MERCER",{fs:26,ff:"Arial",fw:"600",c:"#8fa8d0",al:"center",ls:"6"}),
+   T(60,80,680,80,"bY V$",{fs:26,ff:"Arial",fw:"600",c:"#8fa8d0",al:"center",ls:"6"}),
    LN(280,170,520,170,{s:"#c9a24b",sw:2}),
-   T(60,380,680,240,"THE SILENT\nHARBOR",{fs:82,ff:"Georgia, serif",fw:"700",c:"#e8edf7",al:"center",lh:1.1}),
+   T(60,380,680,240,"last ONE\nstanding",{fs:82,ff:"Georgia, serif",fw:"700",c:"#e8edf7",al:"center",lh:1.1}),
    T(60,660,680,60,"A novel of secrets that refuse to drown.",{fs:22,ff:"Georgia, serif",it:true,c:"#7d92b8",al:"center"}),
    R(60,1020,680,3,{f:"#c9a24b"}),
    T(60,1060,680,50,"FROM THE BESTSELLING AUTHOR OF COLD WATER",{fs:15,ff:"Arial",c:"#8fa8d0",al:"center",ls:"2"})
