@@ -163,6 +163,44 @@ tpl("books","Thriller Book Cover","Dark dramatic front cover",800,1200,[
    T(60,1060,680,50,"FROM THE BESTSELLING AUTHOR OF COLD WATER",{fs:15,ff:"Arial",c:"#8fa8d0",al:"center",ls:"2"})
  ]}],"book cover thriller novel mystery");
 
+/* ---------- fantasy cover art (vector, self-contained) ---------- */
+function svgUri(svg){ return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); }
+function ombreSvg(w,h,c1,c2){
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="o" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="0.55" stop-color="#ffeef6"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#o)"/></svg>`);
+}
+function glitterSvg(w,h,n){
+  let s = 1234567;
+  const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  let dots = "";
+  for (let i = 0; i < n; i++){
+    const x = +(rnd()*w).toFixed(1), y = +(rnd()*h).toFixed(1);
+    const r = (0.8 + rnd()*2.1).toFixed(1);
+    const o = (0.25 + rnd()*0.6).toFixed(2);
+    const c = ["#ffffff","#dfe6ef","#c8d0da"][Math.floor(rnd()*3)];
+    dots += `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" opacity="${o}"/>`;
+    if (i % 4 === 0) dots += `<path d="M${x} ${y-6} L${x+1.6} ${y-1.6} L${x+6} ${y} L${x+1.6} ${y+1.6} L${x} ${y+6} L${x-1.6} ${y+1.6} L${x-6} ${y} L${x-1.6} ${y-1.6} Z" fill="#ffffff" opacity="${(o*0.9).toFixed(2)}"/>`;
+  }
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${dots}</svg>`);
+}
+function dragonSvg(){
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 420"><defs><linearGradient id="horn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#b6bec9"/><stop offset="0.6" stop-color="#e9edf3"/><stop offset="1" stop-color="#fbfdff"/></linearGradient><linearGradient id="dbody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa1ac"/><stop offset="1" stop-color="#7d8490"/></linearGradient></defs><path d="M300 330 C370 350 400 380 380 405 C365 424 330 418 320 400 C345 408 362 400 358 385 C354 370 330 360 300 355 Z" fill="#7d8490"/><path d="M150 235 C120 165 155 105 215 95 C190 145 190 200 215 245 Z" fill="#a9aeb8"/><ellipse cx="205" cy="305" rx="100" ry="72" fill="url(#dbody)"/><ellipse cx="205" cy="320" rx="62" ry="46" fill="#b9bec7"/><ellipse cx="255" cy="368" rx="34" ry="16" fill="#6f7580"/><ellipse cx="155" cy="372" rx="30" ry="14" fill="#6f7580"/><path d="M262 265 C280 225 292 200 300 178 L352 196 C342 235 322 262 292 288 Z" fill="#8d939e"/><circle cx="330" cy="150" r="54" fill="#8d939e"/><ellipse cx="368" cy="168" rx="34" ry="20" fill="#9aa1ac"/><path d="M345 185 q25 8 50 2" stroke="#6e747e" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="392" cy="164" r="3.4" fill="#5c626c"/><circle cx="330" cy="142" r="7" fill="#3d4350"/><circle cx="333" cy="139" r="2.4" fill="#ffffff"/><path d="M296 112 L282 88 L304 100 Z" fill="#7c828c"/><path d="M308 104 L300 76 L320 94 Z" fill="#7c828c"/><path d="M330 102 L343 105 L336 20 Z" fill="url(#horn)" stroke="#aab2bd" stroke-width="1"/><path d="M331 86 L341 88 M330 66 L340 68 M329 46 L339 48" stroke="#aab2bd" stroke-width="1.4" fill="none"/><path d="M330 34 l3 6 6 3 -6 3 -3 6 -3 -6 -6 -3 6 -3 Z" fill="#ffffff"/><path d="M352 60 l2 4 4 2 -4 2 -2 4 -2 -4 -4 -2 4 -2 Z" fill="#ffffff" opacity="0.9"/><path d="M188 250 C160 170 200 115 258 108 C232 158 236 214 262 252 Z" fill="#8d939e"/><path d="M196 240 C180 190 200 150 240 128 M212 246 C198 200 216 162 250 140" stroke="#6e747e" stroke-width="2.4" fill="none" opacity="0.7"/><path d="M120 120 l4 9 9 4 -9 4 -4 9 -4 -9 -9 -4 9 -4 Z" fill="#e6ebf2"/><path d="M420 250 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 Z" fill="#dfe6ef" opacity="0.9"/></svg>`);
+}
+tpl("books","Fantasy Book Cover","Ombre white-to-pink, silver glitter, grey dragon with a unicorn horn",800,1200,[
+ {bg:"#ffffff",elements:[
+   {type:"image",x:0,y:0,w:800,h:1200,src:ombreSvg(800,1200,"#ffffff","#ff9fd0"),fit:"cover",radius:0,opacity:1},
+   {type:"image",x:0,y:0,w:800,h:1200,src:glitterSvg(800,1200,150),fit:"cover",radius:0,opacity:1},
+   T(60,90,680,60,"bY V$",{fs:26,ff:"Arial",fw:"600",c:"#b3557f",al:"center",ls:"6"}),
+   T(60,170,680,200,"THE SILVER\nHORN",{fs:76,ff:"Georgia, serif",fw:"700",c:"#8e2f5d",al:"center",lh:1.15}),
+   LN(280,392,520,392,{s:"#cfd4dd",sw:2}),
+   {type:"image",x:170,y:470,w:460,h:420,src:dragonSvg(),fit:"cover",radius:0,opacity:1},
+   GL(64,470,60,60,"\u2726",{fs:42,c:"#ffffff"}),
+   GL(690,540,60,60,"\u2726",{fs:36,c:"#f3f0f7"}),
+   GL(90,860,50,50,"\u2726",{fs:30,c:"#ffffff"}),
+   T(60,940,680,50,"A dragon's gift. A unicorn's vow.",{fs:22,ff:"Georgia, serif",it:true,c:"#a34a75",al:"center"}),
+   R(60,1060,680,3,{f:"#cfd4dd"}),
+   T(60,1090,680,40,"A FANTASY NOVEL",{fs:15,ff:"Arial",c:"#b3557f",al:"center",ls:"3"})
+ ]}],"fantasy book cover dragon unicorn ombre pink glitter silver magic");
+
 tpl("books","Chapter Opening Page","Book interior typography",850,1100,[
  {bg:"#fbf8f2",elements:[
    T(80,110,690,70,"CHAPTER ONE",{fs:24,ff:"Arial",c:"#a89878",al:"center",ls:"8"}),
