@@ -6,7 +6,20 @@
 }
 *{box-sizing:border-box; margin:0; padding:0}
 html,body{height:100%}
-body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; background:var(--bg); color:var(--ink); overflow:hidden}
+body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:var(--ink); overflow:hidden;
+  background:
+    radial-gradient(1200px 800px at 15% 20%, rgba(124,92,255,.28), transparent 60%),
+    radial-gradient(1000px 700px at 85% 15%, rgba(0,212,170,.20), transparent 60%),
+    radial-gradient(1200px 900px at 80% 85%, rgba(255,92,138,.24), transparent 60%),
+    radial-gradient(900px 700px at 20% 90%, rgba(255,212,121,.16), transparent 60%),
+    linear-gradient(135deg,#141031,#0f1222 45%,#1c1034);
+  background-attachment:fixed}
+/* iridescent sheen — slow drifting pastel bands over the dark base */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:linear-gradient(120deg,rgba(167,139,255,.09),rgba(255,143,177,.09),rgba(143,224,255,.09),rgba(255,222,143,.07),rgba(167,139,255,.09));
+  background-size:300% 300%;animation:irid 16s ease-in-out infinite}
+@keyframes irid{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+#topbar,#catRail,#modalCard{position:relative;z-index:1}
 
 /* ---------- Top bar ---------- */
 #topbar{height:54px; display:flex; align-items:center; gap:10px; padding:0 14px;

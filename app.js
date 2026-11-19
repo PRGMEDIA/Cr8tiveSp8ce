@@ -202,7 +202,7 @@ function showMemberGate(after){
   const store = getMembers();
   const names = Object.keys(store.members);
   showModal(`<h3>\uD83D\uDC65 Member sign-in</h3>
-    <p><b>Members only.</b> Sign in to use the studio \u2014 or create a member${names.length ? " (invite code required; ask the superuser)" : " \u2014 superuser rights are granted only by the owner, never automatically"}. Profiles keep designs, brand kits and templates separate on this device.</p>
+    <p><b>Members only.</b> Sign in to use the atelier \u2014 or create a member${names.length ? " (invite code required; ask the superuser)" : " \u2014 superuser rights are granted only by the owner, never automatically"}. Profiles keep designs, brand kits and templates separate on this device.</p>
     ${names.map(n => `<button class="prop-btn" data-member="${esc(n)}">\uD83D\uDC64 ${esc(n)}</button>`).join("")}
     <div class="m-row"><input id="mUser" placeholder="member ID" autocomplete="off" spellcheck="false"></div>
     <div class="m-row"><input id="mPass" type="password" placeholder="password"></div>
@@ -215,7 +215,7 @@ function showMemberGate(after){
       <button class="abtn primary" id="mIn">Sign in</button></div>`);
   $$("#modalCard [data-member]").forEach(b => b.onclick = () => { $("#mUser").value = b.dataset.member; $("#mPass").focus(); });
   const done = (u) => { localStorage.setItem(SESSION_LS, JSON.stringify(u)); closeModal(); updateMemberChip(); if (after) after(); };
-  // SW-LOCK-1: no guest path — the studio is members-only
+  // SW-LOCK-1: no guest path — the atelier is members-only
   // defect fix: always read the FRESH registry (a stale snapshot rejected
   // members created after the modal opened)
   const signIn = async () => {
@@ -2838,13 +2838,13 @@ async function showAiCreate(){
   const cloud = getAiCloud();
   let lastArt = null, variation = 0, lastPrompt = "", lastSize = "1024x1024";
   showModal(`<h3>\u2728 AI Create — picture & animation</h3>
-    <p>Describe the image you want. The <b>offline studio</b> renders prompt-seeded generative art instantly; the <b>cloud tier</b> produces photorealistic images once your Oracle proxy is connected.</p>
+    <p>Describe the image you want. The <b>offline atelier</b> renders prompt-seeded generative art instantly; the <b>cloud tier</b> produces photorealistic images once your Oracle proxy is connected.</p>
     <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Prompt</span>
       <input id="aiPrompt" placeholder="e.g. neon city at night \u00b7 ocean sunset \u00b7 snowy mountains\u2026"></div>
     <div class="m-row"><span style="font-size:12px;color:var(--ink-dim);width:80px;flex-shrink:0">Size</span>
       <select id="aiSize" class="prop-select"><option value="1024x1024">1024\u00d71024</option><option value="1280x720">1280\u00d7720</option><option value="720x1280">720\u00d71280</option></select></div>
     <div class="m-actions" style="justify-content:flex-start;flex-wrap:wrap">
-      <button class="abtn primary" id="aiGo">\u2728 Generate (offline studio)</button>
+      <button class="abtn primary" id="aiGo">\u2728 Generate (offline atelier)</button>
       ${cloud.endpoint ? `<button class="abtn ghost" id="aiCloudGo">\u2601 Generate with cloud AI</button>` : `<button class="abtn ghost" id="aiCloudCfg">\u2601 Connect cloud AI\u2026</button>`}</div>
     <div id="aiPrevWrap" style="text-align:center;margin:10px 0"><img id="aiPrev" style="max-width:100%;max-height:300px;border-radius:10px;display:none"></div>
     <div class="m-actions" style="justify-content:flex-start;flex-wrap:wrap;display:none" id="aiActs">

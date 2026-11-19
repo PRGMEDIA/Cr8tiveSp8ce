@@ -231,16 +231,18 @@ check("27", "Rotation: lines/shapes/images rotate (handle, props, canvas + SVG e
   assert(r && r.rotate && r.rotateRedo, "rotation undo/redo failed");
   return "rotate handle + Shift-snap + exports + undoable";
 });
-check("28", "Superuser role + community repository (created-by attribution)", () => {
+check("28", "Superuser role (owner-assigned only, SW-SUPER-1) + community repository (created-by attribution)", () => {
   for (const s of ["function isSuperuser", "function showCommunityRepo", "function publishToCommunity",
-                   "const COMM_LS", "created by", "super: Object.keys(st.members).length === 0"])
+                   "const COMM_LS", "created by",
+                   "SW-SUPER-1", "super: false", "SUPER_SALT", "superGrant"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(!SRC.app.includes("super: Object.keys(st.members).length === 0"), "automatic first-member superuser must not exist (SW-SUPER-1)");
   const adm = fs.readFileSync(path.join(ROOT, "admin.html"), "utf8");
   for (const s of ["function renderSuper", "data-open", "data-promo", "superuser"])
     assert(adm.includes(s), "admin.html missing: " + s);
   const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   assert(idx.includes("data-community"), "index.html missing Community button");
-  return "superuser member admin + publish/browse/moderate repository";
+  return "superuser owner-assigned (transfer code + owner-gated admin) + publish/browse/moderate repository";
 });
 check("33", "Community suite: bundled templates valid + publish/use/seed wiring", () => {
   const suite = sandbox.__out.AURA_SUITE_TEMPLATES;
@@ -450,7 +452,9 @@ const distPath = path.join(ROOT, "dist", "aura-studio-single.html");
 check("17", "Artifacts: single-file bundle present & self-contained", () => {
   assert(fs.existsSync(distPath), "dist/aura-studio-single.html missing");
   const html = fs.readFileSync(distPath, "utf8");
-  assert(html.includes("Aura Studio"), "branding missing");
+  assert(html.includes("Aura Atelier") || html.includes("Aura Studio"), "branding missing");
+  const live = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  assert(live.includes("Aura Atelier"), "index.html must carry the Atelier brand");
   // The page itself must be fully self-contained. The embedded Admin HTML string
   // may reference exactly one shared asset (the brand logo), which resolves
   // against the opener when the admin popup opens.
