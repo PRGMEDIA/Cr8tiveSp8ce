@@ -606,6 +606,16 @@ check("36", "I-033 export integrity: download names always match content type; P
   return "rename-on-mismatch verified; %PDF guard present; .aura.json labeled as project file";
 });
 
+check("37", "SW-LOCK-1 members-only lock: mandatory gate, guest path removed, invite-code creation", () => {
+  assert(!SRC.app.includes("Continue as guest"), "guest path must be removed from the gate");
+  for (const s of ["SW-LOCK-1", "INVITE_SALT", "mmInvite", "Invalid invite code", "the superuser must issue an invite code"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(/const session = currentUser\(\);\s*\n\s*if \(!session\)\{[\s\S]{0,200}showMemberGate/.test(SRC.app), "gate must be mandatory at startup when no session");
+  assert(SRC.app.includes("Object.keys(st.members).length > 0 && !isSuperuser())"), "invite enforcement with superuser bypass");
+  assert(SRC.app.includes("hashPassword(INVITE_SALT, normCode(inv))"), "invite verification normalized");
+  return "gate mandatory on every visit; guest removed; invite hashed + superuser bypass + generator";
+});
+
 /* ---------------- report (async-aware) ---------------- */
 const asyncChecks = [
   { id: "31", name: "Password recovery: code verify, wrong code rejected, reset works, old password gone",

@@ -150,9 +150,10 @@ window.addEventListener("DOMContentLoaded", () => {
   bindPalette();
   bindKeyboard();
   updateMemberChip();
-  const store = getMembers();
   const session = currentUser();
-  if (Object.keys(store.members).length && !session){
+  if (!session){
+    // members-only lock (SW-LOCK-1): the gate is mandatory on every visit,
+    // including a fresh device — the first member created becomes the superuser
     showMemberGate(() => { renderGallery(); restoreAutosave(); });
   } else {
     restoreAutosave();
@@ -169,6 +170,7 @@ window.addEventListener("DOMContentLoaded", () => {
    ============================================================ */
 const MEMBERS_LS = "aura.members";
 const SESSION_LS = "aura.currentMember";
+const INVITE_SALT = "aura-invite-v1";  // invite codes hash with a fixed namespace (device-local)
 function getMembers(){
   try { return JSON.parse(localStorage.getItem(MEMBERS_LS) || "") || { members:{} }; }
   catch(e){ return { members:{} }; }
@@ -199,19 +201,19 @@ function showMemberGate(after){
   const store = getMembers();
   const names = Object.keys(store.members);
   showModal(`<h3>\uD83D\uDC65 Member sign-in</h3>
-    <p>Member profiles keep designs, brand kits and templates separate on this device \u2014 like a phone lock screen. (Cloud-synced member accounts arrive with the Phase II server.)</p>
+    <p><b>Members only.</b> Sign in to use the studio \u2014 or create a member${names.length ? " (invite code required; ask the superuser)" : " \u2014 the first member on this device becomes the superuser"}. Profiles keep designs, brand kits and templates separate on this device.</p>
     ${names.map(n => `<button class="prop-btn" data-member="${esc(n)}">\uD83D\uDC64 ${esc(n)}</button>`).join("")}
     <div class="m-row"><input id="mUser" placeholder="member ID" autocomplete="off" spellcheck="false"></div>
     <div class="m-row"><input id="mPass" type="password" placeholder="password"></div>
     <div class="m-row"><input id="mPhone" placeholder="Phone (optional — for new members)" autocomplete="tel"></div>
+    <div class="m-row"><input id="mInvite" placeholder="Invite code (new members only — ask the superuser)" autocomplete="off" spellcheck="false"></div>
     <div class="m-actions" style="flex-wrap:wrap">
       <button class="abtn ghost" id="mNew" style="margin-right:auto">\u2795 Create member</button>
-      <button class="abtn ghost" id="mGuest">Continue as guest</button>
       <button class="abtn ghost" id="mForgot">\uD83D\uDD11 Forgot password?</button>
       <button class="abtn primary" id="mIn">Sign in</button></div>`);
   $$("#modalCard [data-member]").forEach(b => b.onclick = () => { $("#mUser").value = b.dataset.member; $("#mPass").focus(); });
   const done = (u) => { localStorage.setItem(SESSION_LS, JSON.stringify(u)); closeModal(); updateMemberChip(); if (after) after(); };
-  $("#mGuest").onclick = () => { localStorage.removeItem(SESSION_LS); closeModal(); updateMemberChip(); if (after) after(); };
+  // SW-LOCK-1: no guest path — the studio is members-only
   // defect fix: always read the FRESH registry (a stale snapshot rejected
   // members created after the modal opened)
   const signIn = async () => {
@@ -237,6 +239,14 @@ function showMemberGate(after){
     const ph = (($("#mPhone") || {}).value || "");
     // case-insensitive duplicate check — "Villa" vs "villa" is the same member
     if (Object.keys(st.members).find(x => x.toLowerCase() === u.toLowerCase())){ toast("That member ID already exists"); return; }
+    // SW-LOCK-1: on an already-initialized device, new members need the superuser's invite code
+    // (the superuser themself bypasses — they are the issuing authority)
+    if (Object.keys(st.members).length > 0 && !isSuperuser()){
+      const inv = (($("#mInvite") || {}).value || "").trim();
+      if (!st.invite || !st.invite.hash){ toast("Members only \u2014 the superuser must issue an invite code first (Members menu)"); return; }
+      const ih = await hashPassword(INVITE_SALT, normCode(inv));
+      if (ih !== st.invite.hash){ toast("Invalid invite code"); return; }
+    }
     const salt = uid() + uid();
     // the first member created on a device becomes the superuser (admin role)
     st.members[u] = { salt, hash: await hashPassword(salt, pw), created: Date.now(), super: Object.keys(st.members).length === 0 };
@@ -328,10 +338,21 @@ function showMemberMenu(){
     <p>Signed in as <b>${esc(u)}</b>${su ? " <span class=\"tag-ok\">\uD83D\uDEE1 superuser</span>" : ""}. Designs, brand kit and templates in use belong to this member profile.</p>
     <div class="m-actions" style="flex-wrap:wrap">
       <button class="abtn ghost" id="mmAdd" style="margin-right:auto">\u2795 Add member</button>
-      ${su ? `<button class="abtn ghost" id="mmAdmin">\uD83D\uDEE1 Superuser admin</button>` : ""}
+      ${su ? `<button class="abtn ghost" id="mmInvite">\uD83C\uDF9F\uFE0F Invite code</button><button class="abtn ghost" id="mmAdmin">\uD83D\uDEE1 Superuser admin</button>` : ""}
       <button class="abtn ghost" id="mmDel">\uD83D\uDD1B Delete this member</button>
       <button class="abtn primary" id="mmOut">Sign out</button></div>`);
   if (su) $("#mmAdmin").onclick = ()=>{ closeModal(); openAdminOverlay(); };
+  if (su) $("#mmInvite").onclick = async () => {
+    const st = getMembers();
+    const code = genRecoveryCode();
+    st.invite = { hash: await hashPassword(INVITE_SALT, normCode(code)), created: Date.now() };
+    setMembers(st);
+    showModal(`<h3>\uD83C\uDF9F\uFE0F Invite code</h3>
+      <p>Shown <b>once</b> \u2014 share it only with people you authorize to create a member on this device. Generating a new code invalidates the previous one. Codes are stored hashed, never in plain text.</p>
+      <div class="m-row"><input readonly value="${code}" onclick="this.select()" style="font-family:monospace;font-size:22px;text-align:center;letter-spacing:4px"></div>
+      <div class="m-actions"><button class="abtn primary" data-close>Done</button></div>`);
+    $$("#modalCard [data-close]").forEach(x => x.onclick = closeModal);
+  };
   $("#mmOut").onclick = ()=>{ localStorage.removeItem(SESSION_LS); location.reload(); };
   $("#mmAdd").onclick = ()=>{ closeModal(); showMemberGate(() => { renderGallery(); restoreAutosave(); }); };
   $("#mmDel").onclick = ()=>{
