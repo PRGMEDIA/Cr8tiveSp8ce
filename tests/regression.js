@@ -610,14 +610,29 @@ check("36", "I-033 export integrity: download names always match content type; P
   return "rename-on-mismatch verified; %PDF guard present; .aura.json labeled as project file";
 });
 
-check("37", "SW-LOCK-1 members-only lock: mandatory gate, guest path removed, invite-code creation", () => {
+check("37", "SW-LOCK-1/2 members-only lock: mandatory gate, guest removed, INVITE-CODE-ONLY access (I-036)", () => {
   assert(!SRC.app.includes("Continue as guest"), "guest path must be removed from the gate");
-  for (const s of ["SW-LOCK-1", "INVITE_SALT", "mmInvite", "Invalid invite code", "the superuser must issue an invite code"])
+  for (const s of ["SW-LOCK-1", "SW-LOCK-2", "INVITE_SALT", "mmInvite", "Invalid or already-used invite code", "Invite code required"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
   assert(/const session = currentUser\(\);\s*\n\s*if \(!session\)\{[\s\S]{0,200}showMemberGate/.test(SRC.app), "gate must be mandatory at startup when no session");
-  assert(SRC.app.includes("Object.keys(st.members).length > 0 && !isSuperuser())"), "invite enforcement with superuser bypass");
+  assert(!SRC.app.includes("Object.keys(st.members).length > 0 && !isSuperuser())"), "the fresh-device creation bypass must NOT exist (I-036)");
+  assert(SRC.app.includes("invitesLedger") && SRC.app.includes("INVITES_URL"), "codes validate against the owner's ledger");
   assert(SRC.app.includes("hashPassword(INVITE_SALT, normCode(inv))"), "invite verification normalized");
-  return "gate mandatory on every visit; guest removed; invite hashed + superuser bypass + generator";
+  return "gate mandatory on every visit; guest removed; invite-code-only access; ledger-validated single-use codes";
+});
+
+check("38", "SW-LEDGER-1 GitHub ledger: public verifier merged at gate, no token in client, private source of truth", () => {
+  for (const s of ["SW-LEDGER-1", "LEDGER_URL", "INVITES_URL", "function syncLedger"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(!/github_pat_|ghp_[A-Za-z0-9]/.test(SRC.app), "no GitHub token may ship in the client");
+  const v = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "members-verify.json"), "utf8"));
+  assert(v.members.length >= 1, "verifier has no members");
+  const su = v.members.find(m => m.is_super);
+  assert(su && su.id && su.salt && su.hash, "superuser entry malformed in verifier");
+  assert(!JSON.stringify(v).includes("phone"), "verifier must not leak private fields (phone)");
+  const inv = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "invites-verify.json"), "utf8"));
+  assert(Array.isArray(inv.invites) && inv.invites.every(e => /^[a-f0-9]{64}$/.test(e.code_hash)), "invite verifier must hold hashed codes only");
+  return "verifier: " + v.members.map(m => m.id + (m.is_super ? " (super)" : "")).join(", ") + " — private fields excluded, no client token";
 });
 
 /* ---------------- report (async-aware) ---------------- */

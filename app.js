@@ -198,7 +198,35 @@ function updateMemberChip(){
   const chip = $("#memberChip");
   if (chip) chip.textContent = currentUser() ? "\uD83D\uDC64 " + currentUser() : "\uD83D\uDC64 Guest";
 }
+/* SW-LEDGER-1: the authoritative member registry is db/members.json in the
+   PRIVATE repo; the public verifier file (ids + salted hashes + super flag)
+   is merged into the local registry on every gate open. No token ships in
+   the client; phones and ledger details stay private. */
+const LEDGER_URL = "data/members-verify.json";
+const INVITES_URL = "data/invites-verify.json";
+function syncLedger(){
+  const membersP = fetch(LEDGER_URL, { cache: "no-store" })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)));
+  const invitesP = fetch(INVITES_URL, { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null);
+  return Promise.all([membersP, invitesP]).then(([j, inv]) => {
+    const st = getMembers();
+    (j.members || []).forEach(m => {
+      if (!m.id || !m.salt || !m.hash) return;
+      const ex = st.members[m.id] || {};
+      st.members[m.id] = Object.assign({}, ex, { salt: m.salt, hash: m.hash, super: !!m.is_super });
+      if (!st.members[m.id].created) st.members[m.id].created = Date.now();
+    });
+    // SW-LOCK-2: owner-minted invite codes arrive as hashed entries; a code is
+    // spendable once per device and stays valid until the owner retires it.
+    if (inv && inv.invites) st.invitesLedger = inv.invites.map(e => ({ code_hash: e.code_hash }));
+    setMembers(st);
+    return Object.keys(st.members).length;
+  });
+}
 function showMemberGate(after){
+  syncLedger().catch(() => {}).then(() => renderGate(after));
+}
+function renderGate(after){
   const store = getMembers();
   const names = Object.keys(store.members);
   showModal(`<h3>\uD83D\uDC65 Member sign-in</h3>
@@ -253,13 +281,19 @@ function showMemberGate(after){
     const ph = (($("#mPhone") || {}).value || "");
     // case-insensitive duplicate check — "Villa" vs "villa" is the same member
     if (Object.keys(st.members).find(x => x.toLowerCase() === u.toLowerCase())){ toast("That member ID already exists"); return; }
-    // SW-LOCK-1: on an already-initialized device, new members need the superuser's invite code
-    // (the superuser themself bypasses — they are the issuing authority)
-    if (Object.keys(st.members).length > 0 && !isSuperuser()){
+    // SW-LOCK-2 (I-036): access is INVITE-CODE ONLY — on every device, including
+    // a fresh one. Codes are validated against the owner's ledger (hashed) or a
+    // locally minted code, and each code is spendable once per device.
+    // The superuser bypasses — they are the issuing authority.
+    if (!isSuperuser()){
       const inv = (($("#mInvite") || {}).value || "").trim();
-      if (!st.invite || !st.invite.hash){ toast("Members only \u2014 the superuser must issue an invite code first (Members menu)"); return; }
+      if (!inv){ toast("Invite code required \u2014 access is by invitation only"); return; }
       const ih = await hashPassword(INVITE_SALT, normCode(inv));
-      if (ih !== st.invite.hash){ toast("Invalid invite code"); return; }
+      const used = st.invitesUsed || [];
+      const ledgerOk = (st.invitesLedger || []).some(e => e.code_hash === ih) && !used.includes(ih);
+      const localOk = st.invite && st.invite.hash === ih && !used.includes(ih);
+      if (!ledgerOk && !localOk){ toast("Invalid or already-used invite code"); return; }
+      st.invitesUsed = used.concat([ih]);
     }
     const salt = uid() + uid();
     // SW-SUPER-1: superusers are assigned ONLY by the owner — never automatically.
