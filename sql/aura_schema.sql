@@ -68,6 +68,34 @@ CREATE TABLE IF NOT EXISTS aura_media (
   KEY idx_member (member_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Works — licensed creations (SW-LIC-1). CC top-tier records (SW-LIC-1.a)
+-- enforce the required-attribute entry: title, TYPE OF ART, creator, date,
+-- license class, org, royalty tier. A missing attribute REJECTS the record
+-- (NOT NULL columns + API validation — no partial registrations).
+CREATE TABLE IF NOT EXISTS aura_works (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  asset_ref     VARCHAR(255) NOT NULL,                 -- design id / media ref / S3 object key
+  title         VARCHAR(160) NOT NULL,                 -- 1–160, unique per creator
+  art_type      ENUM('digital_art','illustration','photography','logo','template',
+                     'video','audio','text','craft','other') NOT NULL,
+  creator       VARCHAR(64)  NOT NULL,                 -- ledger member id (uid+handle)
+  work_date     DATE         NOT NULL,                 -- creation date of the work
+  license_class ENUM('base','middle','cc') NOT NULL,
+  cc_variant    ENUM('BY','BY-SA','BY-NC','BY-NC-SA','CC0') DEFAULT NULL, -- required when license_class='cc'
+  org           VARCHAR(64)  NOT NULL,                 -- member organization
+  royalty_tier  ENUM('base','middle','top') NOT NULL,
+  tm_flag       TINYINT(1)   DEFAULT 0,                -- ™ branding (logo works)
+  download_format ENUM('png','jpg') NOT NULL,          -- format the DB serves on request
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_title_creator (title, creator),
+  KEY idx_license (license_class, cc_variant),
+  KEY idx_creator (creator)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Record-rejection rule (application layer): an INSERT attempt with any
+-- required attribute missing must fail validation BEFORE reaching the table;
+-- rejected attempts are logged to aura_audit_log as validation_rejected.
+
 -- Audit log — ISO 27001:2022 aligned (A.8.15 logging, A.8.16 monitoring,
 -- 5.33/5.34 record protection & retention).
 -- Every auth/validation event the back end accepts or rejects is recorded
