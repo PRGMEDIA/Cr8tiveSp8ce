@@ -386,7 +386,7 @@ function isSuperuser(){
    re-authentication is required after inactivity; the click-to-fill pill is
    identity selection only and never bypasses the password. The interval is
    overridable for UAT via ?idle=<minutes> on the URL. */
-const SESSION_IDLE_MINUTES = 30;
+const SESSION_IDLE_MINUTES = 3;  // owner directive 2026-11-21: 3-minute lockout (regulatory posture)
 (function installIdleTimer(){
   try {  // sandbox/SSR-safe: DOM APIs may be absent outside the browser
     const search = (typeof location !== "undefined" && location.search) || "";
