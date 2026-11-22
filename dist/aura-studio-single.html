@@ -325,6 +325,7 @@ input[type=color].prop-input{padding:2px;height:30px;cursor:pointer}
         <select id="templateType" class="type-select">
           <option value="all">All template types</option>
         </select>
+        <div style="margin-top:14px"><button class="abtn ghost" id="btnCommunity" title="Browse the community repository — member-published images, animations and templates">🌐 Community</button></div>
       </div>
       <div id="searchResults" style="display:none"></div>
       <div id="gallerySections"></div>
@@ -2875,6 +2876,8 @@ function bindTopbar(){
     toast(guidesOn ? "Print guides on \u2014 backgrounds to the edge, text inside cyan" : "Print guides off");
   };
   $("#btnWatermark").onclick = showWatermarkModal;
+  const bc = document.getElementById("btnCommunity");
+  if (bc) bc.onclick = showCommunityRepo;
   $("#memberChip").onclick = showMemberMenu;
   $("#btnAdmin").onclick = openAdminOverlay;
   const sel = document.getElementById("templateType");
@@ -4770,11 +4773,39 @@ function commClassOf(m){
   if (t.indexOf("video") === 0 || m.blob || t === "image/gif") return "animated";
   return "image";
 }
+/* SW-COMMWALL-1 (Phase 3 form): default application-owned published assets —
+   exactly 11 showcase templates, attributed to the publishing house, [PRG]-
+   badged and pinned in the Templates folder. Not deletable; Use/Download work. */
+const COMM_HOUSE_BY = "S\u00B3 PRGDUCTION & PUBLISHING HOUSE \u00B7 [PRG]";
+const COMM_DEFAULT_SHOWCASE = [
+  "Business Card Sheet \u2014 Classic 10-up",
+  "Case Study \u2014 Clean",
+  "Build a Bee \u2014 Cut & Color",
+  "Fall Leaves \u2014 Color & Cut",
+  "Recipe Page \u2014 Script Title",
+  "Daily Schedule \u2014 Hourly",
+  "Labels \u2014 Polka 6-up",
+  "Album Layouts \u2014 12\u00D736 Pink",
+  "Business Infographic \u2014 4 Steps",
+  "Tech Blog \u2014 Homepage",
+  "To Do \u2014 Pastel Floral"
+];
+function commDefaults(){
+  if (typeof AURA_SUITE_TEMPLATES === "undefined") return [];
+  return COMM_DEFAULT_SHOWCASE.map((name, i) => {
+    const tpl = AURA_SUITE_TEMPLATES.find(t => t.name === name);
+    if (!tpl) return null;
+    return { id: "sys-default-" + i, kind: "template", name: tpl.name, by: COMM_HOUSE_BY,
+      added: 9e15 - i, tpl: tpl, sys: true };
+  }).filter(Boolean);
+}
 function commTemplateCell(m){
-  const canDelete = isSuperuser() || m.by === (currentUser() || "Guest");
-  return '<div class="ml-cell"><div class="ml-thumb" style="font-size:26px">✨</div>' +
-    '<div class="ml-nm">' + (m.name || "template").slice(0, 26) + '</div>' +
-    '<div class="ml-by">created by <b>' + (m.by || "unknown").replace(/</g, "&lt;") + '</b></div>' +
+  const canDelete = !m.sys && (isSuperuser() || m.by === (currentUser() || "Guest"));
+  const badge = m.sys ? ' <span style="font-size:9px;border:1px solid currentColor;border-radius:999px;padding:0 5px;margin-left:4px;vertical-align:middle">[PRG]</span>' : "";
+  const byLine = m.sys ? 'Published by <b>S\u00B3 PRGDUCTION & PUBLISHING HOUSE</b> [PRG]' : 'created by <b>' + (m.by || "unknown").replace(/</g, "&lt;") + '</b>';
+  return '<div class="ml-cell" data-id="' + m.id + '"><div class="ml-thumb" style="font-size:26px">✨</div>' +
+    '<div class="ml-nm">' + (m.name || "template").slice(0, 26) + badge + '</div>' +
+    '<div class="ml-by">' + byLine + '</div>' +
     '<div class="ml-ops"><button data-use="1" title="Open as a new design">▶ Use</button>' +
     '<button data-dl="1" title="Download template .json">⬇</button>' +
     (canDelete ? '<button data-del="1" title="Remove">✕</button>' : '') + '</div></div>';
@@ -4806,8 +4837,9 @@ function showCommunityRepo(){
       '<select id="commCat" class="prop-select">' + cats.map(c =>
         '<option value="' + c[0] + '"' + (view.cat === c[0] ? " selected" : "") + '>' + c[1] + '</option>').join("") + '</select></div>'
     : "";
+  const defList = tab === "templates" ? commDefaults() : [];
   const list = tab === "templates"
-    ? groups.template.filter(m => view.cat === "all" || (m.tpl && m.tpl.cat === view.cat))
+    ? defList.concat(groups.template).filter(m => view.cat === "all" || (m.tpl && m.tpl.cat === view.cat))
     : tab === "animated" ? groups.animated.concat(groups.audio)
     : groups.image;
   const cell = (m) => tab === "templates" ? commTemplateCell(m) : commMediaCell(m, su, me);
@@ -4822,7 +4854,7 @@ function showCommunityRepo(){
     '<div class="pj-tabs">' +
     '<button data-folder="images" class="' + (tab === "images" ? "on" : "") + '">🖼 Images (' + groups.image.length + ')</button>' +
     '<button data-folder="animated" class="' + (tab === "animated" ? "on" : "") + '">🎬 Animated (' + (groups.animated.length + groups.audio.length) + ')</button>' +
-    '<button data-folder="templates" class="' + (tab === "templates" ? "on" : "") + '">✨ Templates (' + groups.template.length + ')</button></div>' +
+    '<button data-folder="templates" class="' + (tab === "templates" ? "on" : "") + '">✨ Templates (' + (groups.template.length + defList.length) + ')</button></div>' +
     catSel +
     '<div class="ml-grid" id="commGrid">' + body + '</div>' +
     '<div class="m-actions"><button class="abtn primary" data-close style="margin-left:auto">Done</button></div>');
