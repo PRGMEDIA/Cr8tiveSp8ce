@@ -231,7 +231,8 @@ function renderGate(after){
   const names = Object.keys(store.members);
   showModal(`<h3>\uD83D\uDC65 Member sign-in</h3>
     <p><b>Members only.</b> Sign in to use the atelier \u2014 or create a member${names.length ? " (invite code required; ask the superuser)" : " \u2014 superuser rights are granted only by the owner, never automatically"}. Profiles keep designs, brand kits and templates separate on this device.</p>
-    ${names.map(n => `<button class="prop-btn" data-member="${esc(n)}">\uD83D\uDC64 ${esc(n)}</button>`).join("")}
+    ${names.length ? `<p class="gate-mini">Quick sign-in — click your saved profile:</p>` : ""}
+    ${names.map(n => `<button class="prop-btn" data-member="${esc(n)}" title="Click to fill your member ID">\uD83D\uDC64 ${esc(n)} ▸</button>`).join("")}
     <div class="m-row"><input id="mUser" placeholder="member ID" autocomplete="off" spellcheck="false"></div>
     <div class="m-row"><input id="mPass" type="password" placeholder="password"></div>
     <div class="m-row"><input id="mPhone" placeholder="Phone (optional — for new members)" autocomplete="tel"></div>
