@@ -635,6 +635,16 @@ check("38", "SW-LEDGER-1 GitHub ledger: public verifier merged at gate, no token
   return "verifier: " + v.members.map(m => m.id + (m.is_super ? " (super)" : "")).join(", ") + " — private fields excluded, no client token";
 });
 
+check("39", "SW-SIGNIN-2 idle timeout: re-auth required after inactivity; UAT override via ?idle=; autosave on expiry", () => {
+  for (const s of ["SW-SIGNIN-2", "SESSION_IDLE_MINUTES", "installIdleTimer", "Session ended after",
+                   "please sign in again", "saveAutosave();", "showMemberGate(() => { renderGallery(); restoreAutosave(); })"])
+    assert(SRC.app.includes(s), "app.js missing: " + s);
+  assert(SRC.app.includes("URLSearchParams(location.search).get(\"idle\")"), "UAT idle override missing");
+  assert(/[\"(]mousemove[\"),]/.test(SRC.app) && SRC.app.includes("keydown"), "activity listeners missing");
+  assert(SRC.app.includes("localStorage.removeItem(SESSION_LS)"), "session must be cleared on expiry");
+  return "idle timer: 30 min default, activity-tracked, session cleared, autosave + gate re-entry";
+});
+
 /* ---------------- report (async-aware) ---------------- */
 const asyncChecks = [
   { id: "31", name: "Password recovery: code verify, wrong code rejected, reset works, old password gone",

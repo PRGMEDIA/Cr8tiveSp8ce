@@ -381,6 +381,28 @@ function isSuperuser(){
   const st = getMembers();
   return !!(u && st.members[u] && st.members[u].super);
 }
+
+/* SW-SIGNIN-2 (Phase 2 backport, RR-1 disposition): idle timeout —
+   re-authentication is required after inactivity; the click-to-fill pill is
+   identity selection only and never bypasses the password. The interval is
+   overridable for UAT via ?idle=<minutes> on the URL. */
+const SESSION_IDLE_MINUTES = 30;
+(function installIdleTimer(){
+  const urlIdle = parseInt(new URLSearchParams(location.search).get("idle") || "", 10);
+  const idleMs = (isNaN(urlIdle) || urlIdle < 1 ? SESSION_IDLE_MINUTES : urlIdle) * 60000;
+  let last = Date.now();
+  ["mousemove","keydown","click","touchstart","scroll"].forEach(ev =>
+    document.addEventListener(ev, () => { last = Date.now(); }, { passive: true }));
+  setInterval(() => {
+    if (!currentUser()) return;
+    if (Date.now() - last < idleMs) return;
+    localStorage.removeItem(SESSION_LS);
+    updateMemberChip();
+    saveAutosave();
+    toast("Session ended after " + idleMs/60000 + " minute(s) of inactivity — please sign in again", 6000);
+    showMemberGate(() => { renderGallery(); restoreAutosave(); });
+  }, 15000);
+})();
 function showMemberMenu(){
   const u = currentUser();
   if (!u){ showMemberGate(() => { renderGallery(); restoreAutosave(); }); return; }
