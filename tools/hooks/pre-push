@@ -38,6 +38,13 @@ while read local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_sha" ] && continue
 
   # 2) force-push policy
+  # I-039 amendment: TAG re-points are exempt — tags are pointers, not branch
+  # history; blocking their routine post-rebase updates caused control fatigue.
+  # Branch history rewrites remain blocked without the explicit override.
+  case "$local_ref" in refs/tags/*)
+    [ "$is_public" = "1" ] && echo "SW-GIT-003: tag re-point permitted (tags are pointers; branches remain protected)." >&2
+    continue ;;
+  esac
   if [ "$remote_sha" != "0000000000000000000000000000000000000000" ] && [ -n "$remote_sha" ]; then
     if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
       if [ "$is_public" = "1" ] && [ -z "$AURA_ALLOW_FORCE_PUBLIC" ]; then
