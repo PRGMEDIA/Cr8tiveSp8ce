@@ -2138,20 +2138,24 @@ function isSuperuser(){
    overridable for UAT via ?idle=<minutes> on the URL. */
 const SESSION_IDLE_MINUTES = 30;
 (function installIdleTimer(){
-  const urlIdle = parseInt(new URLSearchParams(location.search).get("idle") || "", 10);
-  const idleMs = (isNaN(urlIdle) || urlIdle < 1 ? SESSION_IDLE_MINUTES : urlIdle) * 60000;
-  let last = Date.now();
-  ["mousemove","keydown","click","touchstart","scroll"].forEach(ev =>
-    document.addEventListener(ev, () => { last = Date.now(); }, { passive: true }));
-  setInterval(() => {
-    if (!currentUser()) return;
-    if (Date.now() - last < idleMs) return;
-    localStorage.removeItem(SESSION_LS);
-    updateMemberChip();
-    saveAutosave();
-    toast("Session ended after " + idleMs/60000 + " minute(s) of inactivity — please sign in again", 6000);
-    showMemberGate(() => { renderGallery(); restoreAutosave(); });
-  }, 15000);
+  try {  // sandbox/SSR-safe: DOM APIs may be absent outside the browser
+    const search = (typeof location !== "undefined" && location.search) || "";
+    const qp = (typeof URLSearchParams === "function") ? new URLSearchParams(search) : null;
+    const urlIdle = qp ? parseInt(qp.get("idle") || "", 10) : NaN;
+    const idleMs = (isNaN(urlIdle) || urlIdle < 1 ? SESSION_IDLE_MINUTES : urlIdle) * 60000;
+    let last = Date.now();
+    ["mousemove","keydown","click","touchstart","scroll"].forEach(ev =>
+      document.addEventListener(ev, () => { last = Date.now(); }, { passive: true }));
+    setInterval(() => {
+      if (!currentUser()) return;
+      if (Date.now() - last < idleMs) return;
+      localStorage.removeItem(SESSION_LS);
+      updateMemberChip();
+      saveAutosave();
+      toast("Session ended after " + idleMs/60000 + " minute(s) of inactivity — please sign in again", 6000);
+      showMemberGate(() => { renderGallery(); restoreAutosave(); });
+    }, 15000);
+  } catch(e) { /* no DOM in this environment — timer not installed */ }
 })();
 function showMemberMenu(){
   const u = currentUser();
