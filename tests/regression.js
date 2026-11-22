@@ -639,7 +639,7 @@ check("39", "SW-SIGNIN-2 idle timeout: re-auth required after inactivity; UAT ov
   for (const s of ["SW-SIGNIN-2", "SESSION_IDLE_MINUTES", "installIdleTimer", "Session ended after",
                    "please sign in again", "saveAutosave();", "showMemberGate(() => { renderGallery(); restoreAutosave(); })"])
     assert(SRC.app.includes(s), "app.js missing: " + s);
-  assert(SRC.app.includes("URLSearchParams(location.search).get(\"idle\")"), "UAT idle override missing");
+  assert(SRC.app.includes("qp.get(\"idle\")"), "UAT idle override missing");
   assert(/[\"(]mousemove[\"),]/.test(SRC.app) && SRC.app.includes("keydown"), "activity listeners missing");
   assert(SRC.app.includes("localStorage.removeItem(SESSION_LS)"), "session must be cleared on expiry");
   return "idle timer: 30 min default, activity-tracked, session cleared, autosave + gate re-entry";
