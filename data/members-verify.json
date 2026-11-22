@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "source": "Cr8tiveSp8ce-Private/db/members.json",
+  "generated": "2026-11-22T04:05:04.625Z",
+  "members": [
+    {
+      "id": "V$",
+      "salt": "aaec9849f344ea263a06630232ee92ea",
+      "hash": "e1f6c01cf70def68ececb154f833a6b66c7a623cf38da5d99281e06c94b31c5a",
+      "is_super": true
+    }
+  ]
+}
